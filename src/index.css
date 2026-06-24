@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Tenant accent (R G B). Overridden at runtime by ThemeContext. Default = WFS gold. */
+  --accent: 245 158 11;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 85% -10%, #141C30 0%, #080C16 55%) fixed;
+  color: theme('colors.ice.DEFAULT');
+  font-family: theme('fontFamily.sans');
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #1B2640; border-radius: 8px; border: 2px solid #080C16; }
+::-webkit-scrollbar-thumb:hover { background: #27324F; }
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-white/[0.06] bg-navy-800/60 backdrop-blur-sm shadow-deck;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-ice-faint;
+  }
+  .input {
+    @apply w-full rounded-lg border border-white/10 bg-navy/60 px-3 py-2 text-sm text-ice
+           placeholder:text-ice-faint/70 outline-none transition
+           focus:border-accent/60 focus:ring-2 focus:ring-accent/20;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold
+           transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary { @apply btn bg-accent text-navy hover:brightness-110; }
+  .btn-ghost   { @apply btn border border-white/10 text-ice hover:bg-white/[0.04]; }
+  .btn-sm      { @apply px-2.5 py-1.5 text-xs; }
+  .th { @apply px-3 py-2 text-left font-mono text-[11px] uppercase tracking-wider text-ice-faint; }
+  .td { @apply px-3 py-2.5 text-sm text-ice/90 border-t border-white/[0.05]; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
