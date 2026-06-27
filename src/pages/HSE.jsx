@@ -6,6 +6,7 @@ import { date, daysUntil } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { ShieldAlert, Flame, FileWarning, ShieldCheck } from 'lucide-react'
+import { useDepartments } from '../hooks/useDepartments'
 
 const ITYPE = ['near_miss', 'injury', 'spill', 'equipment', 'environmental']
 const SEV = ['low', 'medium', 'high', 'critical']
@@ -70,6 +71,7 @@ function ComplianceDocs() {
 
 export default function HSE() {
   const [tab, setTab] = useState('incidents')
+  const { options: deptOptions } = useDepartments()
   return (
     <div>
       <Tabs tab={tab} setTab={setTab} />
@@ -93,7 +95,7 @@ export default function HSE() {
             { key: 'severity', label: 'Severity', type: 'select', options: SEV.map((s) => ({ value: s, label: s })), default: 'low' },
             { key: 'status', label: 'Status', type: 'select', options: ISTATUS.map((s) => ({ value: s, label: s })), default: 'open' },
             { key: 'location', label: 'Location' },
-            { key: 'department', label: 'Department' },
+            { key: 'department', label: 'Department', type: 'select', options: deptOptions },
             { key: 'occurred_at', label: 'Occurred at', type: 'date' },
             { key: 'reported_by', label: 'Reported by' },
             { key: 'description', label: 'Description', type: 'textarea', span: true },

@@ -2,11 +2,13 @@ import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard } from '../components/ui'
 import { money, date, daysUntil } from '../lib/format'
 import { Wrench, AlertTriangle, Activity, CalendarClock } from 'lucide-react'
+import { useDepartments } from '../hooks/useDepartments'
 
 const STATUS = ['operational', 'maintenance', 'down', 'retired']
 const CRIT = ['low', 'medium', 'high', 'critical']
 
 export default function Assets() {
+  const { options: deptOptions } = useDepartments()
   return (
     <ModuleScaffold
       eyebrow="Operations" title="Asset Register" table="assets"
@@ -32,7 +34,7 @@ export default function Assets() {
         { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'operational' },
         { key: 'criticality', label: 'Criticality', type: 'select', options: CRIT.map((s) => ({ value: s, label: s })), default: 'medium' },
         { key: 'location', label: 'Location' },
-        { key: 'department', label: 'Department' },
+        { key: 'department', label: 'Department', type: 'select', options: deptOptions },
         { key: 'manufacturer', label: 'Manufacturer' },
         { key: 'model', label: 'Model' },
         { key: 'serial_no', label: 'Serial no.' },

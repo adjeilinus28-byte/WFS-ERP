@@ -12,7 +12,7 @@ Each client is a *tenant* with its own data, branding, and switched-on modules.
 
 | Layer | Files |
 |---|---|
-| Database | `supabase/migrations/0001_core_platform.sql`, `0002_erp_modules.sql` |
+| Database | `supabase/migrations/0001_core_platform.sql`, `0002_erp_modules.sql`, `0003_hr_accounting_procurement.sql` (incl. structured departments) |
 | Auth + tenancy | `src/context/AuthContext.jsx` (deadlock-safe), `my_memberships()` RPC |
 | White-label | `src/context/ThemeContext.jsx` + per-tenant `accent_color` |
 | Module registry | `src/lib/modules.js` — drives nav, routes, and Settings toggles |
@@ -30,8 +30,9 @@ import it in `src/App.jsx`. Nav and per-tenant toggles pick it up automatically.
 1. Open your project (ref `wucvejrenltzinhamgmx`) → **SQL Editor**.
 2. Paste **all** of `0001_core_platform.sql`, run it.
 3. Paste **all** of `0002_erp_modules.sql`, run it. (This seeds a demo "Pamicor Ltd" tenant.)
-4. **Settings → API**: copy the **Project URL**, **anon public** key, and **service_role** key.
-5. Link your login to the demo tenant: create your user under **Authentication → Users**, then in SQL Editor run:
+4. Paste **all** of `0003_hr_accounting_procurement.sql`, run it. (Structured departments, HR, accounting, and procure-to-pay tables + seed.)
+5. **Settings → API**: copy the **Project URL**, **anon public** key, and **service_role** key.
+6. Link your login to the demo tenant: create your user under **Authentication → Users**, then in SQL Editor run:
    ```sql
    insert into public.org_members (org_id, user_id, role, full_name, email)
    select id, 'YOUR-AUTH-UUID', 'owner', 'Your Name', 'you@email.com'

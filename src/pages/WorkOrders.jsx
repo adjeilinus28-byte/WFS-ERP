@@ -2,12 +2,14 @@ import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard } from '../components/ui'
 import { date, daysUntil } from '../lib/format'
 import { ClipboardList, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { useDepartments } from '../hooks/useDepartments'
 
 const TYPE = ['preventive', 'corrective', 'inspection']
 const PRIORITY = ['low', 'medium', 'high', 'urgent']
 const STATUS = ['open', 'in_progress', 'on_hold', 'done', 'cancelled']
 
 export default function WorkOrders() {
+  const { options: deptOptions } = useDepartments()
   return (
     <ModuleScaffold
       eyebrow="Operations" title="Work Orders" table="work_orders"
@@ -34,7 +36,7 @@ export default function WorkOrders() {
         { key: 'priority', label: 'Priority', type: 'select', options: PRIORITY.map((s) => ({ value: s, label: s })), default: 'medium' },
         { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'open' },
         { key: 'assigned_to', label: 'Assigned to' },
-        { key: 'department', label: 'Department' },
+        { key: 'department', label: 'Department', type: 'select', options: deptOptions },
         { key: 'due_date', label: 'Due date', type: 'date' },
         { key: 'description', label: 'Description', type: 'textarea', span: true },
       ]}
