@@ -1,21 +1,18 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
-  functions = "netlify/functions"
+  command = "cd wfs-erp && npm run build"
+  publish = "wfs-erp/dist"
+  functions = "wfs-erp/netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA fallback — React Router handles client routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Scheduled alert sweeps. Declaring cron here (NOT exports.config) is the
-# reliable pattern — CommonJS exports.config does not register dependably.
 [functions."scheduled-alerts"]
-  schedule = "0 6 * * *"   # daily 06:00 UTC — document expiry, service due, low stock
+  schedule = "0 6 * * *"
 
 [functions."scheduled-report"]
-  schedule = "0 5 1 * *"   # 05:00 UTC on the 1st — monthly AI operations report
+  schedule = "0 5 1 * *"
