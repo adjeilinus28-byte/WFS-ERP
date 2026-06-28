@@ -1,5 +1,5 @@
 [build]
-  command = "cd wfs-erp && npm run build"
+  command = "cd wfs-erp && npm install && npm run build"
   publish = "wfs-erp/dist"
   functions = "wfs-erp/netlify/functions"
 
