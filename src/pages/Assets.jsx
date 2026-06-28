@@ -1,6 +1,7 @@
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard } from '../components/ui'
 import { money, date, daysUntil } from '../lib/format'
+import { useAuth } from '../context/AuthContext'
 import { Wrench, AlertTriangle, Activity, CalendarClock } from 'lucide-react'
 import { useDepartments } from '../hooks/useDepartments'
 
@@ -8,6 +9,8 @@ const STATUS = ['operational', 'maintenance', 'down', 'retired']
 const CRIT = ['low', 'medium', 'high', 'critical']
 
 export default function Assets() {
+  const { activeOrg } = useAuth()
+  const ccy = activeOrg?.currency || 'GHS'
   const { options: deptOptions } = useDepartments()
   return (
     <ModuleScaffold
@@ -53,7 +56,7 @@ export default function Assets() {
           <StatCard label="Assets down" value={down} tone={down ? 'bad' : 'ok'} icon={AlertTriangle} sub={`${rows.length} total`} />
           <StatCard label="Critical" value={crit} icon={Activity} />
           <StatCard label="Service due ≤7d" value={dueSoon} tone={dueSoon ? 'bad' : 'ok'} icon={CalendarClock} />
-          <StatCard label="Fleet value" value={money(value)} icon={Wrench} />
+          <StatCard label="Fleet value" value={money(value, ccy)} icon={Wrench} />
         </>
       }}
     />

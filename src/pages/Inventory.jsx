@@ -1,11 +1,14 @@
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, StatCard } from '../components/ui'
 import { money, num } from '../lib/format'
+import { useAuth } from '../context/AuthContext'
 import { Boxes, TrendingDown, PackageX, Layers } from 'lucide-react'
 
 const lowStock = (r) => Number(r.qty_on_hand) <= Number(r.reorder_level)
 
 export default function Inventory() {
+  const { activeOrg } = useAuth()
+  const ccy = activeOrg?.currency || 'GHS'
   return (
     <ModuleScaffold
       eyebrow="Supply Chain" title="Inventory" table="inventory_items"
@@ -20,7 +23,7 @@ export default function Inventory() {
           <span className={lowStock(r) ? 'text-bad' : ''}>{num(v)} {r.uom}</span>
         ) },
         { key: 'reorder_level', label: 'Reorder', render: (v) => num(v) },
-        { key: 'unit_cost', label: 'Unit cost', render: (v) => money(v) },
+        { key: 'unit_cost', label: 'Unit cost', render: (v) => money(v, ccy) },
         { key: 'location', label: 'Location' },
         { key: '_status', label: 'Status', render: (_, r) => lowStock(r)
           ? <Badge tone="bad">reorder</Badge> : <Badge tone="ok">ok</Badge> },
@@ -43,7 +46,7 @@ export default function Inventory() {
           <StatCard label="SKUs" value={rows.length} icon={Boxes} />
           <StatCard label="Below reorder" value={low} tone={low ? 'bad' : 'ok'} icon={TrendingDown} />
           <StatCard label="Out of stock" value={out} tone={out ? 'bad' : 'ok'} icon={PackageX} />
-          <StatCard label="Stock value" value={money(value)} icon={Layers} />
+          <StatCard label="Stock value" value={money(value, ccy)} icon={Layers} />
         </>
       }}
     />
