@@ -13,6 +13,8 @@ import Procurement from './pages/Procurement'
 import Workforce from './pages/Workforce'
 import HSE from './pages/HSE'
 import Reports from './pages/Reports'
+import HR from './pages/HR'
+import Accounts from './pages/Accounts'
 import Settings from './pages/Settings'
 
 function Splash({ label = 'Loading…' }) {
@@ -48,6 +50,8 @@ function Gate() {
         <Route path="/workforce" element={<Workforce />} />
         <Route path="/hse" element={<HSE />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/hr" element={<HR />} />
+        <Route path="/accounts" element={<Accounts />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
