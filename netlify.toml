@@ -1,7 +1,7 @@
 [build]
-  command = "cd wfs-erp && npm install && npm run build"
-  publish = "wfs-erp/dist"
-  functions = "wfs-erp/netlify/functions"
+  command = "npm install && npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
