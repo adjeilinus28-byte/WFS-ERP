@@ -1,4 +1,9 @@
-// Shared helpers for WFS Enterprise serverless functions (CommonJS).
+// Polyfill WebSocket for Node.js < 22 — required by @supabase/supabase-js
+// realtime client. Without this, Netlify functions (Node 20) throw on client init.
+if (!globalThis.WebSocket) {
+  try { globalThis.WebSocket = require('ws') } catch (_) {}
+}
+
 const { createClient } = require('@supabase/supabase-js')
 
 function admin() {
@@ -7,7 +12,6 @@ function admin() {
   })
 }
 
-// Send a transactional email via Brevo. Returns true on success.
 async function sendBrevo({ to, subject, html }) {
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean).map((email) => ({ email }))
   if (recipients.length === 0) return false
@@ -23,7 +27,6 @@ async function sendBrevo({ to, subject, html }) {
   return res.ok
 }
 
-// Branded email wrapper — navy header, amber accent.
 function shell(orgName, accent, title, bodyHtml) {
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
     <div style="background:#080C16;padding:20px 24px">
