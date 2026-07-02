@@ -11,9 +11,10 @@ import { useDepartments } from '../hooks/useDepartments'
 import { workingDays, noticeDays } from '../lib/workdays'
 import {
   CalendarCheck, CalendarX, Users, Check, X, Plus, AlertTriangle, Clock, Wallet, Layers,
+  ChevronLeft, ChevronRight, CalendarDays,
 } from 'lucide-react'
 
-const TABS = [['requests', 'Requests'], ['balances', 'Balances'], ['types', 'Leave Types']]
+const TABS = [['requests', 'Requests'], ['balances', 'Balances'], ['calendar', 'Calendar'], ['types', 'Leave Types']]
 const LEAVE_STATUS = ['pending', 'approved', 'declined', 'cancelled']
 
 function TabStrip({ tab, setTab }) {
@@ -237,6 +238,7 @@ function Balances() {
   const { activeOrgId } = useAuth()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [leaveType, setLeaveType] = useState('Annual')   // default view
 
   useEffect(() => {
     if (!activeOrgId) return
@@ -245,20 +247,155 @@ function Balances() {
       .order('full_name').then(({ data }) => { setRows(data || []); setLoading(false) })
   }, [activeOrgId])
 
+  // All leave types present in the balance data, for the toggle
+  const types = useMemo(() => [...new Set(rows.map((r) => r.leave_type))].sort(), [rows])
+
+  // Fall back to the first available type if 'Annual' isn't configured
+  const activeType = types.includes(leaveType) ? leaveType : (types[0] || 'Annual')
+
+  // One row per employee, filtered to the selected leave type
+  const view = rows
+    .filter((r) => r.leave_type === activeType)
+    .map((r) => ({ ...r, id: r.employee_id }))
+
   return (
-    <DataTable
-      loading={loading} rows={rows.map((r, i) => ({ ...r, id: `${r.employee_id}-${r.leave_type}-${i}` }))}
-      searchKeys={['full_name', 'leave_type']}
-      emptyTitle="No balances yet" emptyHint="Add employees and leave types to see balances."
-      columns={[
-        { key: 'full_name', label: 'Employee' },
-        { key: 'leave_type', label: 'Type', render: (v) => <Badge>{v}</Badge> },
-        { key: 'annual_entitlement', label: 'Entitlement', render: (v) => <span className="font-mono">{num(v)}</span> },
-        { key: 'adjustments', label: 'Adjust.', render: (v) => <span className="font-mono">{Number(v) > 0 ? '+' : ''}{num(v)}</span> },
-        { key: 'used_days', label: 'Used', render: (v) => <span className="font-mono text-warn">{num(v)}</span> },
-        { key: 'remaining_days', label: 'Remaining', render: (v) => <span className={`font-mono font-semibold ${Number(v) <= 0 ? 'text-bad' : 'text-ok'}`}>{num(v)}</span> },
-      ]}
-    />
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Leave type:</span>
+        {types.map((t) => (
+          <button key={t} onClick={() => setLeaveType(t)}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+              activeType === t ? 'border-accent-line bg-accent-soft text-accent' : 'border-white/10 text-ice-dim hover:bg-white/[0.04] hover:text-ice'
+            }`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <DataTable
+        loading={loading} rows={view}
+        searchKeys={['full_name']}
+        emptyTitle="No balances yet" emptyHint="Add employees and leave types to see balances."
+        columns={[
+          { key: 'full_name', label: 'Employee' },
+          { key: 'annual_entitlement', label: `${activeType} entitlement`, render: (v) => <span className="font-mono">{num(v)}</span> },
+          { key: 'adjustments', label: 'Adjustments', render: (v) => <span className="font-mono">{Number(v) > 0 ? '+' : ''}{num(v)}</span> },
+          { key: 'used_days', label: 'Used', render: (v) => <span className="font-mono text-warn">{num(v)}</span> },
+          { key: 'remaining_days', label: 'Remaining', render: (v) => <span className={`font-mono font-semibold ${Number(v) <= 0 ? 'text-bad' : 'text-ok'}`}>{num(v)}</span> },
+        ]}
+      />
+    </>
+  )
+}
+
+// ── Calendar tab ─────────────────────────────────────────────────────────────
+function LeaveCalendar() {
+  const { activeOrgId } = useAuth()
+  const { rows: requests } = useTable('leave_requests')
+  const { rows: types } = useTable('leave_types')
+  const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [showType, setShowType] = useState('')   // '' = all types
+
+  const colorFor = (name) => types.find((t) => t.name === name)?.color || '#F59E0B'
+
+  const monthName = new Date(cursor.y, cursor.m, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const firstDay = new Date(cursor.y, cursor.m, 1).getDay()   // 0 Sun
+  const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+
+  // Approved leave that overlaps this month, optionally filtered by type
+  const inMonth = useMemo(() => requests.filter((r) => {
+    if (r.status !== 'approved') return false
+    if (showType && r.leave_type !== showType) return false
+    const s = new Date(r.start_date), e = new Date(r.end_date)
+    const mStart = new Date(cursor.y, cursor.m, 1), mEnd = new Date(cursor.y, cursor.m, daysInMonth)
+    return !(e < mStart || s > mEnd)
+  }), [requests, showType, cursor, daysInMonth])
+
+  // Map day-of-month -> array of {name, type, color}
+  const byDay = useMemo(() => {
+    const map = {}
+    inMonth.forEach((r) => {
+      const s = new Date(r.start_date), e = new Date(r.end_date)
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cell = new Date(cursor.y, cursor.m, d)
+        if (cell >= new Date(s.getFullYear(), s.getMonth(), s.getDate()) && cell <= new Date(e.getFullYear(), e.getMonth(), e.getDate())) {
+          (map[d] ||= []).push({ name: r.employee_name, type: r.leave_type, color: colorFor(r.leave_type) })
+        }
+      }
+    })
+    return map
+  }, [inMonth, cursor, daysInMonth, types])
+
+  const move = (delta) => setCursor((c) => {
+    const nm = c.m + delta
+    return { y: c.y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 }
+  })
+  const goToday = () => { const d = new Date(); setCursor({ y: d.getFullYear(), m: d.getMonth() }) }
+
+  const activeTypes = types.filter((t) => t.active !== false)
+  const cells = []
+  for (let i = 0; i < firstDay; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+
+  return (
+    <div>
+      {/* Controls */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1">
+          <button onClick={() => move(-1)} className="btn-ghost btn-sm"><ChevronLeft size={15} /></button>
+          <span className="min-w-[150px] text-center font-display text-lg font-bold text-ice">{monthName}</span>
+          <button onClick={() => move(1)} className="btn-ghost btn-sm"><ChevronRight size={15} /></button>
+          <button onClick={goToday} className="btn-ghost btn-sm ml-1">Today</button>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <button onClick={() => setShowType('')}
+            className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${showType === '' ? 'border-accent-line bg-accent-soft text-accent' : 'border-white/10 text-ice-dim hover:text-ice'}`}>
+            All
+          </button>
+          {activeTypes.map((t) => (
+            <button key={t.id} onClick={() => setShowType(t.name)}
+              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition ${showType === t.name ? 'border-white/30 text-ice' : 'border-white/10 text-ice-dim hover:text-ice'}`}>
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: t.color }} />{t.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="panel overflow-hidden p-3">
+        <div className="grid grid-cols-7 gap-1">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            <div key={d} className="pb-2 text-center font-mono text-[10px] uppercase tracking-wider text-ice-faint">{d}</div>
+          ))}
+          {cells.map((d, i) => {
+            if (d === null) return <div key={`e${i}`} className="min-h-[92px] rounded-lg" />
+            const cellDate = new Date(cursor.y, cursor.m, d)
+            const isToday = cellDate.getTime() === today.getTime()
+            const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6
+            const people = byDay[d] || []
+            return (
+              <div key={d} className={`min-h-[92px] rounded-lg border p-1.5 transition ${isToday ? 'border-accent/60 bg-accent-soft' : isWeekend ? 'border-white/[0.04] bg-white/[0.01]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+                <div className={`mb-1 text-right font-mono text-xs ${isToday ? 'font-bold text-accent' : 'text-ice-faint'}`}>{d}</div>
+                <div className="space-y-0.5">
+                  {people.slice(0, 3).map((p, idx) => (
+                    <div key={idx} className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[10px] text-ice/90"
+                      style={{ background: `${p.color}22`, borderLeft: `2px solid ${p.color}` }} title={`${p.name} — ${p.type}`}>
+                      <span className="truncate">{p.name}</span>
+                    </div>
+                  ))}
+                  {people.length > 3 && <div className="px-1 text-[10px] text-ice-faint">+{people.length - 3} more</div>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <p className="mt-3 flex items-center gap-2 text-xs text-ice-faint">
+        <CalendarDays size={13} /> Showing approved leave only. Colours match each leave type.
+      </p>
+    </div>
   )
 }
 
@@ -272,6 +409,7 @@ export default function HR() {
 
       {tab === 'requests' && <Requests />}
       {tab === 'balances' && <Balances />}
+      {tab === 'calendar' && <LeaveCalendar />}
       {tab === 'types' && (
         <ModuleScaffold
           eyebrow="People" title="Leave Types" table="leave_types"
