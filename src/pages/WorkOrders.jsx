@@ -1,57 +1,216 @@
-import ModuleScaffold from '../components/ModuleScaffold'
-import { Badge, statusTone, StatCard } from '../components/ui'
+import { useMemo, useState } from 'react'
+import { Plus, Pencil, Trash2, Search, Filter, X } from 'lucide-react'
+import { useTable } from '../hooks/useTable'
+import { useAuth } from '../context/AuthContext'
+import { useDepartments } from '../hooks/useDepartments'
+import { PageHeader, StatCard, Badge, statusTone, useToast, Select, EmptyState } from '../components/ui'
+import Drawer from '../components/Drawer'
 import { date, daysUntil } from '../lib/format'
 import { ClipboardList, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { useDepartments } from '../hooks/useDepartments'
 
-const TYPE = ['preventive', 'corrective', 'inspection']
+const TYPE     = ['preventive', 'corrective', 'inspection']
 const PRIORITY = ['low', 'medium', 'high', 'urgent']
-const STATUS = ['open', 'in_progress', 'on_hold', 'done', 'cancelled']
+const STATUS   = ['open', 'in_progress', 'on_hold', 'done', 'cancelled']
+
+// ── Inline progress bar with quick-set buttons ──────────────────────────────
+function ProgressCell({ value, onSet, disabled }) {
+  const v = Number(value || 0)
+  const tone = v >= 100 ? 'bg-ok' : v >= 50 ? 'bg-accent' : v > 0 ? 'bg-warn' : 'bg-white/20'
+  return (
+    <div className="flex items-center gap-2 min-w-[150px]">
+      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+        <div className={`absolute inset-y-0 left-0 rounded-full transition-all ${tone}`} style={{ width: `${v}%` }} />
+      </div>
+      <span className="w-9 text-right font-mono text-xs text-ice-dim">{v}%</span>
+      {!disabled && (
+        <input type="range" min="0" max="100" step="5" value={v}
+          onChange={(e) => onSet(Number(e.target.value))}
+          className="h-1 w-16 cursor-pointer accent-[rgb(var(--accent))]" title="Drag to update progress" />
+      )}
+    </div>
+  )
+}
+
+const empty = { wo_number: '', title: '', wo_type: 'corrective', priority: 'medium', status: 'open', assigned_to: '', department: '', due_date: '', progress: 0, description: '' }
 
 export default function WorkOrders() {
+  const { role } = useAuth()
+  const toast = useToast()
   const { options: deptOptions } = useDepartments()
+  const { rows, loading, insert, update, remove } = useTable('work_orders')
+  const [drawer, setDrawer] = useState({ open: false, row: null })
+  const [saving, setSaving] = useState(false)
+  const canWrite = role && role !== 'viewer'
+
+  // ── Filters ──
+  const [q, setQ] = useState('')
+  const [fDept, setFDept] = useState('')
+  const [fPriority, setFPriority] = useState('')
+  const [fStatus, setFStatus] = useState('')
+  const [fView, setFView] = useState('')   // all | uncompleted | overdue | due_soon | unassigned
+
+  const filtered = useMemo(() => {
+    const today = new Date()
+    return rows.filter((r) => {
+      if (q.trim()) {
+        const n = q.toLowerCase()
+        const hit = ['wo_number','title','assigned_to','department'].some((k) => String(r[k] ?? '').toLowerCase().includes(n))
+        if (!hit) return false
+      }
+      if (fDept && r.department !== fDept) return false
+      if (fPriority && r.priority !== fPriority) return false
+      if (fStatus && r.status !== fStatus) return false
+      const d = daysUntil(r.due_date)
+      if (fView === 'uncompleted' && ['done','cancelled'].includes(r.status)) return false
+      if (fView === 'overdue' && !(d != null && d < 0 && !['done','cancelled'].includes(r.status))) return false
+      if (fView === 'due_soon' && !(d != null && d >= 0 && d <= 3 && !['done','cancelled'].includes(r.status))) return false
+      if (fView === 'unassigned' && r.assigned_to) return false
+      return true
+    })
+  }, [rows, q, fDept, fPriority, fStatus, fView])
+
+  const activeFilters = [fDept, fPriority, fStatus, fView].filter(Boolean).length + (q ? 1 : 0)
+  const clearFilters = () => { setQ(''); setFDept(''); setFPriority(''); setFStatus(''); setFView('') }
+
+  const setProgress = async (row, progress) => {
+    // Auto-sync status at the extremes so the two stay coherent.
+    const patch = { progress }
+    if (progress === 100 && row.status !== 'done') { patch.status = 'done'; patch.completed_at = new Date().toISOString() }
+    else if (progress > 0 && progress < 100 && ['open'].includes(row.status)) patch.status = 'in_progress'
+    else if (progress === 0 && row.status === 'done') { patch.status = 'open'; patch.completed_at = null }
+    try { await update(row.id, patch) } catch (e) { toast.error(e.message) }
+  }
+
+  const save = async (payload) => {
+    setSaving(true)
+    try {
+      if (payload.progress === 100 && payload.status !== 'cancelled') { payload.status = 'done'; payload.completed_at = new Date().toISOString() }
+      if (drawer.row) { await update(drawer.row.id, payload); toast.success('Updated') }
+      else { await insert(payload); toast.success('Created') }
+      setDrawer({ open: false, row: null })
+    } catch (e) { toast.error(e.message || 'Save failed') }
+    finally { setSaving(false) }
+  }
+
+  const del = async (row) => {
+    if (!window.confirm(`Delete ${row.wo_number}?`)) return
+    try { await remove(row.id); toast.success('Deleted') } catch (e) { toast.error(e.message) }
+  }
+
+  const fields = [
+    { key: 'wo_number', label: 'WO number', required: true },
+    { key: 'title', label: 'Title', required: true, span: true },
+    { key: 'wo_type', label: 'Type', type: 'select', options: TYPE.map((s) => ({ value: s, label: s })), default: 'corrective' },
+    { key: 'priority', label: 'Priority', type: 'select', options: PRIORITY.map((s) => ({ value: s, label: s })), default: 'medium' },
+    { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'open' },
+    { key: 'progress', label: 'Progress %', type: 'number', default: 0 },
+    { key: 'assigned_to', label: 'Assigned to' },
+    { key: 'department', label: 'Department', type: 'select', options: deptOptions },
+    { key: 'due_date', label: 'Due date', type: 'date' },
+    { key: 'description', label: 'Description', type: 'textarea', span: true },
+  ]
+
+  const open    = rows.filter((r) => ['open','in_progress','on_hold'].includes(r.status)).length
+  const overdue = rows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && !['done','cancelled'].includes(r.status) }).length
+  const urgent  = rows.filter((r) => r.priority === 'urgent' && r.status !== 'done').length
+  const done    = rows.filter((r) => r.status === 'done').length
+
   return (
-    <ModuleScaffold
-      eyebrow="Operations" title="Work Orders" table="work_orders"
-      newLabel="New work order" emptyTitle="No work orders"
-      emptyHint="Raise preventive, corrective, and inspection jobs against your assets."
-      searchKeys={['wo_number', 'title', 'assigned_to', 'department']}
-      columns={[
-        { key: 'wo_number', label: 'WO #', render: (v) => <span className="font-mono text-accent">{v}</span> },
-        { key: 'title', label: 'Title' },
-        { key: 'wo_type', label: 'Type', render: (v) => <Badge>{v}</Badge> },
-        { key: 'priority', label: 'Priority', render: (v) => <Badge tone={v === 'urgent' || v === 'high' ? 'bad' : 'mute'}>{v}</Badge> },
-        { key: 'assigned_to', label: 'Assigned' },
-        { key: 'due_date', label: 'Due', render: (v, r) => {
-          const d = daysUntil(v)
-          const overdue = d != null && d < 0 && r.status !== 'done'
-          return <span className={overdue ? 'text-bad' : d != null && d <= 2 ? 'text-warn' : ''}>{date(v)}</span>
-        } },
-        { key: 'status', label: 'Status', render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
-      ]}
-      fields={[
-        { key: 'wo_number', label: 'WO number', required: true },
-        { key: 'title', label: 'Title', required: true, span: true },
-        { key: 'wo_type', label: 'Type', type: 'select', options: TYPE.map((s) => ({ value: s, label: s })), default: 'corrective' },
-        { key: 'priority', label: 'Priority', type: 'select', options: PRIORITY.map((s) => ({ value: s, label: s })), default: 'medium' },
-        { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'open' },
-        { key: 'assigned_to', label: 'Assigned to' },
-        { key: 'department', label: 'Department', type: 'select', options: deptOptions },
-        { key: 'due_date', label: 'Due date', type: 'date' },
-        { key: 'description', label: 'Description', type: 'textarea', span: true },
-      ]}
-      kpis={(rows) => {
-        const open = rows.filter((r) => ['open', 'in_progress', 'on_hold'].includes(r.status)).length
-        const overdue = rows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && r.status !== 'done' && r.status !== 'cancelled' }).length
-        const urgent = rows.filter((r) => r.priority === 'urgent' && r.status !== 'done').length
-        const done = rows.filter((r) => r.status === 'done').length
-        return <>
-          <StatCard label="Open" value={open} icon={ClipboardList} />
-          <StatCard label="Overdue" value={overdue} tone={overdue ? 'bad' : 'ok'} icon={Clock} />
-          <StatCard label="Urgent" value={urgent} tone={urgent ? 'bad' : 'ok'} icon={AlertTriangle} />
-          <StatCard label="Completed" value={done} tone="ok" icon={CheckCircle2} />
-        </>
-      }}
-    />
+    <>
+      <PageHeader eyebrow="Operations" title="Work Orders">
+        {canWrite && (
+          <button className="btn-primary" onClick={() => setDrawer({ open: true, row: null })}>
+            <Plus size={16} /> New work order
+          </button>
+        )}
+      </PageHeader>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Open" value={open} icon={ClipboardList} />
+        <StatCard label="Overdue" value={overdue} tone={overdue ? 'bad' : 'ok'} icon={Clock} />
+        <StatCard label="Urgent" value={urgent} tone={urgent ? 'bad' : 'ok'} icon={AlertTriangle} />
+        <StatCard label="Completed" value={done} tone="ok" icon={CheckCircle2} />
+      </div>
+
+      {/* ── Filter bar ── */}
+      <div className="panel mb-4 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+            <Search size={15} className="text-ice-faint" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…"
+              className="w-40 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
+          </div>
+          <div className="flex items-center gap-1.5 text-ice-faint"><Filter size={14} /></div>
+          <div className="w-40"><Select value={fView} onChange={(e) => setFView(e.target.value)}
+            options={[{value:'',label:'All work orders'},{value:'uncompleted',label:'Uncompleted'},{value:'overdue',label:'Overdue'},{value:'due_soon',label:'Due within 3 days'},{value:'unassigned',label:'Unassigned'}]} /></div>
+          <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)}
+            options={[{value:'',label:'All depts'}, ...deptOptions]} /></div>
+          <div className="w-32"><Select value={fPriority} onChange={(e) => setFPriority(e.target.value)}
+            options={[{value:'',label:'Any priority'}, ...PRIORITY.map((s) => ({ value: s, label: s }))]} /></div>
+          <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)}
+            options={[{value:'',label:'Any status'}, ...STATUS.map((s) => ({ value: s, label: s.replace('_',' ') }))]} /></div>
+          {activeFilters > 0 && (
+            <button onClick={clearFilters} className="btn-ghost btn-sm ml-auto">
+              <X size={13} /> Clear ({activeFilters})
+            </button>
+          )}
+          <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+        </div>
+      </div>
+
+      {/* ── Table ── */}
+      <div className="panel overflow-hidden">
+        {loading ? (
+          <div className="space-y-px p-3">{Array.from({length:5}).map((_,i) => <div key={i} className="h-11 animate-pulse rounded bg-white/[0.03]" />)}</div>
+        ) : filtered.length === 0 ? (
+          <EmptyState title={rows.length ? 'No work orders match these filters' : 'No work orders yet'}
+            hint={rows.length ? 'Try clearing or adjusting the filters above.' : 'Raise preventive, corrective, and inspection jobs against your assets.'}
+            action={activeFilters > 0 ? <button className="btn-ghost btn-sm" onClick={clearFilters}>Clear filters</button> : null} />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/[0.02]">
+                <tr>
+                  <th className="th">WO #</th><th className="th">Title</th><th className="th">Type</th>
+                  <th className="th">Priority</th><th className="th">Assigned</th><th className="th">Due</th>
+                  <th className="th">Progress</th><th className="th">Status</th>
+                  {canWrite && <th className="th text-right">Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => {
+                  const d = daysUntil(r.due_date)
+                  const overdueRow = d != null && d < 0 && !['done','cancelled'].includes(r.status)
+                  return (
+                    <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                      <td className="td font-mono text-accent whitespace-nowrap">{r.wo_number}</td>
+                      <td className="td">{r.title}</td>
+                      <td className="td"><Badge>{r.wo_type}</Badge></td>
+                      <td className="td"><Badge tone={r.priority === 'urgent' || r.priority === 'high' ? 'bad' : 'mute'}>{r.priority}</Badge></td>
+                      <td className="td whitespace-nowrap">{r.assigned_to || <span className="text-ice-faint">—</span>}</td>
+                      <td className="td whitespace-nowrap"><span className={overdueRow ? 'text-bad' : d != null && d <= 2 ? 'text-warn' : ''}>{date(r.due_date)}</span></td>
+                      <td className="td"><ProgressCell value={r.progress} disabled={!canWrite} onSet={(v) => setProgress(r, v)} /></td>
+                      <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
+                      {canWrite && (
+                        <td className="td text-right">
+                          <div className="inline-flex gap-1">
+                            <button onClick={() => setDrawer({ open: true, row: r })} className="rounded-md p-1.5 text-ice-faint hover:bg-white/5 hover:text-ice"><Pencil size={14} /></button>
+                            <button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><Trash2 size={14} /></button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <Drawer open={drawer.open} onClose={() => setDrawer({ open: false, row: null })}
+        title={drawer.row ? 'Edit Work Order' : 'New work order'}
+        fields={fields} initial={drawer.row || empty} onSubmit={save} submitting={saving} />
+    </>
   )
 }
