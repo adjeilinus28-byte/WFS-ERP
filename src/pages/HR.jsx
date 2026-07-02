@@ -1,55 +1,306 @@
+import { useEffect, useMemo, useState } from 'react'
 import ModuleScaffold from '../components/ModuleScaffold'
-import { Badge, statusTone, StatCard } from '../components/ui'
-import { date } from '../lib/format'
+import { Badge, statusTone, StatCard, PageHeader, Field, Select, useToast, EmptyState } from '../components/ui'
+import Drawer from '../components/Drawer'
+import DataTable from '../components/DataTable'
+import { date, num } from '../lib/format'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
+import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
-import { CalendarCheck, CalendarX, Users } from 'lucide-react'
+import { workingDays, noticeDays } from '../lib/workdays'
+import {
+  CalendarCheck, CalendarX, Users, Check, X, Plus, AlertTriangle, Clock, Wallet, Layers,
+} from 'lucide-react'
 
-const LEAVE_TYPES  = ['annual', 'sick', 'maternity', 'paternity', 'study', 'compassionate', 'unpaid']
-const LEAVE_STATUS = ['pending', 'approved', 'rejected', 'cancelled']
+const TABS = [['requests', 'Requests'], ['balances', 'Balances'], ['types', 'Leave Types']]
+const LEAVE_STATUS = ['pending', 'approved', 'declined', 'cancelled']
 
-export default function HR() {
+function TabStrip({ tab, setTab }) {
+  return (
+    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+      {TABS.map(([k, label]) => (
+        <button key={k} onClick={() => setTab(k)}
+          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Notify helper (Brevo via Netlify fn) ────────────────────────────────────
+async function notify(org_id, request_id, event) {
+  try {
+    await fetch('/.netlify/functions/leave-notification', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org_id, request_id, event }),
+    })
+  } catch (_) { /* non-blocking */ }
+}
+
+// ── Requests tab ─────────────────────────────────────────────────────────────
+function Requests() {
+  const { activeOrgId, role } = useAuth()
+  const toast = useToast()
   const { options: deptOptions } = useDepartments()
+  const { rows, loading, insert, update, remove, refresh } = useTable('leave_requests')
+  const { rows: employees } = useTable('employees')
+  const { rows: types } = useTable('leave_types')
+  const [drawer, setDrawer] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [decideRow, setDecideRow] = useState(null)
+  const [note, setNote] = useState('')
+  const [fStatus, setFStatus] = useState('')
+  const [fDept, setFDept] = useState('')
+  const canApprove = ['owner', 'admin', 'manager', 'supervisor'].includes(role)
+
+  // Apply form state
+  const [form, setForm] = useState({ employee_id: '', leave_type: '', start_date: '', end_date: '', reason: '' })
+  const activeTypes = types.filter((t) => t.active !== false)
+
+  const emp = employees.find((e) => e.id === form.employee_id)
+  const lt = activeTypes.find((t) => t.name === form.leave_type)
+  const wd = useMemo(() => workingDays(form.start_date, form.end_date), [form.start_date, form.end_date])
+  const notice = noticeDays(form.start_date)
+  const noticeOk = !lt || notice >= (lt.requires_notice_days || 0)
+
+  // Clash detection: same employee, overlapping approved/pending dates
+  const clash = useMemo(() => {
+    if (!form.employee_id || !form.start_date || !form.end_date) return null
+    return rows.find((r) => r.employee_id === form.employee_id
+      && ['pending', 'approved'].includes(r.status)
+      && !(new Date(r.end_date) < new Date(form.start_date) || new Date(r.start_date) > new Date(form.end_date)))
+  }, [rows, form])
+
+  const submitApply = async () => {
+    if (!form.employee_id || !form.leave_type || !form.start_date || !form.end_date) { toast.error('Fill all required fields'); return }
+    if (!noticeOk) { toast.error(`${lt.name} needs ${lt.requires_notice_days} days notice`); return }
+    setSaving(true)
+    try {
+      const payload = {
+        employee_id: form.employee_id, employee_name: emp?.full_name, department: emp?.department,
+        leave_type: form.leave_type, start_date: form.start_date, end_date: form.end_date,
+        days: wd, working_days: wd, reason: form.reason, status: 'pending',
+      }
+      const [created] = await insert(payload)
+      if (created?.id) await notify(activeOrgId, created.id, 'submitted')
+      toast.success('Leave request submitted — approvers notified')
+      setDrawer(false); setForm({ employee_id: '', leave_type: '', start_date: '', end_date: '', reason: '' })
+    } catch (e) { toast.error(e.message) } finally { setSaving(false) }
+  }
+
+  const decide = async (status) => {
+    if (!decideRow) return
+    try {
+      await update(decideRow.id, { status, decision_note: note, decided_at: new Date().toISOString() })
+      await notify(activeOrgId, decideRow.id, status === 'approved' ? 'approved' : 'declined')
+      toast.success(`Request ${status} — applicant notified`)
+      setDecideRow(null); setNote('')
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const del = async (row) => {
+    if (!window.confirm('Delete this leave request?')) return
+    try { await remove(row.id); toast.success('Deleted') } catch (e) { toast.error(e.message) }
+  }
+
+  const filtered = rows.filter((r) => (!fStatus || r.status === fStatus) && (!fDept || r.department === fDept))
+  const pending = rows.filter((r) => r.status === 'pending').length
+  const approved = rows.filter((r) => r.status === 'approved').length
+  const away = rows.filter((r) => { const now = new Date(); return r.status === 'approved' && new Date(r.start_date) <= now && new Date(r.end_date) >= now }).length
 
   return (
-    <ModuleScaffold
-      eyebrow="People" title="Leave Requests" table="leave_requests"
-      newLabel="New request" emptyTitle="No leave requests"
-      emptyHint="Log and track annual, sick, and other leave types for your workforce."
-      searchKeys={['employee_name', 'department', 'leave_type', 'status']}
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <div />
+        <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> Apply for leave</button>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Pending" value={pending} tone={pending ? 'warn' : 'ok'} icon={CalendarX} />
+        <StatCard label="Approved" value={approved} tone="ok" icon={CalendarCheck} />
+        <StatCard label="Currently away" value={away} icon={Users} />
+        <StatCard label="Total requests" value={rows.length} icon={Layers} />
+      </div>
+
+      <div className="panel mb-4 flex flex-wrap items-center gap-2 p-3">
+        <div className="w-40"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, ...LEAVE_STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+        <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: 'All depts' }, ...deptOptions]} /></div>
+        <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+      </div>
+
+      <div className="panel overflow-hidden">
+        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        : filtered.length === 0 ? <EmptyState title="No leave requests" hint="Submit a request with Apply for leave." />
+        : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/[0.02]"><tr>
+                <th className="th">Employee</th><th className="th">Dept</th><th className="th">Type</th>
+                <th className="th">From</th><th className="th">To</th><th className="th">Days</th>
+                <th className="th">Status</th><th className="th text-right">Actions</th>
+              </tr></thead>
+              <tbody>
+                {filtered.map((r) => (
+                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                    <td className="td">{r.employee_name}</td>
+                    <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
+                    <td className="td"><Badge>{r.leave_type}</Badge></td>
+                    <td className="td whitespace-nowrap">{date(r.start_date)}</td>
+                    <td className="td whitespace-nowrap">{date(r.end_date)}</td>
+                    <td className="td font-mono">{r.working_days ?? r.days}</td>
+                    <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
+                    <td className="td text-right">
+                      <div className="inline-flex gap-1">
+                        {canApprove && r.status === 'pending' && (
+                          <>
+                            <button onClick={() => { setDecideRow(r); setNote('') }} className="rounded-md bg-ok/10 px-2 py-1 text-xs text-ok hover:bg-ok/20">Review</button>
+                          </>
+                        )}
+                        {canApprove && <button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><X size={14} /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Apply drawer */}
+      {drawer && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+              <h2 className="font-display text-lg font-bold text-ice">Apply for Leave</h2>
+              <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
+            </div>
+            <div className="space-y-4 p-5">
+              <Field label="Employee *"><Select value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} options={[{ value: '', label: 'Select…' }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
+              <Field label="Leave type *"><Select value={form.leave_type} onChange={(e) => setForm({ ...form, leave_type: e.target.value })} options={[{ value: '', label: 'Select…' }, ...activeTypes.map((t) => ({ value: t.name, label: `${t.name} (${t.annual_entitlement}d)` }))]} /></Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="From *"><input className="input" type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></Field>
+                <Field label="To *"><input className="input" type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></Field>
+              </div>
+              {form.start_date && form.end_date && (
+                <div className="rounded-lg border border-white/10 bg-navy/50 px-3 py-2 text-sm">
+                  <div className="flex justify-between"><span className="text-ice-faint">Working days</span><span className="font-mono text-ice">{wd}</span></div>
+                  <div className="flex justify-between"><span className="text-ice-faint">Advance notice</span><span className={`font-mono ${noticeOk ? 'text-ok' : 'text-bad'}`}>{notice} day(s)</span></div>
+                </div>
+              )}
+              {lt && !noticeOk && (
+                <div className="flex items-center gap-2 rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-xs text-bad">
+                  <Clock size={14} /> {lt.name} requires {lt.requires_notice_days} days advance notice.
+                </div>
+              )}
+              {clash && (
+                <div className="flex items-center gap-2 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+                  <AlertTriangle size={14} /> Overlaps an existing {clash.status} request ({date(clash.start_date)}–{date(clash.end_date)}).
+                </div>
+              )}
+              <Field label="Reason"><textarea className="input min-h-[80px]" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></Field>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
+              <button onClick={() => setDrawer(false)} className="btn-ghost">Cancel</button>
+              <button onClick={submitApply} disabled={saving || !noticeOk} className="btn-primary">{saving ? 'Submitting…' : 'Submit request'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Decide modal */}
+      {decideRow && (
+        <div className="fixed inset-0 z-50 grid place-items-center p-4">
+          <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDecideRow(null)} />
+          <div className="panel relative w-full max-w-md p-5 animate-rise">
+            <h3 className="font-display text-lg font-bold text-ice">Review request</h3>
+            <p className="mt-1 text-sm text-ice-faint">{decideRow.employee_name} · {decideRow.leave_type} · {date(decideRow.start_date)}–{date(decideRow.end_date)} ({decideRow.working_days ?? decideRow.days}d)</p>
+            {decideRow.reason && <p className="mt-2 rounded bg-white/[0.03] px-3 py-2 text-sm text-ice/80">{decideRow.reason}</p>}
+            <Field label="Decision note (optional)"><textarea className="input mt-2 min-h-[70px]" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setDecideRow(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => decide('declined')} className="btn bg-bad/15 text-bad hover:bg-bad/25"><X size={15} /> Decline</button>
+              <button onClick={() => decide('approved')} className="btn-primary"><Check size={15} /> Approve</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── Balances tab ─────────────────────────────────────────────────────────────
+function Balances() {
+  const { activeOrgId } = useAuth()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!activeOrgId) return
+    setLoading(true)
+    supabase.from('leave_balances').select('*').eq('org_id', activeOrgId)
+      .order('full_name').then(({ data }) => { setRows(data || []); setLoading(false) })
+  }, [activeOrgId])
+
+  return (
+    <DataTable
+      loading={loading} rows={rows.map((r, i) => ({ ...r, id: `${r.employee_id}-${r.leave_type}-${i}` }))}
+      searchKeys={['full_name', 'leave_type']}
+      emptyTitle="No balances yet" emptyHint="Add employees and leave types to see balances."
       columns={[
-        { key: 'employee_name', label: 'Employee' },
-        { key: 'department',    label: 'Department', render: (v) => v ? <Badge>{v}</Badge> : '—' },
-        { key: 'leave_type',    label: 'Type',       render: (v) => <Badge>{v}</Badge> },
-        { key: 'start_date',    label: 'From',       render: (v) => date(v) },
-        { key: 'end_date',      label: 'To',         render: (v) => date(v) },
-        { key: 'days',          label: 'Days',       render: (v) => <span className="font-mono">{v}</span> },
-        { key: 'status',        label: 'Status',     render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+        { key: 'full_name', label: 'Employee' },
+        { key: 'leave_type', label: 'Type', render: (v) => <Badge>{v}</Badge> },
+        { key: 'annual_entitlement', label: 'Entitlement', render: (v) => <span className="font-mono">{num(v)}</span> },
+        { key: 'adjustments', label: 'Adjust.', render: (v) => <span className="font-mono">{Number(v) > 0 ? '+' : ''}{num(v)}</span> },
+        { key: 'used_days', label: 'Used', render: (v) => <span className="font-mono text-warn">{num(v)}</span> },
+        { key: 'remaining_days', label: 'Remaining', render: (v) => <span className={`font-mono font-semibold ${Number(v) <= 0 ? 'text-bad' : 'text-ok'}`}>{num(v)}</span> },
       ]}
-      fields={[
-        { key: 'employee_name', label: 'Employee name',  required: true },
-        { key: 'department',    label: 'Department',     type: 'select', options: deptOptions },
-        { key: 'leave_type',    label: 'Leave type',     type: 'select', options: LEAVE_TYPES.map((s) => ({ value: s, label: s })), default: 'annual' },
-        { key: 'status',        label: 'Status',         type: 'select', options: LEAVE_STATUS.map((s) => ({ value: s, label: s })), default: 'pending' },
-        { key: 'start_date',    label: 'Start date',     type: 'date',   required: true },
-        { key: 'end_date',      label: 'End date',       type: 'date',   required: true },
-        { key: 'days',          label: 'Days',           type: 'number', default: 1 },
-        { key: 'reason',        label: 'Reason',         type: 'textarea', span: true },
-      ]}
-      kpis={(rows) => {
-        const pending   = rows.filter((r) => r.status === 'pending').length
-        const approved  = rows.filter((r) => r.status === 'approved').length
-        const totalDays = rows.filter((r) => r.status === 'approved').reduce((s, r) => s + Number(r.days || 0), 0)
-        const onLeave   = rows.filter((r) => {
-          const now = new Date()
-          return r.status === 'approved' && new Date(r.start_date) <= now && new Date(r.end_date) >= now
-        }).length
-        return <>
-          <StatCard label="Pending"        value={pending}   tone={pending ? 'warn' : 'ok'} icon={CalendarX} />
-          <StatCard label="Approved"       value={approved}  tone="ok" icon={CalendarCheck} />
-          <StatCard label="Currently away" value={onLeave}   icon={Users} />
-          <StatCard label="Days approved"  value={totalDays} icon={CalendarCheck} />
-        </>
-      }}
     />
+  )
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
+export default function HR() {
+  const [tab, setTab] = useState('requests')
+  return (
+    <div>
+      <PageHeader eyebrow="People" title="Leave Management" />
+      <TabStrip tab={tab} setTab={setTab} />
+
+      {tab === 'requests' && <Requests />}
+      {tab === 'balances' && <Balances />}
+      {tab === 'types' && (
+        <ModuleScaffold
+          eyebrow="People" title="Leave Types" table="leave_types"
+          newLabel="New leave type" emptyTitle="No leave types"
+          emptyHint="Define leave categories, annual entitlements, and notice rules."
+          searchKeys={['name', 'code']}
+          columns={[
+            { key: 'name', label: 'Type' },
+            { key: 'code', label: 'Code', render: (v) => v ? <span className="font-mono text-accent">{v}</span> : '—' },
+            { key: 'annual_entitlement', label: 'Entitlement (days)', render: (v) => <span className="font-mono">{v}</span> },
+            { key: 'requires_notice_days', label: 'Notice (days)', render: (v) => <span className="font-mono">{v}</span> },
+            { key: 'paid', label: 'Paid', render: (v) => <Badge tone={v ? 'ok' : 'mute'}>{v ? 'paid' : 'unpaid'}</Badge> },
+          ]}
+          fields={[
+            { key: 'name', label: 'Name', required: true },
+            { key: 'code', label: 'Code' },
+            { key: 'annual_entitlement', label: 'Annual entitlement (days)', type: 'number', default: 0 },
+            { key: 'requires_notice_days', label: 'Advance notice (days)', type: 'number', default: 1 },
+            { key: 'color', label: 'Colour (hex)', default: '#F59E0B' },
+          ]}
+          beforeSave={(p) => ({ ...p, paid: p.paid ?? true, active: true })}
+          kpis={(rows) => <>
+            <StatCard label="Leave types" value={rows.length} icon={Layers} />
+            <StatCard label="Total annual days" value={rows.reduce((s, r) => s + Number(r.annual_entitlement || 0), 0)} icon={CalendarCheck} />
+            <StatCard label="Paid types" value={rows.filter((r) => r.paid).length} icon={Wallet} />
+            <StatCard label="No-notice types" value={rows.filter((r) => (r.requires_notice_days || 0) === 0).length} icon={Clock} />
+          </>}
+        />
+      )}
+    </div>
   )
 }
