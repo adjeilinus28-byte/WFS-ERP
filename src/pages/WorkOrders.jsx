@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, Search, Filter, X } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, statusTone, useToast, Select, EmptyState } from '../components/ui'
@@ -13,18 +14,22 @@ const PRIORITY = ['low', 'medium', 'high', 'urgent']
 const STATUS   = ['open', 'in_progress', 'on_hold', 'done', 'cancelled']
 
 // ── Inline progress bar with quick-set buttons ──────────────────────────────
-function ProgressCell({ value, onSet, disabled }) {
-  const v = Number(value || 0)
+function ProgressCell({ value, onCommit, disabled }) {
+  // Local drag state so the table doesn't re-query on every step; persist on release.
+  const [drag, setDrag] = useState(null)
+  const v = drag != null ? drag : Number(value || 0)
   const tone = v >= 100 ? 'bg-ok' : v >= 50 ? 'bg-accent' : v > 0 ? 'bg-warn' : 'bg-white/20'
+  const commit = () => { if (drag != null && drag !== Number(value || 0)) onCommit(drag); setDrag(null) }
   return (
     <div className="flex items-center gap-2 min-w-[150px]">
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-        <div className={`absolute inset-y-0 left-0 rounded-full transition-all ${tone}`} style={{ width: `${v}%` }} />
+        <div className={`absolute inset-y-0 left-0 rounded-full ${drag == null ? 'transition-all' : ''} ${tone}`} style={{ width: `${v}%` }} />
       </div>
       <span className="w-9 text-right font-mono text-xs text-ice-dim">{v}%</span>
       {!disabled && (
         <input type="range" min="0" max="100" step="5" value={v}
-          onChange={(e) => onSet(Number(e.target.value))}
+          onChange={(e) => setDrag(Number(e.target.value))}
+          onMouseUp={commit} onTouchEnd={commit} onKeyUp={commit} onBlur={commit}
           className="h-1 w-16 cursor-pointer accent-[rgb(var(--accent))]" title="Drag to update progress" />
       )}
     </div>
@@ -37,7 +42,7 @@ export default function WorkOrders() {
   const { role } = useAuth()
   const toast = useToast()
   const { options: deptOptions } = useDepartments()
-  const { rows, loading, insert, update, remove } = useTable('work_orders')
+  const { rows, loading, insert, update, remove, refresh } = useTable('work_orders')
   const [drawer, setDrawer] = useState({ open: false, row: null })
   const [saving, setSaving] = useState(false)
   const canWrite = role && role !== 'viewer'
@@ -49,9 +54,15 @@ export default function WorkOrders() {
   const [fStatus, setFStatus] = useState('')
   const [fView, setFView] = useState('')   // all | uncompleted | overdue | due_soon | unassigned
 
+  // Local mirror so progress writes don't trigger a full-table refetch (which caused the glitch)
+  const [localRows, setLocalRows] = useState(null)
+  const effectiveRows = localRows || rows
+  // Keep the mirror in sync when the underlying data reloads (create/edit/delete)
+  useEffect(() => { setLocalRows(null) }, [rows])
+
   const filtered = useMemo(() => {
     const today = new Date()
-    return rows.filter((r) => {
+    return effectiveRows.filter((r) => {
       if (q.trim()) {
         const n = q.toLowerCase()
         const hit = ['wo_number','title','assigned_to','department'].some((k) => String(r[k] ?? '').toLowerCase().includes(n))
@@ -67,18 +78,22 @@ export default function WorkOrders() {
       if (fView === 'unassigned' && r.assigned_to) return false
       return true
     })
-  }, [rows, q, fDept, fPriority, fStatus, fView])
+  }, [effectiveRows, q, fDept, fPriority, fStatus, fView])
 
   const activeFilters = [fDept, fPriority, fStatus, fView].filter(Boolean).length + (q ? 1 : 0)
   const clearFilters = () => { setQ(''); setFDept(''); setFPriority(''); setFStatus(''); setFView('') }
 
   const setProgress = async (row, progress) => {
-    // Auto-sync status at the extremes so the two stay coherent.
     const patch = { progress }
     if (progress === 100 && row.status !== 'done') { patch.status = 'done'; patch.completed_at = new Date().toISOString() }
     else if (progress > 0 && progress < 100 && ['open'].includes(row.status)) patch.status = 'in_progress'
     else if (progress === 0 && row.status === 'done') { patch.status = 'open'; patch.completed_at = null }
-    try { await update(row.id, patch) } catch (e) { toast.error(e.message) }
+    // Optimistic local update — no refetch, so the table stays put
+    setLocalRows(effectiveRows.map((r) => r.id === row.id ? { ...r, ...patch } : r))
+    try {
+      const { error } = await supabase.from('work_orders').update(patch).eq('id', row.id)
+      if (error) throw error
+    } catch (e) { toast.error(e.message); setLocalRows(null); refresh() }
   }
 
   const save = async (payload) => {
@@ -110,10 +125,10 @@ export default function WorkOrders() {
     { key: 'description', label: 'Description', type: 'textarea', span: true },
   ]
 
-  const open    = rows.filter((r) => ['open','in_progress','on_hold'].includes(r.status)).length
-  const overdue = rows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && !['done','cancelled'].includes(r.status) }).length
-  const urgent  = rows.filter((r) => r.priority === 'urgent' && r.status !== 'done').length
-  const done    = rows.filter((r) => r.status === 'done').length
+  const open    = effectiveRows.filter((r) => ['open','in_progress','on_hold'].includes(r.status)).length
+  const overdue = effectiveRows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && !['done','cancelled'].includes(r.status) }).length
+  const urgent  = effectiveRows.filter((r) => r.priority === 'urgent' && r.status !== 'done').length
+  const done    = effectiveRows.filter((r) => r.status === 'done').length
 
   return (
     <>
@@ -189,7 +204,7 @@ export default function WorkOrders() {
                       <td className="td"><Badge tone={r.priority === 'urgent' || r.priority === 'high' ? 'bad' : 'mute'}>{r.priority}</Badge></td>
                       <td className="td whitespace-nowrap">{r.assigned_to || <span className="text-ice-faint">—</span>}</td>
                       <td className="td whitespace-nowrap"><span className={overdueRow ? 'text-bad' : d != null && d <= 2 ? 'text-warn' : ''}>{date(r.due_date)}</span></td>
-                      <td className="td"><ProgressCell value={r.progress} disabled={!canWrite} onSet={(v) => setProgress(r, v)} /></td>
+                      <td className="td"><ProgressCell value={r.progress} disabled={!canWrite} onCommit={(v) => setProgress(r, v)} /></td>
                       <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
                       {canWrite && (
                         <td className="td text-right">
