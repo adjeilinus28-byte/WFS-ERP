@@ -50,7 +50,7 @@ function Requests({ suppliers }) {
 
   const [form, setForm] = useState({
     title: '', department: '', approver_email: '', approver_name: '',
-    supplier_id: '', priority: 'normal', est_total: '', needed_by: '', justification: '',
+    supplier_id: '', priority: 'normal', est_total: '', needed_by: '', justification: '', cc_emails: '',
   })
 
   const submit = async () => {
@@ -65,7 +65,7 @@ function Requests({ suppliers }) {
       if (created?.id) await notify({ org_id: activeOrgId, event: 'request_submitted', request_id: created.id })
       toast.success('Request submitted — approver notified')
       setDrawer(false)
-      setForm({ title: '', department: '', approver_email: '', approver_name: '', supplier_id: '', priority: 'normal', est_total: '', needed_by: '', justification: '' })
+      setForm({ title: '', department: '', approver_email: '', approver_name: '', supplier_id: '', priority: 'normal', est_total: '', needed_by: '', justification: '', cc_emails: '' })
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
   }
 
@@ -84,7 +84,7 @@ function Requests({ suppliers }) {
     try {
       const { data: po, error } = await supabase.from('purchase_orders').insert({
         org_id: activeOrgId, po_number: `PO-${Date.now().toString().slice(-6)}`,
-        supplier_id: pr.supplier_id, status: 'draft', currency: pr.currency || ccy,
+        supplier_id: pr.supplier_id, status: 'draft', currency: ccy,
         total: pr.est_total || 0, request_id: pr.id, supplier_status: 'pending',
         notes: `From request ${pr.request_no}: ${pr.title}`,
       }).select().single()
@@ -133,7 +133,7 @@ function Requests({ suppliers }) {
                     <td className="td">{r.title}</td>
                     <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
                     <td className="td text-xs">{r.approver_name || r.approver_email}</td>
-                    <td className="td font-mono">{money(r.est_total, r.currency || ccy)}</td>
+                    <td className="td font-mono">{money(r.est_total, ccy)}</td>
                     <td className="td"><Badge tone={r.priority === 'urgent' || r.priority === 'high' ? 'bad' : 'mute'}>{r.priority}</Badge></td>
                     <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
                     <td className="td text-right">
@@ -174,6 +174,7 @@ function Requests({ suppliers }) {
                   <Field label="Approver email *"><input className="input" type="email" value={form.approver_email} onChange={(e) => setForm({ ...form, approver_email: e.target.value })} placeholder="head@company.com" /></Field>
                 </div>
               </div>
+              <Field label="CC others (comma-separated)"><input className="input" value={form.cc_emails || ''} onChange={(e) => setForm({ ...form, cc_emails: e.target.value })} placeholder="finance@company.com, ops@company.com" /></Field>
               <Field label="Suggested supplier"><Select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} options={[{ value: '', label: '—' }, ...suppliers.map((s) => ({ value: s.id, label: s.name }))]} /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Priority"><Select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} options={PRIORITY.map((s) => ({ value: s, label: s }))} /></Field>
@@ -196,7 +197,7 @@ function Requests({ suppliers }) {
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDecide(null)} />
           <div className="panel relative w-full max-w-md p-5 animate-rise">
             <h3 className="font-display text-lg font-bold text-ice">Review request</h3>
-            <p className="mt-1 text-sm text-ice-faint">{decide.title} · est. {money(decide.est_total, decide.currency || ccy)}</p>
+            <p className="mt-1 text-sm text-ice-faint">{decide.title} · est. {money(decide.est_total, ccy)}</p>
             {decide.justification && <p className="mt-2 rounded bg-white/[0.03] px-3 py-2 text-sm text-ice/80">{decide.justification}</p>}
             <Field label="Decision note (optional)"><textarea className="input mt-2 min-h-[60px]" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
             <div className="mt-4 flex justify-end gap-2">
@@ -235,7 +236,7 @@ function PurchaseOrders({ suppliers }) {
   const save = async () => {
     setSaving(true)
     try {
-      const patch = { po_number: edit.po_number, supplier_id: edit.supplier_id || null, status: edit.status, total: Number(edit.total || 0), expected_date: edit.expected_date || null, notes: edit.notes }
+      const patch = { po_number: edit.po_number, supplier_id: edit.supplier_id || null, status: edit.status, total: Number(edit.total || 0), expected_date: edit.expected_date || null, notes: edit.notes, cc_emails: edit.cc_emails }
       if (edit.id) await update(edit.id, patch); else await insert(patch)
       toast.success('Saved'); setEdit(null)
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
@@ -274,7 +275,7 @@ function PurchaseOrders({ suppliers }) {
                   <tr key={r.id} className="transition hover:bg-white/[0.025]">
                     <td className="td font-mono text-accent whitespace-nowrap">{r.po_number}</td>
                     <td className="td">{supplierName(r.supplier_id)}</td>
-                    <td className="td font-mono">{money(r.total, r.currency || ccy)}</td>
+                    <td className="td font-mono">{money(r.total, ccy)}</td>
                     <td className="td whitespace-nowrap">{date(r.expected_date)}</td>
                     <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
                     <td className="td">{r.supplier_status ? <Badge tone={supTone(r.supplier_status)}>{r.supplier_status}</Badge> : '—'}</td>
@@ -312,6 +313,7 @@ function PurchaseOrders({ suppliers }) {
                 <Field label={`Total (${ccy})`}><input className="input" type="number" value={edit.total ?? 0} onChange={(e) => setEdit({ ...edit, total: e.target.value })} /></Field>
               </div>
               <Field label="Expected date"><input className="input" type="date" value={edit.expected_date || ''} onChange={(e) => setEdit({ ...edit, expected_date: e.target.value })} /></Field>
+              <Field label="CC others on supplier email (comma-separated)"><input className="input" value={edit.cc_emails || ''} onChange={(e) => setEdit({ ...edit, cc_emails: e.target.value })} placeholder="buyer@company.com" /></Field>
               <Field label="Notes"><textarea className="input min-h-[70px]" value={edit.notes || ''} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></Field>
               {edit.supplier_status === 'accepted' && <p className="rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-xs text-ok">Supplier accepted — a bill was created in Accounts → Bills.</p>}
             </div>

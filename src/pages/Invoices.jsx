@@ -30,7 +30,7 @@ export default function Invoices({ ccy }) {
     return true
   }), [rows, q, fStatus, fSent])
 
-  const empty = { invoice_no: `INV-${Date.now().toString().slice(-6)}`, customer: '', customer_email: '', status: 'draft', issue_date: new Date().toISOString().slice(0, 10), due_date: '', amount: '', tax: '', total: '', reference: '', document_url: '', notes: '' }
+  const empty = { invoice_no: `INV-${Date.now().toString().slice(-6)}`, customer: '', customer_email: '', cc_emails: '', status: 'draft', issue_date: new Date().toISOString().slice(0, 10), due_date: '', amount: '', tax: '', total: '', reference: '', document_url: '', notes: '' }
   const [form, setForm] = useState(empty)
 
   // auto total = amount + tax
@@ -45,7 +45,7 @@ export default function Invoices({ ccy }) {
     try {
       const payload = {
         invoice_no: form.invoice_no, customer: form.customer, customer_email: form.customer_email,
-        status: form.status, issue_date: form.issue_date || null, due_date: form.due_date || null,
+        status: form.status, issue_date: form.issue_date || null, due_date: form.due_date || null, cc_emails: form.cc_emails,
         amount: Number(form.amount || 0), tax: Number(form.tax || 0),
         total: Number(form.total || autoTotal || 0),
         reference: form.reference, document_url: form.document_url, notes: form.notes,
@@ -131,7 +131,7 @@ export default function Invoices({ ccy }) {
                     <td className="td font-mono text-accent whitespace-nowrap">{r.invoice_no}</td>
                     <td className="td">{r.customer}<div className="text-[10px] text-ice-faint">{r.customer_email}</div></td>
                     <td className="td whitespace-nowrap">{date(r.due_date)}</td>
-                    <td className="td font-mono font-semibold">{money(r.total, r.currency || ccy)}</td>
+                    <td className="td font-mono font-semibold">{money(r.total, ccy)}</td>
                     <td className="td">{r.document_url ? <a href={r.document_url} target="_blank" rel="noreferrer" className="text-info hover:underline"><FileText size={14} className="inline" /></a> : <span className="text-ice-faint">—</span>}</td>
                     <td className="td">{r.sent ? <Badge tone="ok">sent</Badge> : <Badge tone="mute">no</Badge>}</td>
                     <td className="td">
@@ -173,6 +173,7 @@ export default function Invoices({ ccy }) {
               </div>
               <Field label="Customer *"><input className="input" value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} /></Field>
               <Field label="Customer email"><input className="input" type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} placeholder="accounts@customer.com" /></Field>
+              <Field label="CC others (comma-separated)"><input className="input" value={form.cc_emails || ''} onChange={(e) => setForm({ ...form, cc_emails: e.target.value })} placeholder="cfo@company.com, records@company.com" /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Issue date"><input className="input" type="date" value={form.issue_date || ''} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} /></Field>
                 <Field label="Due date"><input className="input" type="date" value={form.due_date || ''} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></Field>
