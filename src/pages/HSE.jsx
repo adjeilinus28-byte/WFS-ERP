@@ -3,6 +3,7 @@ import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, PageHeader, Field, Select, useToast } from '../components/ui'
 import DataTable from '../components/DataTable'
 import FileUpload from '../components/FileUpload'
+import SafetyInteractions from './SafetyInteractions'
 import { date, daysUntil } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -14,7 +15,7 @@ const SEV = ['low', 'medium', 'high', 'critical']
 const ISTATUS = ['open', 'investigating', 'closed']
 
 function Tabs({ tab, setTab }) {
-  const items = [['incidents', 'Incidents'], ['docs', 'Compliance Documents'], ['kiosk', 'Document Kiosk']]
+  const items = [['incidents', 'Incidents'], ['docs', 'Compliance Documents'], ['kiosk', 'Document Kiosk'], ['safety', 'Safety Interactions']]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -249,7 +250,8 @@ export default function HSE() {
           }}
         />
       ) : tab === 'docs' ? <><PageHeader eyebrow="Compliance" title="Compliance Documents" /><ComplianceDocs /></>
-        : <><PageHeader eyebrow="Compliance" title="Document Kiosk" /><DocumentKiosk /></>}
+        : tab === 'kiosk' ? <><PageHeader eyebrow="Compliance" title="Document Kiosk" /><DocumentKiosk /></>
+        : <><PageHeader eyebrow="Compliance" title="Safety Interactions" /><SafetyInteractions /></>}
     </div>
   )
 }
