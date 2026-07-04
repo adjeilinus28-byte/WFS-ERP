@@ -5,6 +5,7 @@ import { money, date } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
 import Payroll from './Payroll'
+import Invoices from './Invoices'
 import { Landmark, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-react'
 
 const INV_STATUS  = ['draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
@@ -37,47 +38,7 @@ export default function Accounts() {
     <div>
       <Tabs tab={tab} setTab={setTab} />
 
-      {tab === 'invoices' && (
-        <ModuleScaffold
-          eyebrow="Finance" title="Invoices — Accounts Receivable" table="invoices"
-          newLabel="New invoice" emptyTitle="No invoices"
-          emptyHint="Raise invoices to customers and track outstanding receivables."
-          searchKeys={['invoice_no', 'customer', 'status']}
-          columns={[
-            { key: 'invoice_no', label: 'Invoice #', render: (v) => <span className="font-mono text-accent">{v}</span> },
-            { key: 'customer',   label: 'Customer' },
-            { key: 'issue_date', label: 'Issued',   render: (v) => date(v) },
-            { key: 'due_date',   label: 'Due',      render: (v) => date(v) },
-            { key: 'amount',     label: 'Amount',   render: (v) => money(v, ccy) },
-            { key: 'tax',        label: 'Tax',      render: (v) => money(v, ccy) },
-            { key: 'total',      label: 'Total',    render: (v) => <span className="font-semibold">{money(v, ccy)}</span> },
-            { key: 'status',     label: 'Status',   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
-          ]}
-          fields={[
-            { key: 'invoice_no', label: 'Invoice number', required: true },
-            { key: 'customer',   label: 'Customer',       required: true, span: true },
-            { key: 'status',     label: 'Status',         type: 'select', options: INV_STATUS.map((s) => ({ value: s, label: s })), default: 'draft' },
-            { key: 'issue_date', label: 'Issue date',     type: 'date' },
-            { key: 'due_date',   label: 'Due date',       type: 'date' },
-            { key: 'amount',     label: 'Amount (ex tax)', type: 'number', default: 0 },
-            { key: 'tax',        label: 'Tax',            type: 'number', default: 0 },
-            { key: 'total',      label: 'Total',          type: 'number', default: 0 },
-            { key: 'notes',      label: 'Notes',          type: 'textarea', span: true },
-          ]}
-          kpis={(rows) => {
-            const outstanding = rows.filter((r) => ['sent','partial','overdue'].includes(r.status))
-            const totalAR  = outstanding.reduce((s, r) => s + Number(r.total || 0), 0)
-            const overdue  = rows.filter((r) => r.status === 'overdue').length
-            const paid     = rows.filter((r) => r.status === 'paid').reduce((s, r) => s + Number(r.total || 0), 0)
-            return <>
-              <StatCard label="Total invoices" value={rows.length}       icon={Landmark} />
-              <StatCard label="Outstanding AR" value={money(totalAR, ccy)} tone={totalAR ? 'warn' : 'ok'} icon={TrendingUp} />
-              <StatCard label="Overdue"        value={overdue}           tone={overdue ? 'bad' : 'ok'} icon={Clock} />
-              <StatCard label="Collected"      value={money(paid, ccy)}  tone="ok" icon={Wallet} />
-            </>
-          }}
-        />
-      )}
+      {tab === 'invoices' && <Invoices ccy={ccy} />}
 
       {tab === 'bills' && (
         <ModuleScaffold
