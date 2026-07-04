@@ -8,8 +8,10 @@ const MARITAL = ['single', 'married', 'divorced', 'widowed']
 const STATUS  = ['active', 'leave', 'suspended', 'exited']
 const WORKER  = ['surface', 'underground', 'office', 'field']
 const IDTYPE  = ['ghana_card', 'passport', 'voter', 'drivers']
+const IDDOCTYPE = ['ghana_card', 'passport', 'voter', 'drivers', 'ssnit']
+const ACCTYPE = ['savings', 'current', 'mobile_money']
 
-const TABS = [['employment', 'Employment'], ['contact', 'Contact'], ['personal', 'Personal & Family'], ['identity', 'Identity & Sizing'], ['docs', 'Documents']]
+const TABS = [['employment', 'Employment'], ['contact', 'Contact'], ['personal', 'Personal & Family'], ['identity', 'Identity & Sizing'], ['bank', 'Bank & Payroll'], ['docs', 'Documents']]
 
 export default function EmployeeEditor({ open, initial, deptOptions, onClose, onSubmit, submitting }) {
   const [f, setF] = useState({})
@@ -125,11 +127,23 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
               <Field label="TIN"><input className="input" value={f.tin_number || ''} onChange={(e) => set('tin_number', e.target.value)} /></Field>
               <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3">
                 <div className="eyebrow mb-3">Sizing (PPE / uniform)</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Dress / clothing size"><input className="input" value={f.dress_size || ''} onChange={(e) => set('dress_size', e.target.value)} placeholder="e.g. L, XL, 42" /></Field>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <Field label="Top / shirt size"><input className="input" value={f.top_size || ''} onChange={(e) => set('top_size', e.target.value)} placeholder="e.g. M, L, XL" /></Field>
+                  <Field label="Trouser waist"><input className="input" value={f.trouser_waist || ''} onChange={(e) => set('trouser_waist', e.target.value)} placeholder="e.g. 32, 34" /></Field>
                   <Field label="Shoe size"><input className="input" value={f.shoe_size || ''} onChange={(e) => set('shoe_size', e.target.value)} placeholder="e.g. 43" /></Field>
                 </div>
               </div>
+            </div>
+          )}
+
+          {tab === 'bank' && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Bank name"><input className="input" value={f.bank_name || ''} onChange={(e) => set('bank_name', e.target.value)} placeholder="e.g. GCB, Ecobank" /></Field>
+              <Field label="Branch"><input className="input" value={f.bank_branch || ''} onChange={(e) => set('bank_branch', e.target.value)} /></Field>
+              <Field label="Account name"><input className="input" value={f.account_name || ''} onChange={(e) => set('account_name', e.target.value)} /></Field>
+              <Field label="Account number"><input className="input" value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></Field>
+              <Field label="Account type"><Select value={f.account_type || ''} onChange={(e) => set('account_type', e.target.value)} options={[{ value: '', label: '—' }, ...ACCTYPE.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></Field>
+              <Field label="Mobile money no."><input className="input" value={f.mobile_money_no || ''} onChange={(e) => set('mobile_money_no', e.target.value)} placeholder="e.g. 024 xxx xxxx" /></Field>
             </div>
           )}
 
@@ -137,7 +151,15 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
             <div className="space-y-4">
               <FileUpload label="Passport photo" image accept="image/*" value={f.photo_url} onChange={setFile('photo_url')} entityId={f.id} field="photo" />
               <FileUpload label="Contract letter" accept=".pdf,.doc,.docx,image/*" value={f.contract_url} onChange={setFile('contract_url')} entityId={f.id} field="contract" />
-              <FileUpload label="ID document" accept=".pdf,image/*" value={f.id_document_url} onChange={setFile('id_document_url')} entityId={f.id} field="id" />
+              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+                <Field label="ID document type">
+                  <Select value={f.id_document_type || ''} onChange={(e) => set('id_document_type', e.target.value)}
+                    options={[{ value: '', label: 'Select document type…' }, ...IDDOCTYPE.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} />
+                </Field>
+                <div className="mt-3">
+                  <FileUpload label="ID document" accept=".pdf,image/*" value={f.id_document_url} onChange={setFile('id_document_url')} entityId={f.id} field="id" />
+                </div>
+              </div>
               <div className="border-t border-white/[0.06] pt-4">
                 <Field label="Non-compliance note" span><textarea className="input min-h-[70px]" value={f.compliance_note || ''} onChange={(e) => set('compliance_note', e.target.value)} placeholder="Describe any non-compliance issue…" /></Field>
                 <div className="mt-3"><FileUpload label="Non-compliance letter" accept=".pdf,.doc,.docx,image/*" value={f.compliance_url} onChange={setFile('compliance_url')} entityId={f.id} field="compliance" /></div>

@@ -125,14 +125,24 @@ export default function EmployeeProfile({ employee, onClose, onEdit, canWrite })
           </Section>
 
           <Section title="Sizing (PPE / uniform)">
-            <Row label="Dress / clothing size" value={e.dress_size} />
+            <Row label="Top / shirt size" value={e.top_size || e.dress_size} />
+            <Row label="Trouser waist" value={e.trouser_waist} />
             <Row label="Shoe size" value={e.shoe_size} />
+          </Section>
+
+          <Section title="Bank & payroll">
+            <Row label="Bank" value={e.bank_name} />
+            <Row label="Branch" value={e.bank_branch} />
+            <Row label="Account name" value={e.account_name} />
+            <Row label="Account number" value={e.account_number} />
+            <Row label="Account type" value={e.account_type?.replace('_', ' ')} />
+            <Row label="Mobile money" value={e.mobile_money_no} />
           </Section>
 
           <Section title="Documents">
             <FileLink label="Passport photo" url={e.photo_url} />
             <FileLink label="Contract letter" url={e.contract_url} />
-            <FileLink label="ID document" url={e.id_document_url} />
+            <FileLink label={e.id_document_type ? `ID document (${e.id_document_type.replace('_', ' ')})` : 'ID document'} url={e.id_document_url} />
             <FileLink label="Non-compliance letter" url={e.compliance_url} icon={AlertTriangle} />
           </Section>
 
