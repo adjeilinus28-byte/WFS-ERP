@@ -6,6 +6,7 @@ import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
 import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, date, num } from '../lib/format'
+import { computePayslip } from '../lib/payroll'
 
 const PAY_STATUS = ['draft', 'approved', 'paid']
 const thisPeriod = () => new Date().toISOString().slice(0, 7)
@@ -25,11 +26,7 @@ function SubTabs({ tab, setTab }) {
 }
 
 // Net = basic + overtime + bonus + allowances − (tax + ssnit + other)
-const calcGrossNet = (f) => {
-  const gross = ['basic_pay', 'overtime', 'bonus', 'allowances'].reduce((s, k) => s + Number(f[k] || 0), 0)
-  const ded = ['tax', 'ssnit', 'other_deductions'].reduce((s, k) => s + Number(f[k] || 0), 0)
-  return { gross, ded, net: gross - ded }
-}
+const money0 = (v, ccy) => money(v, ccy)
 
 export default function Payroll({ ccy }) {
   const { activeOrgId, role } = useAuth()
@@ -58,30 +55,66 @@ export default function Payroll({ ccy }) {
   }), [rows, q, fPeriod, fDept])
 
   // ── Entry drawer ──
-  const emptyForm = { period: thisPeriod(), employee_id: '', employee_name: '', department: '', email: '',
-    basic_pay: '', overtime: '', bonus: '', allowances: '', tax: '', ssnit: '', other_deductions: '', status: 'draft', notes: '' }
+  const emptyForm = {
+    period: thisPeriod(), employee_id: '', employee_name: '', department: '', email: '',
+    job_title: '', badge_no: '', bank_name: '', social_security_no: '', social_security_status: 'SSF',
+    no_of_shifts: '', off_days: '', leave_days: '', attendance_pct: 100, monthly_basic: '', daily_basic: '',
+    // earnings
+    basic_pay: '', salary_difference: '', mobile_credit: '', transport_allowance: '', canteen_allowance: '',
+    extra_duty_allowance: '', medical_allowance: '', fuel_allowance: '', bonus: '', allowances: '',
+    shift_overtime: '', weekday_overtime: '', holiday_overtime: '', arrears_overtime: '',
+    // deductions (rates as %)
+    ssnit_rate: 5.5, paye_amount: '', overtime_tax: '', union_dues_rate: '', rent_deduction: '',
+    ssnit_loan: '', other_deductions: '', ssnit_employer_rate: 13,
+    status: 'draft', notes: '',
+  }
   const [form, setForm] = useState(emptyForm)
-  const { gross, ded, net } = calcGrossNet(form)
+  const calc = computePayslip(form)
 
   const openNew = () => { setForm(emptyForm); setDrawer('new') }
-  const openEdit = (r) => { setForm({ ...emptyForm, ...r, basic_pay: r.basic_pay ?? '', overtime: r.overtime ?? '', bonus: r.bonus ?? '', allowances: r.allowances ?? '', tax: r.tax ?? '', ssnit: r.ssnit ?? '', other_deductions: r.other_deductions ?? '' }); setDrawer(r.id) }
+  const openEdit = (r) => {
+    const merged = { ...emptyForm }
+    Object.keys(r).forEach((k) => { if (r[k] !== null && r[k] !== undefined) merged[k] = r[k] })
+    setForm(merged); setDrawer(r.id)
+  }
 
   const pickEmployee = (id) => {
     const e = employees.find((x) => x.id === id)
-    setForm((f) => ({ ...f, employee_id: id, employee_name: e?.full_name || f.employee_name, department: e?.department || f.department, email: e?.email || f.email }))
+    setForm((f) => ({ ...f, employee_id: id,
+      employee_name: e?.full_name || f.employee_name, department: e?.department || f.department,
+      email: e?.email || f.email, job_title: e?.position || f.job_title, badge_no: e?.employee_no || f.badge_no,
+      bank_name: e?.bank_name || f.bank_name, social_security_no: e?.ssnit_number || f.social_security_no,
+      monthly_basic: f.monthly_basic, basic_pay: f.basic_pay }))
   }
 
   const save = async () => {
     if (!form.period || !form.employee_name) { toast.error('Period and employee are required'); return }
     setSaving(true)
     try {
+      const num = (v) => (v === '' || v == null ? 0 : Number(v))
       const payload = {
         period: form.period, employee_id: form.employee_id || null, employee_name: form.employee_name,
         department: form.department, email: form.email,
-        basic_pay: Number(form.basic_pay || 0), overtime: Number(form.overtime || 0), bonus: Number(form.bonus || 0),
-        allowances: Number(form.allowances || 0), tax: Number(form.tax || 0), ssnit: Number(form.ssnit || 0),
-        other_deductions: Number(form.other_deductions || 0),
-        gross_pay: gross, deductions: ded, net_pay: net, status: form.status, notes: form.notes,
+        job_title: form.job_title, badge_no: form.badge_no, bank_name: form.bank_name,
+        social_security_no: form.social_security_no, social_security_status: form.social_security_status,
+        no_of_shifts: num(form.no_of_shifts), off_days: num(form.off_days), leave_days: num(form.leave_days),
+        attendance_pct: num(form.attendance_pct), monthly_basic: num(form.monthly_basic), daily_basic: num(form.daily_basic),
+        // earnings
+        basic_pay: num(form.basic_pay || form.monthly_basic), salary_difference: num(form.salary_difference),
+        mobile_credit: num(form.mobile_credit), transport_allowance: num(form.transport_allowance),
+        canteen_allowance: num(form.canteen_allowance), extra_duty_allowance: num(form.extra_duty_allowance),
+        medical_allowance: num(form.medical_allowance), fuel_allowance: num(form.fuel_allowance),
+        bonus: num(form.bonus), allowances: num(form.allowances),
+        shift_overtime: num(form.shift_overtime), weekday_overtime: num(form.weekday_overtime),
+        holiday_overtime: num(form.holiday_overtime), arrears_overtime: num(form.arrears_overtime),
+        // deductions
+        ssnit_rate: num(form.ssnit_rate), ssnit: calc.ssnit, paye_amount: num(form.paye_amount),
+        overtime_tax: num(form.overtime_tax), union_dues_rate: num(form.union_dues_rate), union_dues: calc.union_dues,
+        rent_deduction: num(form.rent_deduction), ssnit_loan: num(form.ssnit_loan), other_deductions: num(form.other_deductions),
+        ssnit_employer_rate: num(form.ssnit_employer_rate), ssnit_employer: calc.ssnit_employer, taxable_income: calc.taxable,
+        // totals
+        gross_pay: calc.gross, deductions: calc.totalDed, net_pay: calc.net,
+        status: form.status, notes: form.notes,
       }
       if (drawer === 'new') await insert(payload); else await update(drawer, payload)
       toast.success('Payslip saved'); setDrawer(null)
@@ -239,34 +272,67 @@ export default function Payroll({ ccy }) {
               <Field label="Employee *"><Select value={form.employee_id} onChange={(e) => pickEmployee(e.target.value)}
                 options={[{ value: '', label: 'Select employee…' }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
               {!form.employee_id && <Field label="…or type a name"><input className="input" value={form.employee_name} onChange={(e) => setForm({ ...form, employee_name: e.target.value })} /></Field>}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Department"><Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} options={[{ value: '', label: '—' }, ...deptOptions]} /></Field>
-                <Field label="Email (payslip)"><input className="input" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+
+              {/* Header / shift info */}
+              <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
+                <div className="eyebrow mb-2">Employee & shift info</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Job title"><input className="input" value={form.job_title || ''} onChange={(e) => setForm({ ...form, job_title: e.target.value })} /></Field>
+                  <Field label="Badge no."><input className="input" value={form.badge_no || ''} onChange={(e) => setForm({ ...form, badge_no: e.target.value })} /></Field>
+                  <Field label="Department"><Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} options={[{ value: '', label: '—' }, ...deptOptions]} /></Field>
+                  <Field label="Email (payslip)"><input className="input" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
+                  <Field label="Bank"><input className="input" value={form.bank_name || ''} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} /></Field>
+                  <Field label="Social Security No."><input className="input" value={form.social_security_no || ''} onChange={(e) => setForm({ ...form, social_security_no: e.target.value })} /></Field>
+                  <Field label="No. of shifts"><input className="input" type="number" value={form.no_of_shifts} onChange={(e) => setForm({ ...form, no_of_shifts: e.target.value })} /></Field>
+                  <Field label="Off days"><input className="input" type="number" value={form.off_days} onChange={(e) => setForm({ ...form, off_days: e.target.value })} /></Field>
+                  <Field label="Leave days"><input className="input" type="number" value={form.leave_days} onChange={(e) => setForm({ ...form, leave_days: e.target.value })} /></Field>
+                  <Field label="Attendance %"><input className="input" type="number" value={form.attendance_pct} onChange={(e) => setForm({ ...form, attendance_pct: e.target.value })} /></Field>
+                </div>
               </div>
 
+              {/* Earnings */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
                 <div className="eyebrow mb-2">Earnings</div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Basic pay"><input className="input" type="number" value={form.basic_pay} onChange={(e) => setForm({ ...form, basic_pay: e.target.value })} /></Field>
-                  <Field label="Overtime"><input className="input" type="number" value={form.overtime} onChange={(e) => setForm({ ...form, overtime: e.target.value })} /></Field>
+                  <Field label="Basic salary"><input className="input" type="number" value={form.basic_pay} onChange={(e) => setForm({ ...form, basic_pay: e.target.value })} /></Field>
+                  <Field label="Salary difference"><input className="input" type="number" value={form.salary_difference} onChange={(e) => setForm({ ...form, salary_difference: e.target.value })} /></Field>
+                  <Field label="Mobile phone credit"><input className="input" type="number" value={form.mobile_credit} onChange={(e) => setForm({ ...form, mobile_credit: e.target.value })} /></Field>
+                  <Field label="Transport allowance"><input className="input" type="number" value={form.transport_allowance} onChange={(e) => setForm({ ...form, transport_allowance: e.target.value })} /></Field>
+                  <Field label="Canteen allowance"><input className="input" type="number" value={form.canteen_allowance} onChange={(e) => setForm({ ...form, canteen_allowance: e.target.value })} /></Field>
+                  <Field label="Extra duty / acting"><input className="input" type="number" value={form.extra_duty_allowance} onChange={(e) => setForm({ ...form, extra_duty_allowance: e.target.value })} /></Field>
+                  <Field label="Medical allowance"><input className="input" type="number" value={form.medical_allowance} onChange={(e) => setForm({ ...form, medical_allowance: e.target.value })} /></Field>
+                  <Field label="Fuel allowance"><input className="input" type="number" value={form.fuel_allowance} onChange={(e) => setForm({ ...form, fuel_allowance: e.target.value })} /></Field>
+                  <Field label="Other allowances"><input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} /></Field>
                   <Field label="Bonus"><input className="input" type="number" value={form.bonus} onChange={(e) => setForm({ ...form, bonus: e.target.value })} /></Field>
-                  <Field label="Allowances"><input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} /></Field>
+                  <Field label="12-hr shift overtime"><input className="input" type="number" value={form.shift_overtime} onChange={(e) => setForm({ ...form, shift_overtime: e.target.value })} /></Field>
+                  <Field label="Weekday overtime"><input className="input" type="number" value={form.weekday_overtime} onChange={(e) => setForm({ ...form, weekday_overtime: e.target.value })} /></Field>
+                  <Field label="Public holiday overtime"><input className="input" type="number" value={form.holiday_overtime} onChange={(e) => setForm({ ...form, holiday_overtime: e.target.value })} /></Field>
+                  <Field label="Arrears overtime"><input className="input" type="number" value={form.arrears_overtime} onChange={(e) => setForm({ ...form, arrears_overtime: e.target.value })} /></Field>
                 </div>
               </div>
 
+              {/* Deductions with percentages */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
                 <div className="eyebrow mb-2">Deductions</div>
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="PAYE / Tax"><input className="input" type="number" value={form.tax} onChange={(e) => setForm({ ...form, tax: e.target.value })} /></Field>
-                  <Field label="SSNIT"><input className="input" type="number" value={form.ssnit} onChange={(e) => setForm({ ...form, ssnit: e.target.value })} /></Field>
-                  <Field label="Other"><input className="input" type="number" value={form.other_deductions} onChange={(e) => setForm({ ...form, other_deductions: e.target.value })} /></Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={`SSNIT / SSF rate (%) → ${money(calc.ssnit, ccy)}`}><input className="input" type="number" step="0.1" value={form.ssnit_rate} onChange={(e) => setForm({ ...form, ssnit_rate: e.target.value })} /></Field>
+                  <Field label={`Union dues rate (%) → ${money(calc.union_dues, ccy)}`}><input className="input" type="number" step="0.1" value={form.union_dues_rate} onChange={(e) => setForm({ ...form, union_dues_rate: e.target.value })} /></Field>
+                  <Field label="Income tax (PAYE)"><input className="input" type="number" value={form.paye_amount} onChange={(e) => setForm({ ...form, paye_amount: e.target.value })} /></Field>
+                  <Field label="Overtime tax"><input className="input" type="number" value={form.overtime_tax} onChange={(e) => setForm({ ...form, overtime_tax: e.target.value })} /></Field>
+                  <Field label="Rent"><input className="input" type="number" value={form.rent_deduction} onChange={(e) => setForm({ ...form, rent_deduction: e.target.value })} /></Field>
+                  <Field label="SSNIT loan"><input className="input" type="number" value={form.ssnit_loan} onChange={(e) => setForm({ ...form, ssnit_loan: e.target.value })} /></Field>
+                  <Field label="Other deductions"><input className="input" type="number" value={form.other_deductions} onChange={(e) => setForm({ ...form, other_deductions: e.target.value })} /></Field>
                 </div>
+                <p className="mt-2 text-[11px] text-ice-faint">SSNIT and union dues compute automatically from the basic salary × rate.</p>
               </div>
 
+              {/* Totals */}
               <div className="rounded-lg border border-white/10 bg-navy/50 px-3 py-2.5 text-sm">
-                <div className="flex justify-between"><span className="text-ice-faint">Gross</span><span className="font-mono text-ice">{money(gross, ccy)}</span></div>
-                <div className="flex justify-between"><span className="text-ice-faint">Deductions</span><span className="font-mono text-bad">−{money(ded, ccy)}</span></div>
-                <div className="mt-1 flex justify-between border-t border-white/10 pt-1"><span className="font-semibold text-ice">Net pay</span><span className="font-mono font-bold text-ok">{money(net, ccy)}</span></div>
+                <div className="flex justify-between"><span className="text-ice-faint">Gross earnings</span><span className="font-mono text-ice">{money(calc.gross, ccy)}</span></div>
+                <div className="flex justify-between"><span className="text-ice-faint">Total deductions</span><span className="font-mono text-bad">−{money(calc.totalDed, ccy)}</span></div>
+                <div className="mt-1 flex justify-between border-t border-white/10 pt-1"><span className="font-semibold text-ice">Net pay</span><span className="font-mono font-bold text-ok">{money(calc.net, ccy)}</span></div>
+                <div className="mt-2 flex justify-between border-t border-white/[0.06] pt-2 text-xs"><span className="text-ice-faint">Employer SSNIT ({form.ssnit_employer_rate}%)</span><span className="font-mono text-ice-dim">{money(calc.ssnit_employer, ccy)}</span></div>
+                <div className="flex justify-between text-xs"><span className="text-ice-faint">Taxable income</span><span className="font-mono text-ice-dim">{money(calc.taxable, ccy)}</span></div>
               </div>
 
               <Field label="Notes"><textarea className="input min-h-[50px]" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
