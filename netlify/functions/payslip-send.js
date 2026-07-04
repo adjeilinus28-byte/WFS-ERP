@@ -29,24 +29,51 @@ exports.handler = async (event) => {
       }
       if (!email) { skipped++; continue }
 
-      const line = (label, val, neg) => `<tr><td style="padding:6px 0;color:#374151">${label}</td><td style="padding:6px 0;text-align:right;color:${neg ? '#b91c1c' : '#111827'}">${neg ? '−' : ''}${money(val, ccy)}</td></tr>`
+      const line = (label, val, neg) => (Number(val) ? `<tr><td style="padding:5px 0;color:#374151">${label}</td><td style="padding:5px 0;text-align:right;color:${neg ? '#b91c1c' : '#111827'}">${neg ? '−' : ''}${money(val, ccy)}</td></tr>` : '')
       const body = `
         <p>Dear ${s.employee_name},</p>
         <p>Please find your payslip for <b>${s.period}</b>.</p>
-        <table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:14px">
+        <table style="width:100%;font-size:13px;margin:8px 0 14px">
+          <tr><td style="color:#6b7280">Job title</td><td style="text-align:right">${s.job_title || '—'}</td></tr>
+          <tr><td style="color:#6b7280">Badge no.</td><td style="text-align:right">${s.badge_no || '—'}</td></tr>
+          <tr><td style="color:#6b7280">Department</td><td style="text-align:right">${s.department || '—'}</td></tr>
+          <tr><td style="color:#6b7280">Bank</td><td style="text-align:right">${s.bank_name || '—'}</td></tr>
+          <tr><td style="color:#6b7280">No. of shifts / Off / Leave</td><td style="text-align:right">${s.no_of_shifts || 0} / ${s.off_days || 0} / ${s.leave_days || 0}</td></tr>
+          <tr><td style="color:#6b7280">Attendance</td><td style="text-align:right">${s.attendance_pct || 0}%</td></tr>
+        </table>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr><td colspan="2" style="border-bottom:2px solid #eee;padding-bottom:6px;font-weight:bold">Earnings</td></tr>
-          ${line('Basic pay', s.basic_pay)}
-          ${line('Overtime', s.overtime)}
+          ${line('Basic salary', s.basic_pay)}
+          ${line('Salary difference', s.salary_difference)}
+          ${line('Mobile phone credit', s.mobile_credit)}
+          ${line('Transport allowance', s.transport_allowance)}
+          ${line('Canteen allowance', s.canteen_allowance)}
+          ${line('Extra duty / acting', s.extra_duty_allowance)}
+          ${line('Medical allowance', s.medical_allowance)}
+          ${line('Fuel allowance', s.fuel_allowance)}
+          ${line('Other allowances', s.allowances)}
           ${line('Bonus', s.bonus)}
-          ${line('Allowances', s.allowances)}
+          ${line('12-hr shift overtime', s.shift_overtime)}
+          ${line('Weekday overtime', s.weekday_overtime)}
+          ${line('Public holiday overtime', s.holiday_overtime)}
+          ${line('Arrears overtime', s.arrears_overtime)}
           <tr><td style="padding:6px 0;font-weight:bold;border-top:1px solid #eee">Gross pay</td><td style="padding:6px 0;text-align:right;font-weight:bold;border-top:1px solid #eee">${money(s.gross_pay, ccy)}</td></tr>
           <tr><td colspan="2" style="border-bottom:2px solid #eee;padding:10px 0 6px;font-weight:bold">Deductions</td></tr>
-          ${line('PAYE / Tax', s.tax, true)}
-          ${line('SSNIT', s.ssnit, true)}
+          ${line(`SSNIT / SSF (${s.ssnit_rate || 5.5}%)`, s.ssnit, true)}
+          ${line('Income tax (PAYE)', s.paye_amount, true)}
+          ${line('Overtime tax', s.overtime_tax, true)}
+          ${line('Union dues', s.union_dues, true)}
+          ${line('Rent', s.rent_deduction, true)}
+          ${line('SSNIT loan', s.ssnit_loan, true)}
           ${line('Other deductions', s.other_deductions, true)}
+          <tr><td style="padding:6px 0;font-weight:bold;border-top:1px solid #eee">Total deductions</td><td style="padding:6px 0;text-align:right;font-weight:bold;border-top:1px solid #eee;color:#b91c1c">−${money(s.deductions, ccy)}</td></tr>
           <tr><td style="padding:10px 0;font-weight:bold;font-size:16px;border-top:2px solid #111">Net pay</td><td style="padding:10px 0;text-align:right;font-weight:bold;font-size:16px;border-top:2px solid #111;color:#16a34a">${money(s.net_pay, ccy)}</td></tr>
         </table>
-        <p style="color:#6b7280;font-size:12px">Department: ${s.department || '—'}. This payslip is confidential.</p>`
+        <table style="width:100%;font-size:12px;color:#6b7280;margin-top:10px">
+          ${s.taxable_income ? `<tr><td>Taxable income</td><td style="text-align:right">${money(s.taxable_income, ccy)}</td></tr>` : ''}
+          ${s.ssnit_employer ? `<tr><td>Employer SSNIT (${s.ssnit_employer_rate || 13}%)</td><td style="text-align:right">${money(s.ssnit_employer, ccy)}</td></tr>` : ''}
+        </table>
+        <p style="color:#6b7280;font-size:12px;margin-top:10px">This payslip is confidential.</p>`
       const ok = await sendBrevo({ to: [email], subject: `[${org.name}] Payslip — ${s.period}`, html: shell(org.name, org.accent_color, 'Payslip', body) })
       if (ok) { await sb.from('payroll').update({ payslip_sent: true, sent_at: new Date().toISOString(), email }).eq('id', s.id); sent++ }
       else skipped++
