@@ -4,6 +4,7 @@ import { Badge, statusTone, StatCard } from '../components/ui'
 import { money, date } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
+import Payroll from './Payroll'
 import { Landmark, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-react'
 
 const INV_STATUS  = ['draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
@@ -154,47 +155,7 @@ export default function Accounts() {
         />
       )}
 
-      {tab === 'payroll' && (
-        <ModuleScaffold
-          eyebrow="Finance" title="Payroll" table="payroll"
-          newLabel="New payroll entry" emptyTitle="No payroll records"
-          emptyHint="Capture gross pay, allowances, deductions, and net pay per period."
-          searchKeys={['employee_name', 'department', 'period', 'status']}
-          columns={[
-            { key: 'period',        label: 'Period',   render: (v) => <span className="font-mono text-accent">{v}</span> },
-            { key: 'employee_name', label: 'Employee' },
-            { key: 'department',    label: 'Dept',     render: (v) => v ? <Badge>{v}</Badge> : '—' },
-            { key: 'gross_pay',     label: 'Gross',    render: (v) => money(v, ccy) },
-            { key: 'allowances',    label: 'Allow.',   render: (v) => money(v, ccy) },
-            { key: 'deductions',    label: 'Deduct.',  render: (v) => money(v, ccy) },
-            { key: 'net_pay',       label: 'Net pay',  render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
-            { key: 'status',        label: 'Status',   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
-          ]}
-          fields={[
-            { key: 'period',        label: 'Period (YYYY-MM)', required: true },
-            { key: 'employee_name', label: 'Employee name',    required: true },
-            { key: 'department',    label: 'Department',       type: 'select', options: deptOptions },
-            { key: 'status',        label: 'Status',           type: 'select', options: PAY_STATUS.map((s) => ({ value: s, label: s })), default: 'draft' },
-            { key: 'gross_pay',     label: 'Gross pay',        type: 'number', default: 0 },
-            { key: 'allowances',    label: 'Allowances',       type: 'number', default: 0 },
-            { key: 'deductions',    label: 'Deductions',       type: 'number', default: 0 },
-            { key: 'net_pay',       label: 'Net pay',          type: 'number', default: 0 },
-            { key: 'notes',         label: 'Notes',            type: 'textarea', span: true },
-          ]}
-          kpis={(rows) => {
-            const periods    = [...new Set(rows.map((r) => r.period))].length
-            const approved   = rows.filter((r) => ['approved','paid'].includes(r.status))
-            const totalGross = approved.reduce((s, r) => s + Number(r.gross_pay || 0), 0)
-            const totalNet   = approved.reduce((s, r) => s + Number(r.net_pay   || 0), 0)
-            return <>
-              <StatCard label="Payroll entries"  value={rows.length}          icon={Wallet} />
-              <StatCard label="Pay periods"      value={periods}              icon={Wallet} />
-              <StatCard label="Gross (approved)" value={money(totalGross, ccy)} icon={TrendingUp} />
-              <StatCard label="Net (approved)"   value={money(totalNet, ccy)} tone="ok" icon={Wallet} />
-            </>
-          }}
-        />
-      )}
+      {tab === 'payroll' && <Payroll ccy={ccy} />}
     </div>
   )
 }
