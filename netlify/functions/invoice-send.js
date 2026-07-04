@@ -31,7 +31,7 @@ exports.handler = async (event) => {
       ${inv.reference ? `<p style="color:#6b7280;font-size:13px">Reference: ${inv.reference}</p>` : ''}
       <p style="margin-top:16px">Kindly review and confirm approval at your earliest convenience. For any queries, reply to this email${org.contact_email ? ` or contact ${org.contact_email}` : ''}.</p>`
 
-    const ok = await sendBrevo({ to: [inv.customer_email], subject: `[${org.name}] Invoice ${inv.invoice_no} for approval — ${money(inv.total, ccy)}`, html: shell(org.name, org.accent_color, 'Invoice', body) })
+    const ok = await sendBrevo({ to: [inv.customer_email], cc: inv.cc_emails, subject: `[${org.name}] Invoice ${inv.invoice_no} for approval — ${money(inv.total, ccy)}`, html: shell(org.name, org.accent_color, 'Invoice', body) })
     if (ok) await sb.from('invoices').update({ sent: true, sent_at: new Date().toISOString(), status: inv.status === 'draft' ? 'sent' : inv.status }).eq('id', invoice_id)
     await sb.from('notification_log').insert({ org_id, alert_type: 'invoice_sent', subject: `Invoice ${inv.invoice_no}`, recipients: [inv.customer_email], status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok }) }

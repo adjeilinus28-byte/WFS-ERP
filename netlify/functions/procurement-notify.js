@@ -13,10 +13,11 @@ exports.handler = async (event) => {
     const sb = admin()
     const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
     const base = process.env.URL || process.env.DEPLOY_PRIME_URL || ''
-    let to, subject, body
+    let to, subject, body, cc
 
     if (kind === 'request_submitted' || kind === 'request_approved' || kind === 'request_declined') {
       const { data: pr } = await sb.from('purchase_requests').select('*').eq('id', request_id).single()
+      cc = pr?.cc_emails
       if (!pr) return { statusCode: 404, body: JSON.stringify({ error: 'request not found' }) }
 
       if (kind === 'request_submitted') {
@@ -40,6 +41,7 @@ exports.handler = async (event) => {
       }
     } else if (kind === 'po_to_supplier') {
       const { data: po } = await sb.from('purchase_orders').select('*').eq('id', po_id).single()
+      cc = po?.cc_emails
       if (!po) return { statusCode: 404, body: JSON.stringify({ error: 'PO not found' }) }
       const { data: sup } = po.supplier_id ? await sb.from('suppliers').select('*').eq('id', po.supplier_id).single() : { data: null }
       if (!sup?.email) return { statusCode: 400, body: JSON.stringify({ error: 'supplier has no email' }) }
@@ -68,7 +70,7 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'unknown event' }) }
     }
 
-    const ok = await sendBrevo({ to, subject, html: shell(org.name, org.accent_color, 'Procurement', body) })
+    const ok = await sendBrevo({ to, cc, subject, html: shell(org.name, org.accent_color, 'Procurement', body) })
     await sb.from('notification_log').insert({ org_id, alert_type: kind, subject, recipients: to, status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok, recipients: to.length }) }
   } catch (e) {

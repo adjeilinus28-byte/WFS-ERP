@@ -12,16 +12,21 @@ function admin() {
   })
 }
 
-async function sendBrevo({ to, subject, html }) {
+async function sendBrevo({ to, cc, subject, html }) {
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean).map((email) => ({ email }))
   if (recipients.length === 0) return false
+  // cc can be an array or a comma/semicolon separated string
+  const ccList = (Array.isArray(cc) ? cc : String(cc || '').split(/[,;]/))
+    .map((e) => (e || '').trim()).filter((e) => e && e.includes('@')).map((email) => ({ email }))
+  const payload = {
+    sender: { email: process.env.BREVO_SENDER_EMAIL, name: process.env.BREVO_SENDER_NAME || 'WFS Enterprise' },
+    to: recipients, subject, htmlContent: html,
+  }
+  if (ccList.length) payload.cc = ccList
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
-    body: JSON.stringify({
-      sender: { email: process.env.BREVO_SENDER_EMAIL, name: process.env.BREVO_SENDER_NAME || 'WFS Enterprise' },
-      to: recipients, subject, htmlContent: html,
-    }),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) console.error('[Brevo]', res.status, await res.text())
   return res.ok
