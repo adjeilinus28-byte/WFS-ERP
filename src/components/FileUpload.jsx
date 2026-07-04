@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 
 // Uploads to the 'employee-files' bucket under {org_id}/{entityId}/{field}-{ts}.
 // Stores a signed-URL-friendly path; returns a public-ish URL via createSignedUrl.
-export default function FileUpload({ label, value, onChange, entityId, field, accept = '*', image = false }) {
+export default function FileUpload({ label, value, onChange, entityId, field, accept = '*', image = false, bucket = 'employee-files' }) {
   const { activeOrgId } = useAuth()
   const inputRef = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -21,10 +21,10 @@ export default function FileUpload({ label, value, onChange, entityId, field, ac
     try {
       const ext = file.name.split('.').pop()
       const path = `${activeOrgId}/${entityId || 'new'}/${field}-${Date.now()}.${ext}`
-      const { error } = await supabase.storage.from('employee-files').upload(path, file, { upsert: true })
+      const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true })
       if (error) throw error
       // Signed URL valid for ~10 years (private bucket)
-      const { data: signed } = await supabase.storage.from('employee-files').createSignedUrl(path, 315360000)
+      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(path, 315360000)
       onChange(signed?.signedUrl || path, path)
     } catch (e2) {
       setErr(e2.message || 'Upload failed')
