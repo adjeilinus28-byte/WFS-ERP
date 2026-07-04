@@ -21,7 +21,8 @@ const inPeriod = (d, period) => {
 }
 
 export default function Issuance() {
-  const { role } = useAuth()
+  const { role, activeOrg } = useAuth()
+  const ccy = activeOrg?.currency || 'GHS'
   const toast = useToast()
   const { options: deptOptions } = useDepartments()
   const { rows, loading, insert, remove } = useTable('issuances', { order: { column: 'issue_date', ascending: false } })
@@ -97,8 +98,8 @@ export default function Issuance() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Issuances" value={filtered.length} icon={PackageMinus} sub={fPeriod.replace('_', ' ')} />
         <StatCard label="Units issued" value={num(totalQty)} icon={Layers} />
-        <StatCard label="Spend (period)" value={money(totalSpend)} tone="bad" icon={Wallet} />
-        <StatCard label="Avg per issue" value={money(filtered.length ? totalSpend / filtered.length : 0)} icon={TrendingDown} />
+        <StatCard label="Spend (period)" value={money(totalSpend, ccy)} tone="bad" icon={Wallet} />
+        <StatCard label="Avg per issue" value={money(filtered.length ? totalSpend / filtered.length : 0, ccy)} icon={TrendingDown} />
       </div>
 
       {/* Filters */}
@@ -139,7 +140,7 @@ export default function Issuance() {
                       <td className="td font-mono text-accent whitespace-nowrap">{r.issue_no}</td>
                       <td className="td">{r.item_name}<div className="font-mono text-[10px] text-ice-faint">{r.sku}</div></td>
                       <td className="td font-mono whitespace-nowrap">{num(r.qty)} {r.uom}</td>
-                      <td className="td font-mono">{money(r.total_cost)}</td>
+                      <td className="td font-mono">{money(r.total_cost, ccy)}</td>
                       <td className="td"><Badge>{(r.issued_to_type || '').replace('_', ' ')}</Badge>{r.issued_to && <div className="mt-0.5 text-xs text-ice-faint">{r.issued_to}</div>}</td>
                       <td className="td whitespace-nowrap">{date(r.issue_date)}</td>
                       {canWrite && <td className="td text-right"><button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><Trash2 size={14} /></button></td>}
@@ -162,7 +163,7 @@ export default function Issuance() {
                   <div key={i}>
                     <div className="mb-1 flex justify-between text-sm">
                       <span className="truncate text-ice/90">{name}</span>
-                      <span className="font-mono text-ice-dim">{money(v.cost)}</span>
+                      <span className="font-mono text-ice-dim">{money(v.cost, ccy)}</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-white/10">
                       <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
@@ -190,14 +191,14 @@ export default function Issuance() {
 
               {selItem && (
                 <div className="rounded-lg border border-white/10 bg-navy/50 px-3 py-2 text-sm">
-                  <div className="flex justify-between"><span className="text-ice-faint">Unit cost</span><span className="font-mono text-ice">{money(selItem.unit_cost)}</span></div>
+                  <div className="flex justify-between"><span className="text-ice-faint">Unit cost</span><span className="font-mono text-ice">{money(selItem.unit_cost, ccy)}</span></div>
                   <div className="flex justify-between"><span className="text-ice-faint">On hand</span><span className={`font-mono ${overStock ? 'text-bad' : 'text-ice'}`}>{num(selItem.qty_on_hand)} {selItem.uom}</span></div>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Quantity *"><input className="input" type="number" min="0" value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value })} /></Field>
-                <Field label="Line cost"><input className="input font-mono" value={money(lineCost)} disabled /></Field>
+                <Field label="Line cost"><input className="input font-mono" value={money(lineCost, ccy)} disabled /></Field>
               </div>
               {overStock && <p className="rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">Exceeds stock on hand — stock will go negative.</p>}
 
