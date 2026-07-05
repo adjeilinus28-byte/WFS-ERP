@@ -12,7 +12,7 @@ export const MODULES = [
   { key: 'procurement', label: 'Procurement',   icon: ShoppingCart,    path: '/procurement', section: 'Supply Chain' },
   { key: 'issuance',    label: 'Issuance',      icon: PackageMinus,    path: '/issuance',    section: 'Supply Chain' },
   { key: 'workforce',   label: 'Workforce',     icon: Users,           path: '/workforce',   section: 'People' },
-  { key: 'hr',          label: 'HR',            icon: UserCog,         path: '/hr',          section: 'People' },
+  { key: 'hr',          label: 'Leave',         icon: UserCog,         path: '/hr',          section: 'People' },
   { key: 'accounts',    label: 'Accounts',      icon: Landmark,        path: '/accounts',    section: 'Finance' },
   { key: 'hse',         label: 'HSE & Safety',  icon: ShieldAlert,     path: '/hse',         section: 'Compliance' },
   { key: 'reports',     label: 'Reports',       icon: BarChart3,       path: '/reports',     section: 'Insight' },
