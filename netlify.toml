@@ -22,3 +22,9 @@
 
 [functions."safety-reminders"]
   schedule = "0 7 * * *"   # daily 07:00 UTC — CCV action reminders + month-end KPI nudges
+
+[functions."catering-autoselect"]
+  schedule = "0 12 * * *"  # daily 12:00 UTC — auto-select meals at the 2-day cutoff
+
+[functions."catering-summary"]
+  schedule = "0 14 * * *"  # daily 14:00 UTC — department catering summary for next 2 days

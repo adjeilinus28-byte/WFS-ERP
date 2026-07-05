@@ -13,6 +13,7 @@ import Inventory from './pages/Inventory'
 import Procurement from './pages/Procurement'
 import Issuance from './pages/Issuance'
 import PPEPlanning from './pages/PPEPlanning'
+import Catering from './pages/Catering'
 import Workforce from './pages/Workforce'
 import HSE from './pages/HSE'
 import Reports from './pages/Reports'
@@ -53,6 +54,7 @@ function Gate() {
         <Route path="/procurement" element={<Procurement />} />
         <Route path="/issuance" element={<Issuance />} />
         <Route path="/ppe" element={<PPEPlanning />} />
+        <Route path="/catering" element={<Catering />} />
         <Route path="/workforce" element={<Workforce />} />
         <Route path="/hse" element={<HSE />} />
         <Route path="/reports" element={<Reports />} />
