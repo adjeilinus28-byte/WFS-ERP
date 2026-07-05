@@ -16,6 +16,7 @@ export default function ModuleScaffold({
   newLabel = 'New record',
   emptyTitle, emptyHint,
   beforeSave,                   // optional (payload) => payload  (e.g. inject defaults)
+  afterSave,                    // optional (record, isNew) => void (e.g. fire notification)
 }) {
   const { role } = useAuth()
   const toast = useToast()
@@ -29,9 +30,12 @@ export default function ModuleScaffold({
     setSaving(true)
     try {
       const body = beforeSave ? beforeSave(payload, drawer.row) : payload
-      if (drawer.row) { await update(drawer.row.id, body); toast.success('Updated') }
-      else { await insert(body); toast.success('Created') }
+      const isNew = !drawer.row
+      let record
+      if (drawer.row) { const [r] = await update(drawer.row.id, body); record = r || { ...drawer.row, ...body }; toast.success('Updated') }
+      else { const [r] = await insert(body); record = r; toast.success('Created') }
       setDrawer({ open: false, row: null })
+      if (afterSave && record) afterSave(record, isNew)
     } catch (e) {
       toast.error(e.message || 'Save failed')
     } finally { setSaving(false) }
