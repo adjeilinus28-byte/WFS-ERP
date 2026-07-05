@@ -181,6 +181,7 @@ export default function Workforce() {
             { key: 'name', label: 'Department name', required: true, span: true },
             { key: 'code', label: 'Code' },
             { key: 'head', label: 'Department head' },
+            { key: 'head_email', label: 'Head email (incident alerts)', type: 'email' },
             { key: 'cost_center', label: 'Cost centre' },
           ]}
           kpis={(rows) => {

@@ -217,6 +217,14 @@ export default function HSE() {
           newLabel="Log incident" emptyTitle="No incidents logged"
           emptyHint="Record near-misses, injuries, and environmental events with corrective actions."
           searchKeys={['incident_no', 'incident_type', 'location', 'reported_by']}
+          afterSave={(rec, isNew) => {
+            if (isNew && rec?.id) {
+              fetch('/.netlify/functions/incident-notify', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ org_id: rec.org_id, incident_id: rec.id }),
+              }).catch(() => {})
+            }
+          }}
           columns={[
             { key: 'incident_no', label: 'Ref', render: (v) => <span className="font-mono text-accent">{v}</span> },
             { key: 'incident_type', label: 'Type', render: (v) => <Badge>{v.replace('_', ' ')}</Badge> },

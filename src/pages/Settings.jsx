@@ -30,6 +30,8 @@ export default function Settings() {
       name: activeOrg.org_name, accent_color: activeOrg.accent_color,
       currency: activeOrg.currency, industry: activeOrg.industry,
       contact_email: activeOrg.contact_email || '',
+      hse_head_email: activeOrg.hse_head_email || '',
+      ops_head_email: activeOrg.ops_head_email || '',
     })
     setModules(activeOrg.enabled_modules || [])
   }, [activeOrgId])
@@ -82,6 +84,12 @@ export default function Settings() {
             </Field>
             <Field label="Contact email" span>
               <input className="input" value={form.contact_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
+            </Field>
+            <Field label="Head of HSE email (incident alerts)" span>
+              <input className="input" value={form.hse_head_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, hse_head_email: e.target.value })} placeholder="hse.head@company.com" />
+            </Field>
+            <Field label="Head of Operations email (incident alerts)" span>
+              <input className="input" value={form.ops_head_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, ops_head_email: e.target.value })} placeholder="ops.head@company.com" />
             </Field>
           </div>
           <div className="mt-4">
