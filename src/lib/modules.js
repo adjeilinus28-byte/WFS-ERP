@@ -1,11 +1,12 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus,
+  UserCog, Landmark, PackageMinus, Megaphone,
 } from 'lucide-react'
 
 export const MODULES = [
   { key: 'dashboard',   label: 'Command Deck', icon: LayoutDashboard, path: '/',            section: 'Overview' },
+  { key: 'news',        label: 'News Flash',     icon: Megaphone,       path: '/news',        section: 'Overview' },
   { key: 'assets',      label: 'Assets',        icon: Wrench,          path: '/assets',      section: 'Operations' },
   { key: 'work_orders', label: 'Work Orders',   icon: ClipboardList,   path: '/work-orders', section: 'Operations' },
   { key: 'inventory',   label: 'Inventory',     icon: Boxes,           path: '/inventory',   section: 'Supply Chain' },
@@ -20,11 +21,11 @@ export const MODULES = [
 ]
 
 export const INDUSTRY_PRESETS = {
-  mining:        ['dashboard','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
-  oil_gas:       ['dashboard','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
-  manufacturing: ['dashboard','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','reports','settings'],
-  logistics:     ['dashboard','assets','work_orders','inventory','issuance','workforce','hr','accounts','reports','settings'],
-  general:       ['dashboard','assets','inventory','workforce','hr','accounts','reports','settings'],
+  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
+  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
+  manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','reports','settings'],
+  logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','workforce','hr','accounts','reports','settings'],
+  general:       ['dashboard','news','assets','inventory','workforce','hr','accounts','reports','settings'],
 }
 
 export const moduleByKey = Object.fromEntries(MODULES.map((m) => [m.key, m]))
