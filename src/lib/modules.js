@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus, Megaphone,
+  UserCog, Landmark, PackageMinus, Megaphone, Shirt,
 } from 'lucide-react'
 
 export const MODULES = [
@@ -12,6 +12,7 @@ export const MODULES = [
   { key: 'inventory',   label: 'Inventory',     icon: Boxes,           path: '/inventory',   section: 'Supply Chain' },
   { key: 'procurement', label: 'Procurement',   icon: ShoppingCart,    path: '/procurement', section: 'Supply Chain' },
   { key: 'issuance',    label: 'Issuance',      icon: PackageMinus,    path: '/issuance',    section: 'Supply Chain' },
+  { key: 'ppe',         label: 'PPE Planning',  icon: Shirt,           path: '/ppe',         section: 'Supply Chain' },
   { key: 'workforce',   label: 'Workforce',     icon: Users,           path: '/workforce',   section: 'People' },
   { key: 'hr',          label: 'Leave',         icon: UserCog,         path: '/hr',          section: 'People' },
   { key: 'accounts',    label: 'Accounts',      icon: Landmark,        path: '/accounts',    section: 'Finance' },
@@ -21,10 +22,10 @@ export const MODULES = [
 ]
 
 export const INDUSTRY_PRESETS = {
-  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
-  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','hse','reports','settings'],
-  manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','workforce','hr','accounts','reports','settings'],
-  logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','workforce','hr','accounts','reports','settings'],
+  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','accounts','hse','reports','settings'],
+  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','accounts','hse','reports','settings'],
+  manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','accounts','reports','settings'],
+  logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','ppe','workforce','hr','accounts','reports','settings'],
   general:       ['dashboard','news','assets','inventory','workforce','hr','accounts','reports','settings'],
 }
 
