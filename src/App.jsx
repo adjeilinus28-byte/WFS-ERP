@@ -6,6 +6,7 @@ import AppShell from './components/AppShell'
 import Login from './pages/Login'
 import NoAccess from './pages/NoAccess'
 import Dashboard from './pages/Dashboard'
+import NewsFlashAdmin from './pages/NewsFlashAdmin'
 import Assets from './pages/Assets'
 import WorkOrders from './pages/WorkOrders'
 import Inventory from './pages/Inventory'
@@ -43,6 +44,7 @@ function Gate() {
   return (
     <AppShell>
       <Routes>
+        <Route path="/news" element={<NewsFlashAdmin />} />
         <Route path="/" element={<Dashboard />} />
         <Route path="/assets" element={<Assets />} />
         <Route path="/work-orders" element={<WorkOrders />} />
