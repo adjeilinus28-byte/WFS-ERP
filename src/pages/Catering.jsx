@@ -147,8 +147,17 @@ function MyOrders() {
 
 function MealSlot({ meal, date, locked, options, order, onPlace, ccy }) {
   const [open, setOpen] = useState(false)
+  const [vendorId, setVendorId] = useState(order?.vendor_id || '')
   const [sel, setSel] = useState(order?.menu_item_id || '')
   const [allergies, setAllergies] = useState(order?.allergies || '')
+
+  // Vendors available for this meal/day, then items for the chosen vendor
+  const vendors = useMemo(() => {
+    const m = {}
+    options.forEach((o) => { if (o.vendor_id) m[o.vendor_id] = o.food_vendors?.name || 'Vendor' })
+    return Object.entries(m).map(([id, name]) => ({ id, name }))
+  }, [options])
+  const vendorItems = options.filter((o) => o.vendor_id === vendorId)
 
   const commit = (itemId, noMeal) => {
     if (noMeal) { onPlace({ no_meal: true, menu_item_id: null, vendor_id: null, item_name: null, price: 0, allergies, status: 'placed', auto_selected: false }); setOpen(false); return }
@@ -156,6 +165,13 @@ function MealSlot({ meal, date, locked, options, order, onPlace, ccy }) {
     if (!item) return
     onPlace({ no_meal: false, menu_item_id: item.id, vendor_id: item.vendor_id, item_name: item.name, price: item.price, allergies, status: 'placed', auto_selected: false })
     setOpen(false)
+  }
+
+  const openPicker = () => {
+    setOpen(!open)
+    setVendorId(order?.vendor_id || (vendors.length === 1 ? vendors[0].id : ''))
+    setSel(order?.menu_item_id || '')
+    setAllergies(order?.allergies || '')
   }
 
   const label = meal[0].toUpperCase() + meal.slice(1)
@@ -176,20 +192,37 @@ function MealSlot({ meal, date, locked, options, order, onPlace, ccy }) {
       ) : <div className="text-sm text-ice-faint">{options.length ? 'Not ordered' : 'No menu'}</div>}
 
       {!locked && options.length > 0 && (
-        <button onClick={() => { setOpen(!open); setSel(order?.menu_item_id || '') }} className="mt-2 w-full rounded-md bg-white/5 py-1 text-xs text-ice-dim hover:text-ice">
+        <button onClick={openPicker} className="mt-2 w-full rounded-md bg-white/5 py-1 text-xs text-ice-dim hover:text-ice">
           {order ? 'Change' : 'Choose'}
         </button>
       )}
 
       {open && (
         <div className="mt-2 space-y-2 rounded-lg border border-white/10 bg-navy/60 p-2">
-          {options.map((o) => (
-            <button key={o.id} onClick={() => setSel(o.id)}
-              className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs ${sel === o.id ? 'bg-accent-soft text-accent' : 'text-ice-dim hover:bg-white/5'}`}>
-              <span>{o.name}<span className="block text-[9px] text-ice-faint">{o.food_vendors?.name}</span></span>
-              <span className="font-mono">{money(o.price, ccy)}</span>
-            </button>
-          ))}
+          {/* Step 1 — vendor */}
+          <div>
+            <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ice-faint">1 · Vendor</div>
+            <Select value={vendorId} onChange={(e) => { setVendorId(e.target.value); setSel('') }}
+              options={[{ value: '', label: 'Select vendor…' }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} />
+          </div>
+
+          {/* Step 2 — item (only after a vendor is chosen) */}
+          {vendorId && (
+            <div>
+              <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ice-faint">2 · Meal</div>
+              <div className="space-y-1">
+                {vendorItems.length === 0 ? <p className="px-1 text-[11px] text-ice-faint">No {meal} items from this vendor.</p>
+                : vendorItems.map((o) => (
+                  <button key={o.id} onClick={() => setSel(o.id)}
+                    className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs ${sel === o.id ? 'bg-accent-soft text-accent' : 'text-ice-dim hover:bg-white/5'}`}>
+                    <span>{o.name}</span>
+                    <span className="font-mono">{money(o.price, ccy)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <input value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Allergies (optional)"
             className="w-full rounded-md border border-white/10 bg-navy/50 px-2 py-1 text-xs text-ice placeholder:text-ice-faint/60 outline-none" />
           <div className="flex gap-1.5">
