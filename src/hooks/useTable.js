@@ -33,9 +33,10 @@ export function useTable(table, { select = '*', order = { column: 'created_at', 
   }, [table, activeOrgId, refresh])
 
   const update = useCallback(async (id, patch) => {
-    const { error } = await supabase.from(table).update(patch).eq('id', id).eq('org_id', activeOrgId)
+    const { data, error } = await supabase.from(table).update(patch).eq('id', id).eq('org_id', activeOrgId).select()
     if (error) throw error
     await refresh()
+    return data
   }, [table, activeOrgId, refresh])
 
   const remove = useCallback(async (id) => {
