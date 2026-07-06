@@ -32,6 +32,9 @@ export default function Settings() {
       contact_email: activeOrg.contact_email || '',
       hse_head_email: activeOrg.hse_head_email || '',
       ops_head_email: activeOrg.ops_head_email || '',
+      iro_email: activeOrg.iro_email || '',
+      counsellor_email: activeOrg.counsellor_email || '',
+      wellbeing_note: activeOrg.wellbeing_note || '',
     })
     setModules(activeOrg.enabled_modules || [])
   }, [activeOrgId])
@@ -90,6 +93,15 @@ export default function Settings() {
             </Field>
             <Field label="Head of Operations email (incident alerts)" span>
               <input className="input" value={form.ops_head_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, ops_head_email: e.target.value })} placeholder="ops.head@company.com" />
+            </Field>
+            <Field label="Industrial Relations officer email" span>
+              <input className="input" value={form.iro_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, iro_email: e.target.value })} placeholder="iro@company.com" />
+            </Field>
+            <Field label="Counsellor email" span>
+              <input className="input" value={form.counsellor_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, counsellor_email: e.target.value })} placeholder="counsellor@company.com" />
+            </Field>
+            <Field label="Wellbeing / support note (shown to workers)" span>
+              <textarea className="input min-h-[60px]" value={form.wellbeing_note || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, wellbeing_note: e.target.value })} placeholder="e.g. Our Employee Assistance Programme is available 24/7 on ..." />
             </Field>
           </div>
           <div className="mt-4">
