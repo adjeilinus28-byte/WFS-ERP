@@ -19,10 +19,15 @@ exports.handler = async () => {
       const byCat = {}
       concerns.forEach((c) => { const k = c.category || 'unclassified'; byCat[k] = (byCat[k] || 0) + 1 })
       const urgent = open.filter((c) => c.severity === 'urgent' || c.severity === 'high')
+      const stale = open.filter((c) => (Date.now() - new Date(c.updated_at || c.created_at)) / 86400000 >= 7)
+      const rated = concerns.filter((c) => c.feedback_rating)
+      const avgRating = rated.length ? (rated.reduce((s, c) => s + Number(c.feedback_rating), 0) / rated.length).toFixed(1) : null
       const rows = open.slice(0, 40).map((c) => `<tr><td style="padding:3px 8px;border-bottom:1px solid #eee">${c.case_id}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${c.category || '—'}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${c.severity}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${c.status}</td></tr>`).join('')
       const body = `<p>Weekly Industrial Relations summary.</p>
-        <p><b>${newThisWeek.length}</b> new this week · <b>${open.length}</b> open · <b>${urgent.length}</b> high/urgent</p>
+        <p><b>${newThisWeek.length}</b> new this week · <b>${open.length}</b> open · <b>${urgent.length}</b> high/urgent · <b>${stale.length}</b> stale (7d+)</p>
+        ${avgRating ? `<p>Resolution satisfaction: <b>${avgRating}/5</b> (${rated.length} rated)</p>` : ''}
         <p style="margin-top:8px"><b>By category:</b> ${Object.entries(byCat).map(([k, v]) => `${k} (${v})`).join(', ') || '—'}</p>
+        ${stale.length ? `<p style="color:#b91c1c"><b>Ageing:</b> ${stale.length} open case(s) untouched 7+ days — ${stale.slice(0, 8).map((c) => c.case_id).join(', ')}.</p>` : ''}
         ${urgent.length ? `<p style="color:#b91c1c"><b>Attention:</b> ${urgent.length} case(s) marked high/urgent need review.</p>` : ''}
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px"><tr><td style="padding:3px 8px;font-weight:bold">Case</td><td style="padding:3px 8px;font-weight:bold">Category</td><td style="padding:3px 8px;font-weight:bold">Severity</td><td style="padding:3px 8px;font-weight:bold">Status</td></tr>${rows}</table>`
       const ok = await sendBrevo({ to: [org.iro_email], subject: `[${org.name}] Weekly IR report — ${open.length} open`, html: shell(org.name, org.accent_color, 'IR Weekly Report', body) })
