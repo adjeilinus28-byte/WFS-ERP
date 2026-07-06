@@ -10,7 +10,7 @@ import { PageHeader, StatCard, Badge, statusTone, Field, Select, useToast, Empty
 import { date } from '../lib/format'
 import {
   Inbox, ShieldQuestion, Heart, Search, Send, Phone, Check, AlertTriangle, Lock, Copy,
-  MessageSquare, UserCheck, ClipboardList, TrendingUp,
+  MessageSquare, UserCheck, ClipboardList, TrendingUp, Clock,
 } from 'lucide-react'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
@@ -120,6 +120,14 @@ function CaseLookup() {
     if (ok) { toast.success('Consent recorded'); lookup() }
   }
 
+  const [rating, setRating] = useState(0)
+  const [fbComment, setFbComment] = useState('')
+  const submitFeedback = async () => {
+    if (!rating) { toast.error('Please pick a rating'); return }
+    const { data: ok } = await supabase.rpc('ir_worker_feedback', { p_case_id: caseId.trim(), p_code: code.trim(), p_rating: rating, p_comment: fbComment })
+    if (ok) { toast.success('Thank you for your feedback'); setRating(0); setFbComment(''); lookup() } else toast.error('Could not submit')
+  }
+
   return (
     <div className="panel mx-auto max-w-lg p-6">
       <div className="mb-4 flex items-center gap-2"><Search size={18} className="text-accent" /><h3 className="font-display text-lg font-bold text-ice">Check your case</h3></div>
@@ -157,6 +165,22 @@ function CaseLookup() {
             <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Write a reply…" className="input flex-1" />
             <button onClick={send} className="btn-primary btn-sm"><Send size={14} /></button>
           </div>
+
+          {/* Resolution feedback — shown once the case is closed and not yet rated */}
+          {data.is_closed && !data.has_feedback && (
+            <div className="mt-4 rounded-lg border border-accent-line bg-accent-soft/40 p-4">
+              <div className="mb-2 text-sm font-semibold text-ice">Your case is closed — was it handled well?</div>
+              <p className="mb-3 text-xs text-ice-faint">Your feedback is anonymous and helps improve how concerns are handled.</p>
+              <div className="mb-3 flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} onClick={() => setRating(n)} className={`grid h-9 w-9 place-items-center rounded-lg border text-sm font-bold transition ${rating >= n ? 'border-accent bg-accent text-navy' : 'border-white/10 text-ice-faint hover:text-ice'}`}>{n}</button>
+                ))}
+              </div>
+              <textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} placeholder="Any comment (optional)" className="input mb-2 min-h-[60px]" />
+              <button onClick={submitFeedback} className="btn-primary btn-sm w-full">Submit feedback</button>
+            </div>
+          )}
+          {data.has_feedback && <div className="mt-4 rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-center text-xs text-ok">Thank you — your feedback has been recorded.</div>}
         </div>
       )}
     </div>
@@ -170,10 +194,21 @@ function IROView() {
   const { rows, loading, refresh } = useTable('ir_concerns', { order: { column: 'created_at', ascending: false } })
   const [sel, setSel] = useState(null)
   const [fStatus, setFStatus] = useState('')
+  const [staleOnly, setStaleOnly] = useState(false)
 
-  const filtered = rows.filter((r) => !fStatus || r.status === fStatus)
+  // Case ageing: days since last update, flagged when open and stale
+  const ageDays = (r) => Math.floor((Date.now() - new Date(r.updated_at || r.created_at)) / 86400000)
+  const isStale = (r) => !['resolved', 'closed'].includes(r.status) && ageDays(r) >= 7
+
+  const filtered = rows.filter((r) => (!fStatus || r.status === fStatus) && (!staleOnly || isStale(r)))
   const openCount = rows.filter((r) => !['resolved', 'closed'].includes(r.status)).length
-  const urgent = rows.filter((r) => ['high', 'urgent'].includes(r.severity) && !['resolved', 'closed'].includes(r.status)).length
+  const urgent = rows.filter((r) => ['high', 'urgent'].includes(r.severity) && !['resolved', 'closed'].includes(r.status))
+
+  const staleCases = rows.filter(isStale)
+
+  // Satisfaction from resolution feedback
+  const rated = rows.filter((r) => r.feedback_rating)
+  const avgRating = rated.length ? (rated.reduce((s, r) => s + Number(r.feedback_rating), 0) / rated.length) : null
 
   const patch = async (id, p) => { try { const { error } = await supabase.from('ir_concerns').update({ ...p, updated_at: new Date().toISOString() }).eq('id', id); if (error) throw error; refresh(); if (sel?.id === id) setSel({ ...sel, ...p }) } catch (e) { toast.error(e.message) } }
 
@@ -190,18 +225,23 @@ function IROView() {
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         <StatCard label="Total concerns" value={rows.length} icon={Inbox} />
         <StatCard label="Open" value={openCount} tone={openCount ? 'warn' : 'ok'} icon={ClipboardList} />
-        <StatCard label="High / urgent" value={urgent} tone={urgent ? 'bad' : 'ok'} icon={AlertTriangle} />
+        <StatCard label="High / urgent" value={urgent.length} tone={urgent.length ? 'bad' : 'ok'} icon={AlertTriangle} />
         <StatCard label="Referred" value={rows.filter((r) => r.referred_to_counsellor).length} icon={UserCheck} />
+        <StatCard label="Stale (7d+)" value={staleCases.length} tone={staleCases.length ? 'bad' : 'ok'} icon={Clock} />
+        <StatCard label="Satisfaction" value={avgRating ? `${avgRating.toFixed(1)}/5` : '—'} tone={avgRating && avgRating >= 3.5 ? 'ok' : avgRating ? 'warn' : 'mute'} icon={TrendingUp} sub={`${rated.length} rated`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="panel overflow-hidden lg:col-span-2">
           <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
             <span className="eyebrow">Concerns</span>
-            <div className="w-40"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStaleOnly(!staleOnly)} className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${staleOnly ? 'border-bad/40 bg-bad/10 text-bad' : 'border-white/10 text-ice-dim hover:text-ice'}`}>Stale only</button>
+              <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+            </div>
           </div>
           {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
           : filtered.length === 0 ? <EmptyState title="No concerns" hint="Submitted concerns appear here for review and classification." />
@@ -210,7 +250,7 @@ function IROView() {
               {filtered.map((r) => (
                 <button key={r.id} onClick={() => setSel(r)} className={`flex w-full items-center gap-3 border-b border-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.03] ${sel?.id === r.id ? 'bg-white/[0.04]' : ''}`}>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><span className="font-mono text-xs text-accent">{r.case_id}</span>{r.anonymous && <Lock size={11} className="text-ice-faint" />}{['high', 'urgent'].includes(r.severity) && <Badge tone="bad">{r.severity}</Badge>}</div>
+                    <div className="flex items-center gap-2"><span className="font-mono text-xs text-accent">{r.case_id}</span>{r.anonymous && <Lock size={11} className="text-ice-faint" />}{['high', 'urgent'].includes(r.severity) && <Badge tone="bad">{r.severity}</Badge>}{isStale(r) && <Badge tone="bad"><Clock size={9} className="mr-0.5 inline" />{ageDays(r)}d</Badge>}</div>
                     <div className="truncate text-sm text-ice">{r.subject}</div>
                   </div>
                   <Badge tone={statusTone(r.status)}>{r.status}</Badge>
