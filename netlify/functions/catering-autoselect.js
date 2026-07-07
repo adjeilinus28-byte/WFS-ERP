@@ -27,6 +27,29 @@ exports.handler = async () => {
       .eq('org_id', orgId).eq('status', 'approved').lte('start_date', target).gte('end_date', target)
     const onLeave = new Set((leave || []).map((l) => l.employee_id))
 
+    // Shift data: skip employees whose shift on the target date is 'off',
+    // unless they have an approved callout for that day.
+    const [{ data: pats }, { data: assigns }, { data: ovs }, { data: cls }] = await Promise.all([
+      sb.from('shift_patterns').select('*').eq('org_id', orgId),
+      sb.from('employee_shift_assignments').select('*').eq('org_id', orgId),
+      sb.from('shift_overrides').select('*').eq('org_id', orgId).eq('shift_date', target),
+      sb.from('callout_requests').select('employee_id, status').eq('org_id', orgId).eq('service_date', target),
+    ])
+    const approvedCallout = new Set((cls || []).filter((c) => c.status === 'approved').map((c) => c.employee_id))
+    const shiftOf = (empId) => {
+      const ov = (ovs || []).find((o) => o.employee_id === empId)
+      if (ov) return ov.shift
+      const mine = (assigns || []).filter((a) => a.employee_id === empId)
+        .sort((a, b) => new Date(b.effective_from) - new Date(a.effective_from))
+      const a = mine.find((x) => new Date(x.effective_from) <= new Date(target))
+      if (!a) return null
+      const p = (pats || []).find((x) => x.id === a.pattern_id)
+      const cyc = Array.isArray(p?.cycle) ? p.cycle : []
+      if (!cyc.length) return null
+      const diff = Math.round((new Date(target) - new Date(p.anchor_date)) / 86400000)
+      return cyc[((diff % cyc.length) + cyc.length) % cyc.length]
+    }
+
     // Existing orders for the target date
     const { data: existing } = await sb.from('food_orders').select('employee_id, meal_type').eq('org_id', orgId).eq('service_date', target)
     const has = new Set((existing || []).map((o) => `${o.employee_id}:${o.meal_type}`))
@@ -37,6 +60,7 @@ exports.handler = async () => {
 
     for (const emp of emps || []) {
       if (onLeave.has(emp.id)) continue
+      if (shiftOf(emp.id) === 'off' && !approvedCallout.has(emp.id)) continue
       for (const mt of mealTypes) {
         if (has.has(`${emp.id}:${mt}`)) continue   // already ordered
         // Most-frequent item name for this weekday + meal type

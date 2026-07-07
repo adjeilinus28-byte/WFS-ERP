@@ -10,8 +10,9 @@ import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from
 import ModuleScaffold from '../components/ModuleScaffold'
 import { money, num } from '../lib/format'
 import {
-  UtensilsCrossed, Store, CalendarDays, Lock, AlertCircle, Plus, X, Check, Ban, TrendingUp, Users, ChefHat,
+  UtensilsCrossed, Store, CalendarDays, Lock, AlertCircle, Plus, X, Check, Ban, TrendingUp, Users, ChefHat, Moon, PhoneCall,
 } from 'lucide-react'
+import { buildShiftContext, shiftOn } from '../lib/shifts'
 
 const MEALS = ['breakfast', 'lunch', 'dinner']
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
@@ -20,7 +21,7 @@ const CUTOFF_DAYS = 2
 
 function Tabs({ tab, setTab, canManage }) {
   const items = [['order', 'My Orders'], ['dashboard', 'Order Dashboard']]
-  if (canManage) { items.push(['vendors', 'Vendors'], ['menu', 'Menu Manager']) }
+  if (canManage) { items.push(['callouts', 'Callout Approvals'], ['vendors', 'Vendors'], ['menu', 'Menu Manager']) }
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -40,6 +41,8 @@ function MyOrders() {
   const [menus, setMenus] = useState([])
   const [orders, setOrders] = useState([])
   const [leaveDates, setLeaveDates] = useState(new Set())
+  const [offDates, setOffDates] = useState(new Set())
+  const [callouts, setCallouts] = useState([])
   const [loading, setLoading] = useState(true)
 
   // 7 upcoming days
@@ -54,10 +57,14 @@ function MyOrders() {
   const load = async () => {
     if (!activeOrgId) return
     setLoading(true)
-    const [{ data: m }, { data: o }, { data: lv }] = await Promise.all([
+    const [{ data: m }, { data: o }, { data: lv }, { data: pats }, { data: assigns }, { data: ovs }, { data: cls }] = await Promise.all([
       supabase.from('menu_items').select('*, food_vendors(name)').eq('org_id', activeOrgId).in('service_date', days).eq('available', true),
       supabase.from('food_orders').select('*').eq('org_id', activeOrgId).in('service_date', days),
       me ? supabase.from('leave_requests').select('start_date,end_date').eq('org_id', activeOrgId).eq('employee_id', me.id).eq('status', 'approved') : Promise.resolve({ data: [] }),
+      supabase.from('shift_patterns').select('*').eq('org_id', activeOrgId),
+      me ? supabase.from('employee_shift_assignments').select('*').eq('org_id', activeOrgId).eq('employee_id', me.id) : Promise.resolve({ data: [] }),
+      me ? supabase.from('shift_overrides').select('*').eq('employee_id', me.id).in('shift_date', days) : Promise.resolve({ data: [] }),
+      me ? supabase.from('callout_requests').select('*').eq('employee_id', me.id).in('service_date', days) : Promise.resolve({ data: [] }),
     ])
     setMenus(m || [])
     setOrders((o || []).filter((r) => me && r.employee_id === me.id))
@@ -65,6 +72,12 @@ function MyOrders() {
     const set = new Set()
     ;(lv || []).forEach((l) => { let d = new Date(l.start_date); const end = new Date(l.end_date); while (d <= end) { set.add(iso(d)); d.setDate(d.getDate() + 1) } })
     setLeaveDates(set)
+    // Shift context: which of the 7 days are off days
+    if (me && (assigns || []).length) {
+      const ctx = buildShiftContext(me.id, assigns, pats || [], ovs || [])
+      setOffDates(new Set(days.filter((d) => shiftOn(ctx, d) === 'off')))
+    } else setOffDates(new Set())
+    setCallouts(cls || [])
     setLoading(false)
   }
   useEffect(() => { if (me !== null || employees.length) load() }, [activeOrgId, me, days.join(',')])
@@ -72,11 +85,32 @@ function MyOrders() {
   const isLocked = (date) => { const cutoff = new Date(); cutoff.setDate(cutoff.getDate() + CUTOFF_DAYS); return new Date(date) < cutoff }
   const orderFor = (date, meal) => orders.find((o) => o.service_date === date && o.meal_type === meal)
   const menuFor = (date, meal) => menus.filter((m) => m.service_date === date && m.meal_type === meal)
+  const calloutFor = (date) => callouts.find((c) => c.service_date === date)
+  const canOrderOffDay = (date) => calloutFor(date)?.status === 'approved'
+
+  const requestCallout = async (date) => {
+    if (!me) return
+    const reason = window.prompt('Reason for the callout (working on your off day):', '') || ''
+    try {
+      const { data, error } = await supabase.from('callout_requests').insert({
+        org_id: activeOrgId, employee_id: me.id, employee_name: me.full_name,
+        department: me.department, service_date: date, reason,
+      }).select().single()
+      if (error) throw error
+      fetch('/.netlify/functions/catering-callout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: activeOrgId, callout_id: data.id, event: 'requested' }),
+      }).catch(() => {})
+      toast.success('Callout requested — your supervisor has been notified')
+      load()
+    } catch (e) { toast.error(e.message.includes('duplicate') ? 'A callout for this day already exists' : e.message) }
+  }
 
   const place = async (date, meal, payload) => {
     if (!me) { toast.error('Your account is not linked to an employee record'); return }
     if (isLocked(date)) { toast.error('This day is locked (within 2-day cutoff)'); return }
     if (leaveDates.has(date)) { toast.error("You're on leave that day"); return }
+    if (offDates.has(date) && !canOrderOffDay(date)) { toast.error('Off day — meals need an approved callout'); return }
     const existing = orderFor(date, meal)
     const base = {
       org_id: activeOrgId, employee_id: me.id, employee_name: me.full_name, department: me.department,
@@ -103,7 +137,7 @@ function MyOrders() {
   return (
     <>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Days open" value={days.filter((d) => !isLocked(d) && !leaveDates.has(d)).length} icon={CalendarDays} />
+        <StatCard label="Days open" value={days.filter((d) => !isLocked(d) && !leaveDates.has(d) && (!offDates.has(d) || canOrderOffDay(d))).length} icon={CalendarDays} />
         <StatCard label="Meals ordered" value={orderedCount} icon={UtensilsCrossed} />
         <StatCard label="Est. spend" value={money(spend, ccy)} icon={TrendingUp} />
         <StatCard label="On-leave days" value={days.filter((d) => leaveDates.has(d)).length} icon={Ban} />
@@ -115,19 +149,35 @@ function MyOrders() {
           {days.map((date) => {
             const locked = isLocked(date)
             const onLeave = leaveDates.has(date)
+            const isOff = offDates.has(date)
+            const callout = calloutFor(date)
+            const offBlocked = isOff && callout?.status !== 'approved'
             const dObj = new Date(date)
             return (
-              <div key={date} className={`panel p-4 ${onLeave ? 'opacity-60' : ''}`}>
+              <div key={date} className={`panel p-4 ${(onLeave || offBlocked) ? 'opacity-70' : ''}`}>
                 <div className="mb-3 flex items-center justify-between">
                   <div className="font-display text-base font-bold text-ice">
                     {dObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
                   </div>
                   {onLeave ? <Badge tone="mute"><Ban size={11} className="mr-1 inline" />On leave</Badge>
+                  : isOff && callout?.status === 'approved' ? <Badge tone="ok">Callout approved</Badge>
+                  : isOff ? <Badge tone="mute"><Moon size={11} className="mr-1 inline" />Off day</Badge>
                   : locked ? <Badge tone="warn"><Lock size={11} className="mr-1 inline" />Locked</Badge>
                   : <Badge tone="ok">Open</Badge>}
                 </div>
                 {onLeave ? <p className="text-sm text-ice-faint">No meals — you're on approved leave.</p>
-                : (
+                : offBlocked ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm text-ice-faint">
+                      {callout?.status === 'pending' ? 'Callout requested — waiting for supervisor approval.'
+                      : callout?.status === 'declined' ? 'Callout declined — no meals this day.'
+                      : "Off day — no meals unless you're called out to work."}
+                    </p>
+                    {!callout && !locked && (
+                      <button onClick={() => requestCallout(date)} className="btn-ghost btn-sm"><PhoneCall size={13} /> Request callout meal</button>
+                    )}
+                  </div>
+                ) : (
                   <div className="grid gap-3 sm:grid-cols-3">
                     {MEALS.map((meal) => (
                       <MealSlot key={meal} meal={meal} date={date} locked={locked}
@@ -399,6 +449,63 @@ function MenuManager() {
   )
 }
 
+// ── Callout approvals (supervisors / dept heads) ─────────────────────────────
+function CalloutApprovals() {
+  const { activeOrgId, user } = useAuth()
+  const toast = useToast()
+  const [reqs, setReqs] = useState([])
+  const [showAll, setShowAll] = useState(false)
+
+  const load = () => {
+    if (!activeOrgId) return
+    supabase.from('callout_requests').select('*').eq('org_id', activeOrgId)
+      .gte('service_date', iso(new Date())).order('service_date')
+      .then(({ data }) => setReqs(data || []))
+  }
+  useEffect(load, [activeOrgId])
+
+  const decide = async (r, status) => {
+    try {
+      const { error } = await supabase.from('callout_requests').update({
+        status, decided_by: user?.email, decided_at: new Date().toISOString(),
+      }).eq('id', r.id)
+      if (error) throw error
+      fetch('/.netlify/functions/catering-callout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org_id: activeOrgId, callout_id: r.id, event: 'decided' }),
+      }).catch(() => {})
+      toast.success(status === 'approved' ? 'Callout approved — worker can order meals' : 'Callout declined')
+      load()
+    } catch (e) { toast.error(e.message) }
+  }
+
+  const shown = showAll ? reqs : reqs.filter((r) => r.status === 'pending')
+
+  return (
+    <div className="panel overflow-hidden">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+        <span className="eyebrow">Callout meal requests</span>
+        <button onClick={() => setShowAll(!showAll)} className="text-xs text-ice-dim hover:text-ice">{showAll ? 'Pending only' : 'Show all'}</button>
+      </div>
+      {shown.length === 0 ? <EmptyState title="No pending callouts" hint="Workers on off days can request a callout meal; approvals happen here." />
+      : shown.map((r) => (
+        <div key={r.id} className="flex flex-wrap items-center gap-3 border-b border-white/[0.04] px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-ice">{r.employee_name} <span className="font-normal text-ice-faint">· {r.department || '—'}</span></div>
+            <div className="text-xs text-ice-faint">{new Date(r.service_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}{r.reason ? ` — ${r.reason}` : ''}</div>
+          </div>
+          {r.status === 'pending' ? (
+            <div className="flex gap-2">
+              <button onClick={() => decide(r, 'approved')} className="btn-primary btn-sm"><Check size={13} /> Approve</button>
+              <button onClick={() => decide(r, 'declined')} className="btn-ghost btn-sm"><X size={13} /> Decline</button>
+            </div>
+          ) : <Badge tone={r.status === 'approved' ? 'ok' : 'mute'}>{r.status}</Badge>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function Catering() {
   const { role } = useAuth()
@@ -441,6 +548,7 @@ export default function Catering() {
         />
       )}
       {tab === 'menu' && canManage && <MenuManager />}
+      {tab === 'callouts' && canManage && <CalloutApprovals />}
     </div>
   )
 }

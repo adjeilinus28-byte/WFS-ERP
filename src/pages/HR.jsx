@@ -8,7 +8,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
-import { workingDays, noticeDays } from '../lib/workdays'
+import { workingDays, noticeDays, isHoliday } from '../lib/workdays'
+import { buildShiftContext, shiftAwareWorkingDays } from '../lib/shifts'
 import {
   CalendarCheck, CalendarX, Users, Check, X, Plus, AlertTriangle, Clock, Wallet, Layers,
   ChevronLeft, ChevronRight, CalendarDays,
@@ -62,7 +63,26 @@ function Requests() {
 
   const emp = employees.find((e) => e.id === form.employee_id)
   const lt = activeTypes.find((t) => t.name === form.leave_type)
-  const wd = useMemo(() => workingDays(form.start_date, form.end_date), [form.start_date, form.end_date])
+  // Shift data — the working-day count respects the employee's off days
+  const { rows: shiftPatterns } = useTable('shift_patterns')
+  const { rows: shiftAssignments } = useTable('employee_shift_assignments')
+  const [shiftOverrides, setShiftOverrides] = useState([])
+  useEffect(() => {
+    if (!form.employee_id || !form.start_date || !form.end_date) { setShiftOverrides([]); return }
+    supabase.from('shift_overrides').select('*').eq('employee_id', form.employee_id)
+      .gte('shift_date', form.start_date).lte('shift_date', form.end_date)
+      .then(({ data }) => setShiftOverrides(data || []))
+  }, [form.employee_id, form.start_date, form.end_date])
+
+  const hasShiftPattern = shiftAssignments.some((a) => a.employee_id === form.employee_id)
+  const wd = useMemo(() => {
+    if (!form.start_date || !form.end_date) return 0
+    if (form.employee_id && hasShiftPattern) {
+      const ctx = buildShiftContext(form.employee_id, shiftAssignments, shiftPatterns, shiftOverrides)
+      return shiftAwareWorkingDays(form.start_date, form.end_date, ctx, { isHoliday })
+    }
+    return workingDays(form.start_date, form.end_date)
+  }, [form.start_date, form.end_date, form.employee_id, hasShiftPattern, shiftAssignments, shiftPatterns, shiftOverrides])
   const notice = noticeDays(form.start_date)
   const noticeOk = !lt || notice >= (lt.requires_notice_days || 0)
 

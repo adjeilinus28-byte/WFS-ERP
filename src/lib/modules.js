@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake,
+  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock,
 } from 'lucide-react'
 
 export const MODULES = [
@@ -14,6 +14,7 @@ export const MODULES = [
   { key: 'issuance',    label: 'Issuance',      icon: PackageMinus,    path: '/issuance',    section: 'Supply Chain' },
   { key: 'ppe',         label: 'PPE Planning',  icon: Shirt,           path: '/ppe',         section: 'Supply Chain' },
   { key: 'workforce',   label: 'Workforce',     icon: Users,           path: '/workforce',   section: 'People' },
+  { key: 'shifts',      label: 'Shifts',        icon: CalendarClock,   path: '/shifts',      section: 'People' },
   { key: 'hr',          label: 'Leave',         icon: UserCog,         path: '/hr',          section: 'People' },
   { key: 'catering',    label: 'Catering',      icon: UtensilsCrossed, path: '/catering',    section: 'People' },
   { key: 'ir',          label: 'Relations',     icon: HeartHandshake,  path: '/relations',   section: 'People' },
@@ -24,11 +25,11 @@ export const MODULES = [
 ]
 
 export const INDUSTRY_PRESETS = {
-  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','catering','ir','accounts','hse','reports','settings'],
-  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','catering','ir','accounts','hse','reports','settings'],
-  manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','hr','catering','ir','accounts','reports','settings'],
-  logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','ppe','workforce','hr','catering','ir','accounts','reports','settings'],
-  general:       ['dashboard','news','assets','inventory','workforce','hr','catering','ir','accounts','reports','settings'],
+  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','reports','settings'],
+  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','reports','settings'],
+  manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','reports','settings'],
+  logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','reports','settings'],
+  general:       ['dashboard','news','assets','inventory','workforce','shifts','hr','catering','ir','accounts','reports','settings'],
 }
 
 export const moduleByKey = Object.fromEntries(MODULES.map((m) => [m.key, m]))
