@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
+import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { buildShiftContext, shiftOn } from '../lib/shifts'
-import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban } from 'lucide-react'
+import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search } from 'lucide-react'
 
 const SHIFTS = ['day', 'night', 'off']
 const SHIFT_META = {
@@ -166,13 +167,19 @@ function Roster() {
   const { rows: employees } = useTable('employees')
   const { rows: patterns } = useTable('shift_patterns')
   const { rows: assignments } = useTable('employee_shift_assignments')
+  const { options: deptOptions } = useDepartments()
   const [overrides, setOverrides] = useState([])
   const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [savingCell, setSavingCell] = useState(null)
+  const [dept, setDept] = useState('')
+  const [patternFilter, setPatternFilter] = useState('')
+  const [search, setSearch] = useState('')
   const canWrite = ['owner', 'admin', 'manager', 'supervisor'].includes(role)
 
   const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate()
   const monthDates = Array.from({ length: daysInMonth }, (_, i) => iso(new Date(Date.UTC(cursor.y, cursor.m, i + 1))))
   const monthName = new Date(cursor.y, cursor.m, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const todayISO = iso(new Date())
 
   const loadOverrides = () => {
     if (!activeOrgId) return
@@ -185,22 +192,44 @@ function Roster() {
   const cycleOverride = async (emp, dateISO, current) => {
     if (!canWrite) return
     const next = SHIFTS[(SHIFTS.indexOf(current || 'day') + 1) % SHIFTS.length]
+    const cellKey = `${emp.id}:${dateISO}`
+    setSavingCell(cellKey)
     try {
       const { error } = await supabase.from('shift_overrides').upsert(
         { org_id: activeOrgId, employee_id: emp.id, shift_date: dateISO, shift: next, reason: 'manual' },
         { onConflict: 'employee_id,shift_date' })
       if (error) throw error
-      loadOverrides()
+      // Optimistic local update so the change shows instantly
+      setOverrides((prev) => {
+        const rest = prev.filter((o) => !(o.employee_id === emp.id && o.shift_date === dateISO))
+        return [...rest, { org_id: activeOrgId, employee_id: emp.id, shift_date: dateISO, shift: next, reason: 'manual' }]
+      })
+      toast.success(`${emp.full_name} · ${new Date(dateISO).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} → ${next}`)
+    } catch (e) { toast.error(e.message) } finally { setTimeout(() => setSavingCell(null), 400) }
+  }
+
+  const clearOverride = async (emp, dateISO) => {
+    if (!canWrite) return
+    try {
+      await supabase.from('shift_overrides').delete().eq('employee_id', emp.id).eq('shift_date', dateISO)
+      setOverrides((prev) => prev.filter((o) => !(o.employee_id === emp.id && o.shift_date === dateISO)))
+      toast.success('Override cleared — back to pattern')
     } catch (e) { toast.error(e.message) }
   }
 
   const move = (delta) => setCursor((c) => { const nm = c.m + delta; return { y: c.y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 } })
 
-  const assigned = employees.filter((e) => assignments.some((a) => a.employee_id === e.id))
+  // Filters: only assigned employees, then dept / pattern / name search
+  const assignedIds = new Set(assignments.map((a) => a.employee_id))
+  const patternIdsForFilter = patternFilter ? new Set(assignments.filter((a) => a.pattern_id === patternFilter).map((a) => a.employee_id)) : null
+  const assigned = employees.filter((e) => assignedIds.has(e.id)
+    && (!dept || e.department === dept)
+    && (!patternFilter || patternIdsForFilter.has(e.id))
+    && (!search || (e.full_name || '').toLowerCase().includes(search.toLowerCase())))
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-1">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <button onClick={() => move(-1)} className="btn-ghost btn-sm"><ChevronLeft size={15} /></button>
         <span className="min-w-[150px] text-center font-display text-lg font-bold text-ice">{monthName}</span>
         <button onClick={() => move(1)} className="btn-ghost btn-sm"><ChevronRight size={15} /></button>
@@ -208,17 +237,32 @@ function Roster() {
           <span className="flex items-center gap-1"><Sun size={11} style={{ color: SHIFT_META.day.color }} /> Day</span>
           <span className="flex items-center gap-1"><Moon size={11} style={{ color: SHIFT_META.night.color }} /> Night</span>
           <span className="flex items-center gap-1"><Ban size={11} className="text-ice-faint" /> Off</span>
-          {canWrite && <span>· click a cell to override</span>}
         </div>
       </div>
 
-      {assigned.length === 0 ? <EmptyState title="No employees assigned to a pattern" hint="Use the Assignments tab first." />
+      {/* Filters */}
+      <div className="panel mb-3 flex flex-wrap items-center gap-2 p-3">
+        <div className="relative flex-1 min-w-[160px]">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ice-faint" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search employee…" className="input pl-8" />
+        </div>
+        <div className="w-44"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
+        <div className="w-44"><Select value={patternFilter} onChange={(e) => setPatternFilter(e.target.value)} options={[{ value: '', label: 'All patterns' }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></div>
+        <span className="font-mono text-[11px] text-ice-faint">{assigned.length} shown</span>
+      </div>
+
+      {canWrite && <p className="mb-2 text-[11px] text-ice-faint">Click a cell to cycle Day → Night → Off (saves instantly). Right-click an override to clear it back to the pattern.</p>}
+
+      {assigned.length === 0 ? <EmptyState title="No employees to show" hint={assignedIds.size === 0 ? 'Assign employees to a pattern in the Assignments tab first.' : 'No employees match these filters.'} />
       : (
         <div className="panel overflow-x-auto p-3">
           <table className="w-full border-collapse">
             <thead><tr>
               <th className="px-2 py-1 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
-              {monthDates.map((d) => <th key={d} className="px-0.5 py-1 text-center font-mono text-[9px] text-ice-faint">{Number(d.slice(8))}</th>)}
+              {monthDates.map((d) => {
+                const dow = new Date(d).getDay()
+                return <th key={d} className={`px-0.5 py-1 text-center font-mono text-[9px] ${d === todayISO ? 'text-accent' : (dow === 0 || dow === 6) ? 'text-ice-faint/50' : 'text-ice-faint'}`}>{Number(d.slice(8))}</th>
+              })}
             </tr></thead>
             <tbody>
               {assigned.map((emp) => {
@@ -230,12 +274,15 @@ function Roster() {
                       const s = shiftOn(ctx, d)
                       const meta = SHIFT_META[s] || { label: '·', color: '#1e293b' }
                       const isOverride = ctx.overrides.has(d)
+                      const cellKey = `${emp.id}:${d}`
                       return (
                         <td key={d} className="p-0.5">
-                          <button onClick={() => cycleOverride(emp, d, s)} disabled={!canWrite}
-                            className={`grid h-6 w-6 place-items-center rounded font-mono text-[9px] font-bold ${isOverride ? 'ring-1 ring-accent' : ''}`}
+                          <button onClick={() => cycleOverride(emp, d, s)}
+                            onContextMenu={(e) => { if (isOverride) { e.preventDefault(); clearOverride(emp, d) } }}
+                            disabled={!canWrite}
+                            className={`grid h-6 w-6 place-items-center rounded font-mono text-[9px] font-bold transition ${isOverride ? 'ring-1 ring-accent' : ''} ${savingCell === cellKey ? 'scale-125' : ''} ${d === todayISO ? 'outline outline-1 outline-accent/40' : ''}`}
                             style={{ background: `${meta.color}26`, color: meta.color }}
-                            title={`${emp.full_name} · ${d} · ${s || 'no pattern'}${isOverride ? ' (override)' : ''}`}>
+                            title={`${emp.full_name} · ${d} · ${s || 'no pattern'}${isOverride ? ' (override — right-click to clear)' : ''}`}>
                             {meta.label}
                           </button>
                         </td>
@@ -254,16 +301,30 @@ function Roster() {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 export default function Shifts() {
+  const { activeOrgId } = useAuth()
   const [tab, setTab] = useState('roster')
-  const { rows: patterns } = useTable('shift_patterns')
-  const { rows: assignments } = useTable('employee_shift_assignments')
+  const [counts, setCounts] = useState({ patterns: 0, assigned: 0 })
+
+  // Live summary — refetched whenever the tab changes so it never goes stale
+  useEffect(() => {
+    if (!activeOrgId) return
+    Promise.all([
+      supabase.from('shift_patterns').select('id').eq('org_id', activeOrgId),
+      supabase.from('employee_shift_assignments').select('employee_id').eq('org_id', activeOrgId),
+    ]).then(([p, a]) => {
+      setCounts({
+        patterns: (p.data || []).length,
+        assigned: new Set((a.data || []).map((x) => x.employee_id)).size,
+      })
+    })
+  }, [activeOrgId, tab])
 
   return (
     <div>
       <PageHeader eyebrow="People" title="Shift System" />
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatCard label="Patterns" value={patterns.length} icon={Repeat} />
-        <StatCard label="Assigned employees" value={[...new Set(assignments.map((a) => a.employee_id))].length} icon={Users} />
+        <StatCard label="Patterns" value={counts.patterns} icon={Repeat} />
+        <StatCard label="Assigned employees" value={counts.assigned} icon={Users} />
         <StatCard label="Roster" value="Monthly" icon={CalendarClock} sub="click cells to override" />
       </div>
       <Tabs tab={tab} setTab={setTab} />
