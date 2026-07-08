@@ -6,7 +6,8 @@ import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { buildShiftContext, shiftOn } from '../lib/shifts'
 import { businessMonthRange, currentBusinessMonth, businessMonthLabel } from '../lib/period'
-import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search } from 'lucide-react'
+import { ghanaHolidays, HOLIDAY_TYPES } from '../lib/holidays'
+import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search, CalendarDays } from 'lucide-react'
 
 const SHIFTS = ['day', 'night', 'off']
 const SHIFT_META = {
@@ -17,7 +18,7 @@ const SHIFT_META = {
 const iso = (d) => d.toISOString().slice(0, 10)
 
 function Tabs({ tab, setTab }) {
-  const items = [['roster', 'Roster'], ['assign', 'Assignments'], ['patterns', 'Patterns']]
+  const items = [['roster', 'Roster'], ['assign', 'Assignments'], ['patterns', 'Patterns'], ['holidays', 'Holidays']]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -170,6 +171,9 @@ function Roster() {
   const { rows: assignments } = useTable('employee_shift_assignments')
   const { options: deptOptions } = useDepartments()
   const [overrides, setOverrides] = useState([])
+  const [holidays, setHolidays] = useState([])
+  const [absences, setAbsences] = useState([])
+  const [mode, setMode] = useState('shifts')   // shifts | attendance
   const [cursor, setCursor] = useState(() => { const b = currentBusinessMonth(); return { y: b.year, m: b.month } })
   const [savingCell, setSavingCell] = useState(null)
   const [dept, setDept] = useState('')
@@ -187,11 +191,39 @@ function Roster() {
 
   const loadOverrides = () => {
     if (!activeOrgId) return
+    const first = monthDates[0], last = monthDates[monthDates.length - 1]
     supabase.from('shift_overrides').select('*').eq('org_id', activeOrgId)
-      .gte('shift_date', monthDates[0]).lte('shift_date', monthDates[monthDates.length - 1])
+      .gte('shift_date', first).lte('shift_date', last)
       .then(({ data }) => setOverrides(data || []))
+    supabase.from('holidays').select('*').eq('org_id', activeOrgId)
+      .gte('holiday_date', first).lte('holiday_date', last)
+      .then(({ data }) => setHolidays(data || []))
+    supabase.from('shift_absences').select('*').eq('org_id', activeOrgId)
+      .gte('absence_date', first).lte('absence_date', last)
+      .then(({ data }) => setAbsences(data || []))
   }
   useEffect(loadOverrides, [activeOrgId, cursor.y, cursor.m])
+
+  const holidayOn = (dateISO) => holidays.find((h) => h.holiday_date === dateISO)
+  const isAbsent = (empId, dateISO) => absences.some((a) => a.employee_id === empId && a.absence_date === dateISO)
+
+  const toggleAbsence = async (emp, dateISO, shift) => {
+    if (!canWrite) return
+    if (shift === 'off' || shift == null) { toast.error('Can only mark absence on a working (Day/Night) shift'); return }
+    const existing = absences.find((a) => a.employee_id === emp.id && a.absence_date === dateISO)
+    try {
+      if (existing) {
+        await supabase.from('shift_absences').delete().eq('id', existing.id)
+        setAbsences((p) => p.filter((a) => a.id !== existing.id))
+        toast.success(`${emp.full_name} marked present`)
+      } else {
+        const { data, error } = await supabase.from('shift_absences').insert({ org_id: activeOrgId, employee_id: emp.id, absence_date: dateISO }).select().single()
+        if (error) throw error
+        setAbsences((p) => [...p, data])
+        toast.success(`${emp.full_name} marked absent · ${new Date(dateISO).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`)
+      }
+    } catch (e) { toast.error(e.message) }
+  }
 
   const cycleOverride = async (emp, dateISO, current) => {
     if (!canWrite) return
@@ -241,6 +273,8 @@ function Roster() {
           <span className="flex items-center gap-1"><Sun size={11} style={{ color: SHIFT_META.day.color }} /> Day</span>
           <span className="flex items-center gap-1"><Moon size={11} style={{ color: SHIFT_META.night.color }} /> Night</span>
           <span className="flex items-center gap-1"><Ban size={11} className="text-ice-faint" /> Off</span>
+          <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Holiday</span>
+          <span className="flex items-center gap-1"><span className="grid h-3 w-3 place-items-center rounded-sm text-[7px] font-bold text-bad ring-1 ring-bad">A</span> Absent</span>
         </div>
       </div>
 
@@ -252,10 +286,22 @@ function Roster() {
         </div>
         <div className="w-44"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
         <div className="w-44"><Select value={patternFilter} onChange={(e) => setPatternFilter(e.target.value)} options={[{ value: '', label: 'All patterns' }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></div>
+        {canWrite && (
+          <div className="inline-flex rounded-lg border border-white/10 bg-navy/60 p-0.5">
+            <button onClick={() => setMode('shifts')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'shifts' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Shifts</button>
+            <button onClick={() => setMode('attendance')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'attendance' ? 'bg-bad text-white' : 'text-ice-dim hover:text-ice'}`}>Attendance</button>
+          </div>
+        )}
         <span className="font-mono text-[11px] text-ice-faint">{assigned.length} shown</span>
       </div>
 
-      {canWrite && <p className="mb-2 text-[11px] text-ice-faint">Click a cell to cycle Day → Night → Off (saves instantly). Right-click an override to clear it back to the pattern.</p>}
+      {canWrite && (
+        <p className="mb-2 text-[11px] text-ice-faint">
+          {mode === 'shifts'
+            ? 'Shifts mode: click a cell to cycle Day → Night → Off (saves instantly). Right-click an override to clear it back to the pattern.'
+            : 'Attendance mode: click a working (Day/Night) cell to toggle Absent (red A). Amber-dotted days are holidays.'}
+        </p>
+      )}
 
       {assigned.length === 0 ? <EmptyState title="No employees to show" hint={assignedIds.size === 0 ? 'Assign employees to a pattern in the Assignments tab first.' : 'No employees match these filters.'} />
       : (
@@ -266,7 +312,11 @@ function Roster() {
               {monthDates.map((d) => {
                 const dow = new Date(d).getDay()
                 const isFirst = d.slice(8) === '01'
-                return <th key={d} className={`px-0.5 py-1 text-center font-mono text-[9px] ${isFirst ? 'border-l border-white/15' : ''} ${d === todayISO ? 'text-accent' : (dow === 0 || dow === 6) ? 'text-ice-faint/50' : 'text-ice-faint'}`}>{Number(d.slice(8))}</th>
+                const hol = holidayOn(d)
+                return <th key={d} title={hol ? hol.name : ''} className={`px-0.5 py-1 text-center font-mono text-[9px] ${isFirst ? 'border-l border-white/15' : ''} ${hol ? 'bg-accent/10' : ''} ${d === todayISO ? 'text-accent' : (dow === 0 || dow === 6) ? 'text-ice-faint/50' : 'text-ice-faint'}`}>
+                  {Number(d.slice(8))}
+                  {hol && <span className="mx-auto mt-0.5 block h-1 w-1 rounded-full bg-accent" />}
+                </th>
               })}
             </tr></thead>
             <tbody>
@@ -281,15 +331,18 @@ function Roster() {
                       const isOverride = ctx.overrides.has(d)
                       const cellKey = `${emp.id}:${d}`
                       const isFirst = d.slice(8) === '01'
+                      const hol = holidayOn(d)
+                      const absent = isAbsent(emp.id, d)
+                      const onClick = () => mode === 'attendance' ? toggleAbsence(emp, d, s) : cycleOverride(emp, d, s)
                       return (
-                        <td key={d} className={`p-0.5 ${isFirst ? 'border-l border-white/15' : ''}`}>
-                          <button onClick={() => cycleOverride(emp, d, s)}
-                            onContextMenu={(e) => { if (isOverride) { e.preventDefault(); clearOverride(emp, d) } }}
+                        <td key={d} className={`p-0.5 ${isFirst ? 'border-l border-white/15' : ''} ${hol ? 'bg-accent/[0.06]' : ''}`}>
+                          <button onClick={onClick}
+                            onContextMenu={(e) => { if (mode === 'shifts' && isOverride) { e.preventDefault(); clearOverride(emp, d) } }}
                             disabled={!canWrite}
-                            className={`grid h-6 w-6 place-items-center rounded font-mono text-[9px] font-bold transition ${isOverride ? 'ring-1 ring-accent' : ''} ${savingCell === cellKey ? 'scale-125' : ''} ${d === todayISO ? 'outline outline-1 outline-accent/40' : ''}`}
-                            style={{ background: `${meta.color}26`, color: meta.color }}
-                            title={`${emp.full_name} · ${d} · ${s || 'no pattern'}${isOverride ? ' (override — right-click to clear)' : ''}`}>
-                            {meta.label}
+                            className={`grid h-6 w-6 place-items-center rounded font-mono text-[9px] font-bold transition ${isOverride ? 'ring-1 ring-accent' : ''} ${absent ? 'ring-2 ring-bad' : ''} ${savingCell === cellKey ? 'scale-125' : ''} ${d === todayISO ? 'outline outline-1 outline-accent/40' : ''}`}
+                            style={absent ? { background: '#dc262633', color: '#f87171' } : { background: `${meta.color}26`, color: meta.color }}
+                            title={`${emp.full_name} · ${d} · ${absent ? 'ABSENT' : (s || 'no pattern')}${hol ? ' · ' + hol.name : ''}${isOverride ? ' (override)' : ''}`}>
+                            {absent ? 'A' : meta.label}
                           </button>
                         </td>
                       )
@@ -301,6 +354,85 @@ function Roster() {
           </table>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Holidays manager ─────────────────────────────────────────────────────────
+function Holidays() {
+  const { activeOrgId, role } = useAuth()
+  const toast = useToast()
+  const { rows, loading, insert, remove, refresh } = useTable('holidays', { order: { column: 'holiday_date', ascending: true } })
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [form, setForm] = useState({ holiday_date: '', name: '', holiday_type: 'company' })
+  const [busy, setBusy] = useState(false)
+  const canWrite = ['owner', 'admin', 'manager', 'supervisor'].includes(role)
+
+  const generate = async () => {
+    setBusy(true)
+    try {
+      const gen = ghanaHolidays(year).map((h) => ({ ...h, org_id: activeOrgId }))
+      const { error } = await supabase.from('holidays').upsert(gen, { onConflict: 'org_id,holiday_date,name', ignoreDuplicates: true })
+      if (error) throw error
+      toast.success(`Generated ${gen.length} holidays for ${year}`); refresh()
+    } catch (e) { toast.error(e.message) } finally { setBusy(false) }
+  }
+  const add = async () => {
+    if (!form.holiday_date || !form.name) { toast.error('Date and name required'); return }
+    try { await insert({ ...form, source: 'manual', country: 'Ghana' }); toast.success('Holiday added'); setForm({ holiday_date: '', name: '', holiday_type: 'company' }) }
+    catch (e) { toast.error(e.message.includes('duplicate') ? 'That holiday already exists' : e.message) }
+  }
+  const del = async (h) => { if (!window.confirm(`Delete "${h.name}"?`)) return; try { await remove(h.id) } catch (e) { toast.error(e.message) } }
+
+  const shown = rows.filter((h) => h.holiday_date.startsWith(String(year)))
+  const TONE = { public: 'accent', religious: 'ok', international: 'info', company: 'mute' }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {canWrite && (
+        <div className="panel p-5">
+          <div className="eyebrow mb-3">Auto-generate</div>
+          <div className="flex items-end gap-2">
+            <Field label="Year"><input className="input w-28" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} /></Field>
+            <button onClick={generate} disabled={busy} className="btn-primary"><CalendarDays size={15} /> {busy ? 'Generating…' : `Generate ${year}`}</button>
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">Adds Ghana public, religious, and international holidays. Fixed and Christian dates are exact; Islamic dates are estimates (marked "est.") — verify and edit below. Holidays are display-only and don't change any shift.</p>
+
+          <div className="my-4 h-px bg-white/10" />
+          <div className="eyebrow mb-3">Add manually</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date"><input className="input" type="date" value={form.holiday_date} onChange={(e) => setForm({ ...form, holiday_date: e.target.value })} /></Field>
+            <Field label="Type"><Select value={form.holiday_type} onChange={(e) => setForm({ ...form, holiday_type: e.target.value })} options={HOLIDAY_TYPES.map((t) => ({ value: t, label: t }))} /></Field>
+            <div className="col-span-2"><Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Company Founders Day" /></Field></div>
+          </div>
+          <button onClick={add} className="btn-primary btn-sm mt-3"><Plus size={14} /> Add holiday</button>
+        </div>
+      )}
+
+      <div className="panel overflow-hidden">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
+          <span className="eyebrow">{year} holidays</span>
+          <div className="flex gap-1">
+            <button onClick={() => setYear(year - 1)} className="btn-ghost btn-sm"><ChevronLeft size={14} /></button>
+            <button onClick={() => setYear(year + 1)} className="btn-ghost btn-sm"><ChevronRight size={14} /></button>
+          </div>
+        </div>
+        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        : shown.length === 0 ? <EmptyState title={`No holidays for ${year}`} hint="Use auto-generate or add them manually." />
+        : (
+          <div className="max-h-[460px] overflow-y-auto">
+            {shown.map((h) => (
+              <div key={h.id} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-2.5">
+                <div className="w-24 shrink-0 font-mono text-xs text-accent">{new Date(h.holiday_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+                <div className="min-w-0 flex-1"><span className="text-sm text-ice">{h.name}</span></div>
+                <Badge tone={TONE[h.holiday_type] || 'mute'}>{h.holiday_type}</Badge>
+                {h.source === 'auto' && <Badge tone="mute">auto</Badge>}
+                {canWrite && <button onClick={() => del(h)} className="text-ice-faint hover:text-bad"><X size={14} /></button>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -337,6 +469,7 @@ export default function Shifts() {
       {tab === 'patterns' && <Patterns />}
       {tab === 'assign' && <Assignments />}
       {tab === 'roster' && <Roster />}
+      {tab === 'holidays' && <Holidays />}
     </div>
   )
 }
