@@ -31,3 +31,6 @@
 
 [functions."ir-weekly-report"]
   schedule = "0 6 * * 1"   # Mondays 06:00 UTC — IRO + counsellor weekly digests
+
+[functions."training-reminders"]
+  schedule = "0 8 * * *"   # daily 08:00 UTC — session reminders (2d out) + cert expiry (30d)

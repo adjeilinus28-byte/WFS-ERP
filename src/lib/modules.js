@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock,
+  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock, GraduationCap,
 } from 'lucide-react'
 
 export const MODULES = [
@@ -19,14 +19,15 @@ export const MODULES = [
   { key: 'catering',    label: 'Catering',      icon: UtensilsCrossed, path: '/catering',    section: 'People' },
   { key: 'ir',          label: 'Relations',     icon: HeartHandshake,  path: '/relations',   section: 'People' },
   { key: 'accounts',    label: 'Accounts',      icon: Landmark,        path: '/accounts',    section: 'Finance' },
+  { key: 'training',    label: 'Training',      icon: GraduationCap,   path: '/training',    section: 'Compliance' },
   { key: 'hse',         label: 'HSE & Safety',  icon: ShieldAlert,     path: '/hse',         section: 'Compliance' },
   { key: 'reports',     label: 'Reports',       icon: BarChart3,       path: '/reports',     section: 'Insight' },
   { key: 'settings',    label: 'Settings',      icon: SettingsIcon,    path: '/settings',    section: 'Admin' },
 ]
 
 export const INDUSTRY_PRESETS = {
-  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','reports','settings'],
-  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','reports','settings'],
+  mining:        ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','training','reports','settings'],
+  oil_gas:       ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','hse','training','reports','settings'],
   manufacturing: ['dashboard','news','assets','work_orders','inventory','procurement','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','reports','settings'],
   logistics:     ['dashboard','news','assets','work_orders','inventory','issuance','ppe','workforce','shifts','hr','catering','ir','accounts','reports','settings'],
   general:       ['dashboard','news','assets','inventory','workforce','shifts','hr','catering','ir','accounts','reports','settings'],

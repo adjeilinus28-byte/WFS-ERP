@@ -16,6 +16,7 @@ import PPEPlanning from './pages/PPEPlanning'
 import Catering from './pages/Catering'
 import IndustrialRelations from './pages/IndustrialRelations'
 import Shifts from './pages/Shifts'
+import Training from './pages/Training'
 import Workforce from './pages/Workforce'
 import HSE from './pages/HSE'
 import Reports from './pages/Reports'
@@ -59,6 +60,7 @@ function Gate() {
         <Route path="/catering" element={<Catering />} />
         <Route path="/relations" element={<IndustrialRelations />} />
         <Route path="/shifts" element={<Shifts />} />
+        <Route path="/training" element={<Training />} />
         <Route path="/workforce" element={<Workforce />} />
         <Route path="/hse" element={<HSE />} />
         <Route path="/reports" element={<Reports />} />
