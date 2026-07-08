@@ -43,12 +43,14 @@ exports.handler = async (event) => {
         <tr><td style="color:#6b7280;padding:4px 0">${s.mode === 'online' ? 'Join' : 'Venue'}</td><td style="text-align:right">${s.mode === 'online' ? (s.link_url ? `<a href="${s.link_url}" style="color:${accent}">Online link</a>` : 'Online') : (s.venue || '—')}</td></tr>
         ${s.trainer ? `<tr><td style="color:#6b7280;padding:4px 0">Facilitator</td><td style="text-align:right">${s.trainer}</td></tr>` : ''}
       </table>
-      <p style="font-size:13px;color:#6b7280">Please make yourself available. Attendance will be recorded.</p>`
+      <p style="font-size:13px;color:#6b7280">Please make yourself available. Attendance will be recorded.</p>
+      ${s.attachment_name ? `<p style="font-size:13px">📎 Attached: ${s.attachment_name}</p>` : ''}`
 
     let ok = false
     if (emails.length) {
       const to = [emails[0]]; const cc = emails.slice(1)
-      ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${typeLabel}: ${s.title} — ${when}`, html: shell(org.name, accent, 'Training Scheduled', bodyHtml) })
+      const attachments = s.attachment_url ? [{ url: s.attachment_url, name: s.attachment_name || 'attachment' }] : []
+      ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${typeLabel}: ${s.title} — ${when}`, html: shell(org.name, accent, 'Training Scheduled', bodyHtml), attachments })
     }
 
     // Create/refresh the News Flash banner — notify_target null => no duplicate email

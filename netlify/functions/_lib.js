@@ -12,7 +12,7 @@ function admin() {
   })
 }
 
-async function sendBrevo({ to, cc, subject, html }) {
+async function sendBrevo({ to, cc, subject, html, attachments }) {
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean).map((email) => ({ email }))
   if (recipients.length === 0) return false
   // cc can be an array or a comma/semicolon separated string
@@ -23,6 +23,9 @@ async function sendBrevo({ to, cc, subject, html }) {
     to: recipients, subject, htmlContent: html,
   }
   if (ccList.length) payload.cc = ccList
+  // attachments: [{ url, name }] — Brevo fetches the (public) URL
+  const atts = (attachments || []).filter((a) => a && a.url).map((a) => ({ url: a.url, name: a.name || 'attachment' }))
+  if (atts.length) payload.attachment = atts
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
