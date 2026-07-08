@@ -13,7 +13,7 @@ const CAT = {
 
 // Rotating announcement banner — the "News Flash" slider on the Command Deck.
 export default function NewsFlash() {
-  const { activeOrgId } = useAuth()
+  const { activeOrgId, user } = useAuth()
   const [items, setItems] = useState([])
   const [idx, setIdx] = useState(0)
   const [dismissed, setDismissed] = useState(false)
@@ -21,13 +21,23 @@ export default function NewsFlash() {
   useEffect(() => {
     if (!activeOrgId) return
     const today = new Date().toISOString().slice(0, 10)
-    supabase.from('news_flash').select('*').eq('org_id', activeOrgId).eq('active', true)
-      .order('pinned', { ascending: false }).order('created_at', { ascending: false })
-      .then(({ data }) => {
-        const live = (data || []).filter((n) => (!n.starts_on || n.starts_on <= today) && (!n.ends_on || n.ends_on >= today))
-        setItems(live)
-      })
-  }, [activeOrgId])
+    // Resolve the viewer's department (to show org-wide + their department's items)
+    const loadDept = user?.email
+      ? supabase.from('employees').select('department').eq('org_id', activeOrgId).ilike('email', user.email).maybeSingle().then(({ data }) => data?.department || null)
+      : Promise.resolve(null)
+
+    loadDept.then((myDept) => {
+      supabase.from('news_flash').select('*').eq('org_id', activeOrgId).eq('active', true)
+        .order('pinned', { ascending: false }).order('created_at', { ascending: false })
+        .then(({ data }) => {
+          const live = (data || []).filter((n) =>
+            (!n.starts_on || n.starts_on <= today) &&
+            (!n.ends_on || n.ends_on >= today) &&
+            (!n.department || n.department === myDept))   // org-wide OR my department
+          setItems(live)
+        })
+    })
+  }, [activeOrgId, user])
 
   // Auto-rotate every 6s
   useEffect(() => {
@@ -51,6 +61,7 @@ export default function NewsFlash() {
         <div className="min-w-0 flex-1">
           <div className="mb-0.5 flex items-center gap-2">
             <span className="font-mono text-[10px] uppercase tracking-wider" style={{ color: meta.color }}>{meta.label}</span>
+            {n.department && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-ice-dim">{n.department}</span>}
             {n.pinned && <Pin size={11} className="text-ice-faint" />}
             {n.priority === 'high' && <span className="rounded bg-bad/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-bad">Important</span>}
           </div>
