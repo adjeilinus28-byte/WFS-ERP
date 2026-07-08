@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { StatCard, PageHeader, Badge } from '../components/ui'
 import { daysUntil, date, money } from '../lib/format'
+import { inCurrentBusinessMonth, currentBusinessMonthLabel } from '../lib/period'
 import NewsFlash from '../components/NewsFlash'
 import {
   Wrench, ClipboardList, Boxes, ShieldAlert, AlertTriangle, ArrowUpRight,
@@ -59,8 +60,7 @@ export default function Dashboard() {
   const woOpen = d.wos.filter((r) => ['open', 'in_progress', 'on_hold'].includes(r.status)).length
   const lowStock = d.inv.filter((r) => Number(r.qty_on_hand) <= Number(r.reorder_level)).length
   const hseOpen = d.hse.filter((r) => r.status !== 'closed').length
-  const thisMonth = new Date().toISOString().slice(0, 7)
-  const issueSpend = d.issuance.filter((r) => String(r.issue_date || '').startsWith(thisMonth)).reduce((s, r) => s + Number(r.total_cost || 0), 0)
+  const issueSpend = d.issuance.filter((r) => r.issue_date && inCurrentBusinessMonth(r.issue_date)).reduce((s, r) => s + Number(r.total_cost || 0), 0)
   const outstandingAR = d.invoices.filter((r) => ['sent', 'approved', 'partial', 'overdue'].includes(r.status)).reduce((s, r) => s + Number(r.total || 0), 0)
   const payableAP = d.bills.filter((r) => r.status !== 'paid').reduce((s, r) => s + Number(r.total || r.amount || 0), 0)
   const onLeave = d.leave.filter((r) => { const now = new Date(); return r.status === 'approved' && new Date(r.start_date) <= now && new Date(r.end_date) >= now }).length
@@ -71,7 +71,7 @@ export default function Dashboard() {
   if (has('assets')) cards.push(<StatCard key="a" label="Assets down" value={assetsDown} tone={assetsDown ? 'bad' : 'ok'} icon={Wrench} sub={`${d.assets.length} registered`} />)
   if (has('work_orders')) cards.push(<StatCard key="w" label="Open work orders" value={woOpen} icon={ClipboardList} sub={`${d.wos.length} total`} />)
   if (has('inventory')) cards.push(<StatCard key="i" label="Items to reorder" value={lowStock} tone={lowStock ? 'warn' : 'ok'} icon={Boxes} sub={`${d.inv.length} SKUs`} />)
-  if (has('issuance')) cards.push(<StatCard key="is" label="Issuance spend (mo)" value={money(issueSpend, ccy)} icon={PackageMinus} />)
+  if (has('issuance')) cards.push(<StatCard key="is" label="Issuance spend (mo)" value={money(issueSpend, ccy)} icon={PackageMinus} sub={currentBusinessMonthLabel()} />)
   if (has('accounts')) cards.push(<StatCard key="ar" label="Outstanding AR" value={money(outstandingAR, ccy)} tone={outstandingAR ? 'warn' : 'ok'} icon={TrendingUp} />)
   if (has('accounts')) cards.push(<StatCard key="ap" label="Payables (AP)" value={money(payableAP, ccy)} icon={Wallet} />)
   if (has('hr')) cards.push(<StatCard key="lv" label="On leave now" value={onLeave} icon={CalendarCheck} sub={`${pendingLeave} pending`} />)

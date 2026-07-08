@@ -7,12 +7,13 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, StatCard, useToast } from '../components/ui'
 import { money } from '../lib/format'
+import { businessMonthKey, businessMonthLabel } from '../lib/period'
 import { Sparkles, Printer, FileBarChart, Download, Wrench, ShieldAlert, Wallet, PackageMinus } from 'lucide-react'
 
 const PALETTE = ['rgb(var(--accent))', '#38BDF8', '#34D399', '#F472B6', '#A78BFA', '#FBBF24']
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
-const monthKey = (d) => (d ? String(d).slice(0, 7) : '')
-const monthLabel = (k) => { const [y, m] = k.split('-'); return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'short' }) }
+const monthKey = (d) => (d ? businessMonthKey(d) : '')
+const monthLabel = (k) => businessMonthLabel(k)
 
 export default function Reports() {
   const { activeOrgId, activeOrg } = useAuth()

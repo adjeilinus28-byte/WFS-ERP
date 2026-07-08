@@ -6,10 +6,11 @@ import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
 import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, date, num } from '../lib/format'
+import { businessMonthKey, currentBusinessMonthLabel } from '../lib/period'
 import { computePayslip } from '../lib/payroll'
 
 const PAY_STATUS = ['draft', 'approved', 'paid']
-const thisPeriod = () => new Date().toISOString().slice(0, 7)
+const thisPeriod = () => businessMonthKey(new Date())
 
 function SubTabs({ tab, setTab }) {
   const items = [['slips', 'Payslips'], ['status', 'Status']]
@@ -266,7 +267,7 @@ export default function Payroll({ ccy }) {
             </div>
             <div className="space-y-4 p-5">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Period (YYYY-MM) *"><input className="input" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} placeholder="2026-07" /></Field>
+                <Field label="Period (YYYY-MM) *"><input className="input" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} placeholder="2026-07" /><span className="mt-1 block text-[11px] text-ice-faint">Business month {currentBusinessMonthLabel()} = {businessMonthKey(new Date())}</span></Field>
                 <Field label="Status"><Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={PAY_STATUS.map((s) => ({ value: s, label: s }))} /></Field>
               </div>
               <Field label="Employee *"><Select value={form.employee_id} onChange={(e) => pickEmployee(e.target.value)}

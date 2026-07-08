@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, num, date } from '../lib/format'
+import { businessMonthKey, businessMonthKeyOffset } from '../lib/period'
 
 const ISSUE_TO = ['work_order', 'department', 'asset', 'employee', 'other']
 
@@ -12,8 +13,8 @@ const ISSUE_TO = ['work_order', 'department', 'asset', 'employee', 'other']
 const inPeriod = (d, period) => {
   if (!period || period === 'all') return true
   const dd = new Date(d), now = new Date()
-  if (period === 'this_month') return dd.getFullYear() === now.getFullYear() && dd.getMonth() === now.getMonth()
-  if (period === 'last_month') { const m = new Date(now.getFullYear(), now.getMonth() - 1, 1); return dd.getFullYear() === m.getFullYear() && dd.getMonth() === m.getMonth() }
+  if (period === 'this_month') return businessMonthKey(d) === businessMonthKey(now)
+  if (period === 'last_month') return businessMonthKey(d) === businessMonthKeyOffset(1)
   if (period === 'this_year') return dd.getFullYear() === now.getFullYear()
   if (period === 'last_30') return (now - dd) / 86400000 <= 30
   if (period === 'last_90') return (now - dd) / 86400000 <= 90

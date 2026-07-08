@@ -10,7 +10,7 @@ import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from
 import { date } from '../lib/format'
 import {
   GraduationCap, CalendarClock, Users, Megaphone, Award, AlertTriangle, Check, X, Plus,
-  ClipboardCheck, ShieldCheck, TrendingUp, Clock,
+  ClipboardCheck, ShieldCheck, TrendingUp, Clock, Paperclip,
 } from 'lucide-react'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
@@ -25,6 +25,44 @@ const STATUS = ['scheduled', 'in_progress', 'completed', 'cancelled']
 const ATT_STATUS = ['assigned', 'attended', 'completed', 'absent', 'failed']
 const CERT_TONE = { valid: 'ok', expiring: 'warn', expired: 'bad', scheduled: 'accent', assigned: 'accent', attended: 'accent', absent: 'mute', failed: 'bad' }
 const iso = (d) => d.toISOString().slice(0, 10)
+
+// Uploads to the public 'training-files' bucket → returns a public URL (email-fetchable)
+function TrainingAttachment({ value, name, onChange }) {
+  const { activeOrgId } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const handle = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { setErr('Max 10 MB'); return }
+    setBusy(true); setErr('')
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${activeOrgId}/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('training-files').upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from('training-files').getPublicUrl(path)
+      onChange(data.publicUrl, file.name)
+    } catch (e2) { setErr(e2.message || 'Upload failed') } finally { setBusy(false) }
+  }
+  return (
+    <div>
+      {value ? (
+        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-2">
+          <Paperclip size={14} className="text-accent" />
+          <a href={value} target="_blank" rel="noreferrer" className="flex-1 truncate text-xs text-info hover:underline">{name || 'View attachment'}</a>
+          <button type="button" onClick={() => onChange(null, null)} className="text-ice-faint hover:text-bad"><X size={14} /></button>
+        </div>
+      ) : (
+        <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-navy/40 px-3 py-2.5 text-xs text-ice-dim transition hover:border-accent/50 hover:text-ice">
+          {busy ? 'Uploading…' : 'Upload attachment'}
+          <input type="file" accept=".pdf,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.gif,.webp" onChange={handle} className="hidden" disabled={busy} />
+        </label>
+      )}
+      {err && <p className="mt-1 text-[11px] text-bad">{err}</p>}
+    </div>
+  )
+}
 
 function Tabs({ tab, setTab, canManage }) {
   const items = [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['attendance', 'Attendance'], ['matrix', 'Compliance Matrix']]
@@ -58,6 +96,7 @@ function Schedule() {
       scheduled_at: f.scheduled_at || null, duration_mins: f.duration_mins ? Number(f.duration_mins) : null,
       audience: f.audience, department: f.audience === 'department' ? f.department : null,
       validity_months: f.validity_months ? Number(f.validity_months) : null, status: f.status,
+      attachment_url: f.attachment_url || null, attachment_name: f.attachment_name || null,
       updated_at: new Date().toISOString(),
     }
     try {
@@ -65,8 +104,16 @@ function Schedule() {
       if (f.id) { await supabase.from('training_sessions').update(payload).eq('id', f.id) }
       else { const { data, error } = await supabase.from('training_sessions').insert(payload).select().single(); if (error) throw error; sessionId = data.id }
 
-      // Auto-populate attendees for all / department audiences
-      if (f.audience !== 'individuals') {
+      // Populate attendees: all/department auto-fill; individuals = the picked list
+      if (f.audience === 'individuals') {
+        const picked = f.selected || []
+        if (picked.length) {
+          const targets = employees.filter((e) => picked.includes(e.id))
+          await supabase.from('training_attendees').upsert(
+            targets.map((e) => ({ org_id: activeOrgId, session_id: sessionId, employee_id: e.id, employee_name: e.full_name, department: e.department, status: 'assigned' })),
+            { onConflict: 'session_id,employee_id', ignoreDuplicates: true })
+        }
+      } else {
         const targets = employees.filter((e) => f.audience === 'all' || e.department === f.department)
         if (targets.length) {
           await supabase.from('training_attendees').upsert(
@@ -114,11 +161,19 @@ function Schedule() {
                   {' · '}{s.audience === 'all' ? 'All staff' : s.audience === 'department' ? s.department : 'Selected staff'}
                   {s.venue ? ` · ${s.venue}` : ''}{s.validity_months ? ` · valid ${s.validity_months}mo` : ''}
                 </div>
+                {s.attachment_url && <a href={s.attachment_url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-[11px] text-info hover:underline"><Paperclip size={11} /> {s.attachment_name || 'Attachment'}</a>}
               </div>
               {canManage && (
                 <div className="flex gap-1.5">
                   <button onClick={() => announce(s)} className="btn-ghost btn-sm" title="Announce (email + banner)"><Megaphone size={14} /></button>
-                  <button onClick={() => setDrawer({ ...s, scheduled_at: s.scheduled_at ? s.scheduled_at.slice(0, 16) : '' })} className="btn-ghost btn-sm">Edit</button>
+                  <button onClick={async () => {
+                    let selected = []
+                    if (s.audience === 'individuals') {
+                      const { data } = await supabase.from('training_attendees').select('employee_id').eq('session_id', s.id)
+                      selected = (data || []).map((a) => a.employee_id).filter(Boolean)
+                    }
+                    setDrawer({ ...s, scheduled_at: s.scheduled_at ? s.scheduled_at.slice(0, 16) : '', selected })
+                  }} className="btn-ghost btn-sm">Edit</button>
                   <button onClick={() => del(s)} className="text-ice-faint hover:text-bad"><X size={16} /></button>
                 </div>
               )}
@@ -151,15 +206,36 @@ function Schedule() {
                   ? <Field label="Join link"><input className="input" value={drawer.link_url || ''} onChange={(e) => setDrawer({ ...drawer, link_url: e.target.value })} /></Field>
                   : <Field label="Venue"><input className="input" value={drawer.venue || ''} onChange={(e) => setDrawer({ ...drawer, venue: e.target.value })} /></Field>}
               </div>
-              <Field label="Audience"><Select value={drawer.audience} onChange={(e) => setDrawer({ ...drawer, audience: e.target.value })} options={[{ value: 'all', label: 'All staff' }, { value: 'department', label: 'A department' }, { value: 'individuals', label: 'Selected individuals (assign in Attendance)' }]} /></Field>
+              <Field label="Audience"><Select value={drawer.audience} onChange={(e) => setDrawer({ ...drawer, audience: e.target.value })} options={[{ value: 'all', label: 'All staff' }, { value: 'department', label: 'A department' }, { value: 'individuals', label: 'Selected individuals' }]} /></Field>
               {drawer.audience === 'department' && <Field label="Department"><Select value={drawer.department || ''} onChange={(e) => setDrawer({ ...drawer, department: e.target.value })} options={[{ value: '', label: 'Select…' }, ...deptOptions]} /></Field>}
+              {drawer.audience === 'individuals' && (
+                <Field label={`Select workers (${(drawer.selected || []).length} chosen)`}>
+                  <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-navy/40 p-2">
+                    {employees.length === 0 ? <p className="p-2 text-xs text-ice-faint">No employees found.</p>
+                    : employees.map((e) => {
+                      const on = (drawer.selected || []).includes(e.id)
+                      return (
+                        <label key={e.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-white/5">
+                          <input type="checkbox" checked={on} className="h-4 w-4 accent-[rgb(var(--accent))]"
+                            onChange={() => setDrawer((d) => { const set = new Set(d.selected || []); on ? set.delete(e.id) : set.add(e.id); return { ...d, selected: [...set] } })} />
+                          <span className="text-ice">{e.full_name}</span>
+                          {e.department && <span className="ml-auto text-[11px] text-ice-faint">{e.department}</span>}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </Field>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Validity (months, optional)"><input className="input" type="number" value={drawer.validity_months || ''} onChange={(e) => setDrawer({ ...drawer, validity_months: e.target.value })} placeholder="e.g. 12" /></Field>
                 <Field label="Status"><Select value={drawer.status} onChange={(e) => setDrawer({ ...drawer, status: e.target.value })} options={STATUS.map((s) => ({ value: s, label: s }))} /></Field>
               </div>
+              <Field label="Attachment (Excel, PDF, or photo — sent with the email)">
+                <TrainingAttachment value={drawer.attachment_url} name={drawer.attachment_name}
+                  onChange={(url, name) => setDrawer((d) => ({ ...d, attachment_url: url, attachment_name: name }))} />
+              </Field>
             </div>
             <button onClick={save} className="btn-primary mt-5 w-full">{drawer.id ? 'Save changes' : 'Create session'}</button>
-            {drawer.audience === 'individuals' && <p className="mt-2 text-[11px] text-ice-faint">After creating, open the Attendance tab to add specific people.</p>}
           </div>
         </div>
       )}

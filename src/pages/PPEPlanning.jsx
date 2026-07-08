@@ -8,11 +8,12 @@ import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Select, useToast, EmptyState } from '../components/ui'
 import { money, num } from '../lib/format'
+import { businessMonthKey, businessMonthLabel, inCurrentBusinessMonth } from '../lib/period'
 import { Shirt, Footprints, Ruler, Wallet, PackageMinus, AlertTriangle, TrendingUp, Users } from 'lucide-react'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
-const monthKey = (d) => (d ? String(d).slice(0, 7) : '')
-const monthLabel = (k) => { const [y, m] = k.split('-'); return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'short' }) }
+const monthKey = (d) => (d ? businessMonthKey(d) : '')
+const monthLabel = (k) => businessMonthLabel(k)
 
 function Tabs({ tab, setTab }) {
   const items = [['sizes', 'Size Demand'], ['requirements', 'Dept Requirements'], ['consumption', 'Consumption Analysis']]
@@ -204,7 +205,7 @@ function Consumption({ issuances, ccy, deptOptions }) {
     if (!d) return false
     const dd = new Date(d), now = new Date()
     if (period === 'all') return true
-    if (period === 'this_month') return String(d).slice(0, 7) === now.toISOString().slice(0, 7)
+    if (period === 'this_month') return inCurrentBusinessMonth(d)
     if (period === 'last_90') return (now - dd) / 86400000 <= 90
     if (period === 'this_year') return dd.getFullYear() === now.getFullYear()
     return true
