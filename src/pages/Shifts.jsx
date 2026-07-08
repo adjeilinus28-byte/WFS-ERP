@@ -5,6 +5,7 @@ import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { buildShiftContext, shiftOn } from '../lib/shifts'
+import { businessMonthRange, currentBusinessMonth, businessMonthLabel } from '../lib/period'
 import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search } from 'lucide-react'
 
 const SHIFTS = ['day', 'night', 'off']
@@ -169,16 +170,19 @@ function Roster() {
   const { rows: assignments } = useTable('employee_shift_assignments')
   const { options: deptOptions } = useDepartments()
   const [overrides, setOverrides] = useState([])
-  const [cursor, setCursor] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() } })
+  const [cursor, setCursor] = useState(() => { const b = currentBusinessMonth(); return { y: b.year, m: b.month } })
   const [savingCell, setSavingCell] = useState(null)
   const [dept, setDept] = useState('')
   const [patternFilter, setPatternFilter] = useState('')
   const [search, setSearch] = useState('')
   const canWrite = ['owner', 'admin', 'manager', 'supervisor'].includes(role)
 
-  const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate()
-  const monthDates = Array.from({ length: daysInMonth }, (_, i) => iso(new Date(Date.UTC(cursor.y, cursor.m, i + 1))))
-  const monthName = new Date(cursor.y, cursor.m, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  // Business month: cursor.{y,m} is the ENDING month; range = 21st prev → 20th current
+  const isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const { start: bStart, end: bEnd } = businessMonthRange(cursor.y, cursor.m)
+  const monthDates = (() => { const out = []; const d = new Date(bStart); while (d <= bEnd) { out.push(isoLocal(d)); d.setDate(d.getDate() + 1) } return out })()
+  const monthName = businessMonthLabel(`${cursor.y}-${String(cursor.m + 1).padStart(2, '0')}`)
+  const rangeLabel = `${bStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${bEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
   const todayISO = iso(new Date())
 
   const loadOverrides = () => {
@@ -231,7 +235,7 @@ function Roster() {
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button onClick={() => move(-1)} className="btn-ghost btn-sm"><ChevronLeft size={15} /></button>
-        <span className="min-w-[150px] text-center font-display text-lg font-bold text-ice">{monthName}</span>
+        <span className="min-w-[150px] text-center font-display text-lg font-bold text-ice">{monthName}<span className="ml-2 font-mono text-[11px] font-normal text-ice-faint">{rangeLabel}</span></span>
         <button onClick={() => move(1)} className="btn-ghost btn-sm"><ChevronRight size={15} /></button>
         <div className="ml-auto flex items-center gap-3 text-[11px] text-ice-faint">
           <span className="flex items-center gap-1"><Sun size={11} style={{ color: SHIFT_META.day.color }} /> Day</span>
@@ -261,7 +265,8 @@ function Roster() {
               <th className="px-2 py-1 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
               {monthDates.map((d) => {
                 const dow = new Date(d).getDay()
-                return <th key={d} className={`px-0.5 py-1 text-center font-mono text-[9px] ${d === todayISO ? 'text-accent' : (dow === 0 || dow === 6) ? 'text-ice-faint/50' : 'text-ice-faint'}`}>{Number(d.slice(8))}</th>
+                const isFirst = d.slice(8) === '01'
+                return <th key={d} className={`px-0.5 py-1 text-center font-mono text-[9px] ${isFirst ? 'border-l border-white/15' : ''} ${d === todayISO ? 'text-accent' : (dow === 0 || dow === 6) ? 'text-ice-faint/50' : 'text-ice-faint'}`}>{Number(d.slice(8))}</th>
               })}
             </tr></thead>
             <tbody>
@@ -275,8 +280,9 @@ function Roster() {
                       const meta = SHIFT_META[s] || { label: '·', color: '#1e293b' }
                       const isOverride = ctx.overrides.has(d)
                       const cellKey = `${emp.id}:${d}`
+                      const isFirst = d.slice(8) === '01'
                       return (
-                        <td key={d} className="p-0.5">
+                        <td key={d} className={`p-0.5 ${isFirst ? 'border-l border-white/15' : ''}`}>
                           <button onClick={() => cycleOverride(emp, d, s)}
                             onContextMenu={(e) => { if (isOverride) { e.preventDefault(); clearOverride(emp, d) } }}
                             disabled={!canWrite}
