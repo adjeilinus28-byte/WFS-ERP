@@ -196,10 +196,8 @@ function Schedule() {
                 <Field label="Type"><Select value={drawer.training_type} onChange={(e) => setDrawer({ ...drawer, training_type: e.target.value })} options={TYPES.map(([v, l]) => ({ value: v, label: l }))} /></Field>
                 <Field label="Trainer"><input className="input" value={drawer.trainer || ''} onChange={(e) => setDrawer({ ...drawer, trainer: e.target.value })} /></Field>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Date & time"><input className="input" type="datetime-local" value={drawer.scheduled_at || ''} onChange={(e) => setDrawer({ ...drawer, scheduled_at: e.target.value })} /></Field>
-                <Field label="Duration (mins)"><input className="input" type="number" value={drawer.duration_mins || ''} onChange={(e) => setDrawer({ ...drawer, duration_mins: e.target.value })} /></Field>
-              </div>
+              <Field label="Date & time"><input className="input w-full" type="datetime-local" value={drawer.scheduled_at || ''} onChange={(e) => setDrawer({ ...drawer, scheduled_at: e.target.value })} /></Field>
+              <Field label="Duration (mins)"><input className="input" type="number" value={drawer.duration_mins || ''} onChange={(e) => setDrawer({ ...drawer, duration_mins: e.target.value })} placeholder="e.g. 60" /></Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Mode"><Select value={drawer.mode} onChange={(e) => setDrawer({ ...drawer, mode: e.target.value })} options={[{ value: 'in_person', label: 'In person' }, { value: 'online', label: 'Online' }]} /></Field>
                 {drawer.mode === 'online'
@@ -358,10 +356,17 @@ function Matrix() {
       {employees.length === 0 ? <EmptyState title="No training records yet" hint="Once staff are assigned and complete training, their competency status appears here." />
       : (
         <div className="panel overflow-x-auto p-3">
-          <table className="w-full border-collapse">
+          <table className="border-collapse">
             <thead><tr>
-              <th className="px-2 py-2 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
-              {typesPresent.map(([t, l]) => <th key={t} className="px-2 py-2 text-center font-mono text-[9px] uppercase text-ice-faint" style={{ writingMode: 'vertical-rl' }}>{l}</th>)}
+              <th className="px-2 py-2 pr-6 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
+              {typesPresent.map(([t, l]) => (
+                <th key={t} className="p-0 align-bottom" style={{ width: 28 }}>
+                  <div className="mx-auto flex h-24 w-7 items-end justify-center pb-1">
+                    <span className="whitespace-nowrap font-mono text-[9px] uppercase tracking-wide text-ice-faint"
+                      style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>{l}</span>
+                  </div>
+                </th>
+              ))}
             </tr></thead>
             <tbody>
               {employees.map((emp) => (
@@ -372,7 +377,7 @@ function Matrix() {
                     const tone = c ? CERT_TONE[c.cert_status] : null
                     const bg = { ok: '#16a34a', warn: '#F59E0B', bad: '#dc2626', accent: 'rgb(var(--accent))', mute: '#475569' }[tone] || '#1e293b'
                     return (
-                      <td key={t} className="px-2 py-1.5 text-center">
+                      <td key={t} className="px-0.5 py-1.5 text-center">
                         {c ? <span title={`${c.cert_status}${c.expires_at ? ' · expires ' + c.expires_at : ''}`} className="mx-auto grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: bg }}>{c.cert_status === 'valid' ? '✓' : c.cert_status === 'expired' ? '✕' : c.cert_status === 'expiring' ? '!' : '•'}</span>
                         : <span className="text-ice-faint/30">·</span>}
                       </td>
