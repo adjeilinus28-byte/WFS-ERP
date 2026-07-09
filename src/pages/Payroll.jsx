@@ -8,12 +8,13 @@ import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from
 import { money, date, num } from '../lib/format'
 import { businessMonthKey, currentBusinessMonthLabel } from '../lib/period'
 import { computePayslip } from '../lib/payroll'
+import { applyBands, DEFAULT_GH_BANDS } from '../lib/tax'
 
 const PAY_STATUS = ['draft', 'approved', 'paid']
 const thisPeriod = () => businessMonthKey(new Date())
 
 function SubTabs({ tab, setTab }) {
-  const items = [['slips', 'Payslips'], ['status', 'Status']]
+  const items = [['slips', 'Payslips'], ['status', 'Status'], ['tax', 'Tax & Deductions']]
   return (
     <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -29,6 +30,166 @@ function SubTabs({ tab, setTab }) {
 // Net = basic + overtime + bonus + allowances − (tax + ssnit + other)
 const money0 = (v, ccy) => money(v, ccy)
 
+// ── Tax & Deductions settings ────────────────────────────────────────────────
+function TaxSettings({ ccy, taxConfig, onSaved }) {
+  const { activeOrgId, role } = useAuth()
+  const toast = useToast()
+  const canAdmin = ['owner', 'admin'].includes(role)
+  const [s, setS] = useState(null)
+  const [bands, setBands] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [preview, setPreview] = useState(3000)
+
+  useEffect(() => {
+    if (!taxConfig) return
+    setS(taxConfig.settings || { org_id: activeOrgId, country: 'GH', auto_calculate: true,
+      ssnit_employee_rate: 5.5, ssnit_employer_rate: 13, union_dues_rate: 0,
+      overtime_tax_enabled: true, overtime_threshold_pct: 50, overtime_rate_within: 5, overtime_rate_excess: 10,
+      bonus_tax_enabled: true, bonus_threshold_pct: 15, bonus_rate: 5 })
+    setBands(taxConfig.bands?.length ? taxConfig.bands : DEFAULT_GH_BANDS.map((b) => ({ ...b, org_id: activeOrgId, country: 'GH' })))
+  }, [taxConfig, activeOrgId])
+
+  if (!s) return <div className="panel p-8 text-center text-ice-faint">Loading tax settings…</div>
+
+  const setBand = (i, k, v) => setBands((p) => p.map((b, idx) => idx === i ? { ...b, [k]: v === '' ? (k === 'band_amount' ? null : '') : Number(v) } : b))
+  const addBand = () => setBands((p) => [...p, { org_id: activeOrgId, country: s.country, band_order: p.length + 1, band_amount: 0, rate: 0 }])
+  const delBand = (i) => setBands((p) => p.filter((_, idx) => idx !== i).map((b, idx) => ({ ...b, band_order: idx + 1 })))
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const { error: e1 } = await supabase.from('tax_settings').upsert({ ...s, org_id: activeOrgId, updated_at: new Date().toISOString() }, { onConflict: 'org_id' })
+      if (e1) throw e1
+      await supabase.from('tax_bands').delete().eq('org_id', activeOrgId).eq('country', s.country)
+      const rows = bands.map((b, i) => ({ org_id: activeOrgId, country: s.country, band_order: i + 1, band_amount: b.band_amount, rate: Number(b.rate || 0) }))
+      const { error: e2 } = await supabase.from('tax_bands').insert(rows)
+      if (e2) throw e2
+      toast.success('Tax settings saved'); onSaved?.()
+    } catch (e) { toast.error(e.message) } finally { setSaving(false) }
+  }
+
+  // Live preview
+  const { tax: previewTax, breakdown } = applyBands(preview, bands)
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-4">
+        <div className="panel p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="eyebrow">Statutory rates</span>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
+              <input type="checkbox" checked={!!s.auto_calculate} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]"
+                onChange={(e) => setS({ ...s, auto_calculate: e.target.checked })} />
+              Auto-calculate on payslips
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Country of operations">
+              <Select value={s.country} disabled={!canAdmin} onChange={(e) => setS({ ...s, country: e.target.value })}
+                options={[{ value: 'GH', label: 'Ghana (GRA)' }, { value: 'OTHER', label: 'Other / custom' }]} />
+            </Field>
+            <Field label="Union dues rate (% of basic)"><input className="input" type="number" step="0.1" value={s.union_dues_rate ?? 0} disabled={!canAdmin} onChange={(e) => setS({ ...s, union_dues_rate: e.target.value })} /></Field>
+          </div>
+        </div>
+
+        <div className="panel p-5">
+          <div className="eyebrow mb-3">SSNIT / Social Security</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Employee contribution (% of basic)"><input className="input" type="number" step="0.1" value={s.ssnit_employee_rate ?? 5.5} disabled={!canAdmin} onChange={(e) => setS({ ...s, ssnit_employee_rate: e.target.value })} /></Field>
+            <Field label="Employer contribution (% of basic)"><input className="input" type="number" step="0.1" value={s.ssnit_employer_rate ?? 13} disabled={!canAdmin} onChange={(e) => setS({ ...s, ssnit_employer_rate: e.target.value })} /></Field>
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">Ghana default: employee 5.5%, employer 13% (18.5% total). Employee SSNIT is deducted before PAYE is computed.</p>
+        </div>
+
+        <div className="panel p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="eyebrow">Overtime tax</span>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
+              <input type="checkbox" checked={!!s.overtime_tax_enabled} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]" onChange={(e) => setS({ ...s, overtime_tax_enabled: e.target.checked })} /> Enabled
+            </label>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Threshold (% of basic)"><input className="input" type="number" step="1" value={s.overtime_threshold_pct ?? 50} disabled={!canAdmin} onChange={(e) => setS({ ...s, overtime_threshold_pct: e.target.value })} /></Field>
+            <Field label="Rate within (%)"><input className="input" type="number" step="0.5" value={s.overtime_rate_within ?? 5} disabled={!canAdmin} onChange={(e) => setS({ ...s, overtime_rate_within: e.target.value })} /></Field>
+            <Field label="Rate on excess (%)"><input className="input" type="number" step="0.5" value={s.overtime_rate_excess ?? 10} disabled={!canAdmin} onChange={(e) => setS({ ...s, overtime_rate_excess: e.target.value })} /></Field>
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">Ghana: for qualifying junior staff, overtime up to 50% of monthly basic is taxed at 5%; the excess at 10%.</p>
+        </div>
+
+        <div className="panel p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="eyebrow">Bonus tax</span>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
+              <input type="checkbox" checked={!!s.bonus_tax_enabled} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]" onChange={(e) => setS({ ...s, bonus_tax_enabled: e.target.checked })} /> Enabled
+            </label>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Threshold (% of annual basic)"><input className="input" type="number" step="1" value={s.bonus_threshold_pct ?? 15} disabled={!canAdmin} onChange={(e) => setS({ ...s, bonus_threshold_pct: e.target.value })} /></Field>
+            <Field label="Final tax rate (%)"><input className="input" type="number" step="0.5" value={s.bonus_rate ?? 5} disabled={!canAdmin} onChange={(e) => setS({ ...s, bonus_rate: e.target.value })} /></Field>
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">Ghana: bonus up to 15% of annual basic attracts a 5% final tax. Any excess is added to chargeable income and taxed at the graduated rates below.</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="panel p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="eyebrow">Graduated PAYE bands (monthly)</span>
+            {canAdmin && <button onClick={addBand} className="btn-ghost btn-sm"><Plus size={13} /> Band</button>}
+          </div>
+          <div className="space-y-2">
+            <div className="grid grid-cols-[2rem_1fr_1fr_1.5rem] gap-2 font-mono text-[10px] uppercase text-ice-faint">
+              <span>#</span><span>Band amount ({ccy})</span><span>Rate (%)</span><span />
+            </div>
+            {bands.map((b, i) => (
+              <div key={i} className="grid grid-cols-[2rem_1fr_1fr_1.5rem] items-center gap-2">
+                <span className="font-mono text-xs text-ice-faint">{i + 1}</span>
+                <input className="input" type="number" step="0.01" disabled={!canAdmin}
+                  value={b.band_amount ?? ''} placeholder={i === bands.length - 1 ? 'Remainder' : ''}
+                  onChange={(e) => setBand(i, 'band_amount', e.target.value)} />
+                <input className="input" type="number" step="0.1" disabled={!canAdmin} value={b.rate ?? 0} onChange={(e) => setBand(i, 'rate', e.target.value)} />
+                {canAdmin && <button onClick={() => delBand(i)} className="text-ice-faint hover:text-bad"><X size={13} /></button>}
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">Leave the last band's amount empty to mean "remainder" (all income above the previous bands).</p>
+        </div>
+
+        <div className="panel p-5">
+          <div className="eyebrow mb-3">Preview</div>
+          <Field label={`Chargeable income (${ccy})`}><input className="input" type="number" value={preview} onChange={(e) => setPreview(Number(e.target.value || 0))} /></Field>
+          <div className="mt-3 rounded-lg border border-white/10 bg-navy/50 p-3">
+            <table className="w-full text-xs">
+              <thead><tr className="text-ice-faint"><th className="py-1 text-left font-mono text-[10px] uppercase">Band</th><th className="text-right font-mono text-[10px] uppercase">Taxed</th><th className="text-right font-mono text-[10px] uppercase">Rate</th><th className="text-right font-mono text-[10px] uppercase">Tax</th></tr></thead>
+              <tbody>
+                {breakdown.map((b) => (
+                  <tr key={b.band_order} className="border-t border-white/[0.05]">
+                    <td className="py-1 text-ice-dim">{b.band_order}</td>
+                    <td className="text-right font-mono text-ice">{money(b.taxed, ccy)}</td>
+                    <td className="text-right font-mono text-ice-faint">{b.rate}%</td>
+                    <td className="text-right font-mono text-ice">{money(b.tax, ccy)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
+              <span className="text-sm font-semibold text-ice">Total PAYE</span>
+              <span className="font-display text-lg font-bold text-accent">{money(previewTax, ccy)}</span>
+            </div>
+            <div className="mt-1 text-right text-[11px] text-ice-faint">Effective rate {preview > 0 ? ((previewTax / preview) * 100).toFixed(1) : '0.0'}%</div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-warn/30 bg-warn/10 p-3 text-[11px] text-ice/90">
+          <b>Verify before running live payroll.</b> These bands and rates are seeded with Ghana (GRA) values but are amended by Finance Acts. Confirm them against the current GRA schedule for your tax year. WFS Enterprise is not a tax advisor and doesn't file on your behalf.
+        </div>
+
+        {canAdmin && <button onClick={save} disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Save tax settings'}</button>}
+      </div>
+    </div>
+  )
+}
+
 export default function Payroll({ ccy }) {
   const { activeOrgId, role } = useAuth()
   const toast = useToast()
@@ -36,10 +197,21 @@ export default function Payroll({ ccy }) {
   const { rows, loading, insert, update, remove, refresh } = useTable('payroll', { order: { column: 'period', ascending: false } })
   const { rows: employees } = useTable('employees')
   const [sub, setSub] = useState('slips')
+  const [taxConfig, setTaxConfig] = useState(null)
   const [drawer, setDrawer] = useState(null)
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const canWrite = role && role !== 'viewer'
+
+  // Tax & deductions settings + graduated PAYE bands
+  const loadTax = () => {
+    if (!activeOrgId) return
+    Promise.all([
+      supabase.from('tax_settings').select('*').eq('org_id', activeOrgId).maybeSingle(),
+      supabase.from('tax_bands').select('*').eq('org_id', activeOrgId).order('band_order'),
+    ]).then(([s, b]) => setTaxConfig({ settings: s.data || null, bands: b.data || [] }))
+  }
+  useEffect(loadTax, [activeOrgId])
 
   // Filters
   const [q, setQ] = useState('')
@@ -65,12 +237,12 @@ export default function Payroll({ ccy }) {
     extra_duty_allowance: '', medical_allowance: '', fuel_allowance: '', bonus: '', allowances: '',
     shift_overtime: '', weekday_overtime: '', holiday_overtime: '', arrears_overtime: '',
     // deductions (rates as %)
-    ssnit_rate: 5.5, paye_amount: '', overtime_tax: '', union_dues_rate: '', rent_deduction: '',
+    ssnit_rate: 5.5, paye_amount: '', overtime_tax: '', bonus_tax: '', union_dues_rate: '', rent_deduction: '',
     ssnit_loan: '', other_deductions: '', ssnit_employer_rate: 13,
     status: 'draft', notes: '',
   }
   const [form, setForm] = useState(emptyForm)
-  const calc = computePayslip(form)
+  const calc = computePayslip(form, taxConfig)
 
   const openNew = () => { setForm(emptyForm); setDrawer('new') }
   const openEdit = (r) => {
@@ -109,8 +281,9 @@ export default function Payroll({ ccy }) {
         shift_overtime: num(form.shift_overtime), weekday_overtime: num(form.weekday_overtime),
         holiday_overtime: num(form.holiday_overtime), arrears_overtime: num(form.arrears_overtime),
         // deductions
-        ssnit_rate: num(form.ssnit_rate), ssnit: calc.ssnit, paye_amount: num(form.paye_amount),
-        overtime_tax: num(form.overtime_tax), union_dues_rate: num(form.union_dues_rate), union_dues: calc.union_dues,
+        ssnit_rate: num(form.ssnit_rate), ssnit: calc.ssnit, paye_amount: calc.deductions.paye_amount,
+        overtime_tax: calc.deductions.overtime_tax, bonus_tax: calc.deductions.bonus_tax,
+        union_dues_rate: num(form.union_dues_rate), union_dues: calc.union_dues,
         rent_deduction: num(form.rent_deduction), ssnit_loan: num(form.ssnit_loan), other_deductions: num(form.other_deductions),
         ssnit_employer_rate: num(form.ssnit_employer_rate), ssnit_employer: calc.ssnit_employer, taxable_income: calc.taxable,
         // totals
@@ -227,6 +400,8 @@ export default function Payroll({ ccy }) {
         </>
       )}
 
+      {sub === 'tax' && <TaxSettings ccy={ccy} taxConfig={taxConfig} onSaved={loadTax} />}
+
       {sub === 'status' && (
         <div className="panel overflow-hidden">
           {statusLoading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
@@ -314,17 +489,32 @@ export default function Payroll({ ccy }) {
 
               {/* Deductions with percentages */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                <div className="eyebrow mb-2">Deductions</div>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="eyebrow">Deductions</span>
+                  {calc.autoCalc && <Badge tone="ok">auto-calculated</Badge>}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={`SSNIT / SSF rate (%) → ${money(calc.ssnit, ccy)}`}><input className="input" type="number" step="0.1" value={form.ssnit_rate} onChange={(e) => setForm({ ...form, ssnit_rate: e.target.value })} /></Field>
-                  <Field label={`Union dues rate (%) → ${money(calc.union_dues, ccy)}`}><input className="input" type="number" step="0.1" value={form.union_dues_rate} onChange={(e) => setForm({ ...form, union_dues_rate: e.target.value })} /></Field>
-                  <Field label="Income tax (PAYE)"><input className="input" type="number" value={form.paye_amount} onChange={(e) => setForm({ ...form, paye_amount: e.target.value })} /></Field>
-                  <Field label="Overtime tax"><input className="input" type="number" value={form.overtime_tax} onChange={(e) => setForm({ ...form, overtime_tax: e.target.value })} /></Field>
+                  <Field label={`SSNIT / SSF rate (%) → ${money(calc.ssnit, ccy)}`}><input className="input" type="number" step="0.1" value={form.ssnit_rate} onChange={(e) => setForm({ ...form, ssnit_rate: e.target.value })} disabled={calc.autoCalc} /></Field>
+                  <Field label={`Union dues rate (%) → ${money(calc.union_dues, ccy)}`}><input className="input" type="number" step="0.1" value={form.union_dues_rate} onChange={(e) => setForm({ ...form, union_dues_rate: e.target.value })} disabled={calc.autoCalc} /></Field>
+                  <Field label={`Income tax (PAYE)${calc.autoCalc ? ` → ${money(calc.tax.paye, ccy)}` : ''}`}>
+                    <input className="input" type="number" value={form.paye_amount} placeholder={calc.autoCalc ? `auto ${calc.tax.paye}` : ''} onChange={(e) => setForm({ ...form, paye_amount: e.target.value })} />
+                  </Field>
+                  <Field label={`Overtime tax${calc.autoCalc ? ` → ${money(calc.tax.overtimeTax, ccy)}` : ''}`}>
+                    <input className="input" type="number" value={form.overtime_tax} placeholder={calc.autoCalc ? `auto ${calc.tax.overtimeTax}` : ''} onChange={(e) => setForm({ ...form, overtime_tax: e.target.value })} />
+                  </Field>
+                  <Field label={`Bonus tax${calc.autoCalc ? ` → ${money(calc.tax.bonusTax, ccy)}` : ''}`}>
+                    <input className="input" type="number" value={form.bonus_tax} placeholder={calc.autoCalc ? `auto ${calc.tax.bonusTax}` : ''} onChange={(e) => setForm({ ...form, bonus_tax: e.target.value })} />
+                  </Field>
                   <Field label="Rent"><input className="input" type="number" value={form.rent_deduction} onChange={(e) => setForm({ ...form, rent_deduction: e.target.value })} /></Field>
                   <Field label="SSNIT loan"><input className="input" type="number" value={form.ssnit_loan} onChange={(e) => setForm({ ...form, ssnit_loan: e.target.value })} /></Field>
                   <Field label="Other deductions"><input className="input" type="number" value={form.other_deductions} onChange={(e) => setForm({ ...form, other_deductions: e.target.value })} /></Field>
                 </div>
-                <p className="mt-2 text-[11px] text-ice-faint">SSNIT and union dues compute automatically from the basic salary × rate.</p>
+                {calc.autoCalc ? (
+                  <div className="mt-2 space-y-1 text-[11px] text-ice-faint">
+                    <p>SSNIT, union dues, PAYE, overtime tax, and bonus tax compute automatically from your Tax &amp; Deductions settings. Type a value to override any tax.</p>
+                    <p>Chargeable income {money(calc.tax.chargeable, ccy)} · overtime {money(calc.tax.overtimeTotal, ccy)} ({money(calc.tax.overtimeWithin, ccy)} within threshold, {money(calc.tax.overtimeExcess, ccy)} excess) · bonus qualifying {money(calc.tax.bonusQualifying, ccy)}, excess {money(calc.tax.bonusExcess, ccy)} taxed at graduated rates.</p>
+                  </div>
+                ) : <p className="mt-2 text-[11px] text-ice-faint">SSNIT and union dues compute automatically from the basic salary × rate. Enable auto-calculation in Tax &amp; Deductions for PAYE.</p>}
               </div>
 
               {/* Totals */}
