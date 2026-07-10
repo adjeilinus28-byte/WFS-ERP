@@ -1,9 +1,18 @@
 // Payroll calculation — mirrors the Pamicor payslip structure.
-// Percentage deductions (SSNIT, union dues) compute off basic salary.
+// Statutory deductions (SSNIT, union dues, PAYE, overtime tax, bonus tax) can
+// be auto-computed from the org's Tax & Deductions settings; manual amounts
+// still win when auto-calculation is off or a value is explicitly entered.
+
+import { computeTaxes } from './tax'
 
 const n = (v) => Number(v || 0)
+const r2 = (v) => +(Number(v) || 0).toFixed(2)
 
-export function computePayslip(f) {
+export function computePayslip(f, taxConfig) {
+  const settings = taxConfig?.settings
+  const bands = taxConfig?.bands
+  const auto = !!settings?.auto_calculate
+
   const basic = n(f.basic_pay || f.monthly_basic)
 
   // ── Earnings ──
@@ -25,15 +34,25 @@ export function computePayslip(f) {
   }
   const gross = Object.values(earnings).reduce((s, v) => s + v, 0)
 
-  // ── Percentage-driven statutory deductions (off basic) ──
-  const ssnit = +(basic * (n(f.ssnit_rate ?? 5.5) / 100)).toFixed(2)          // employee SSF
-  const union_dues = +(basic * (n(f.union_dues_rate) / 100)).toFixed(2)
-  const ssnit_employer = +(basic * (n(f.ssnit_employer_rate ?? 13) / 100)).toFixed(2)
+  // ── Statutory computation ──
+  const t = computeTaxes(f, settings, bands)
+
+  // Percentage-driven deductions (off basic). Fall back to legacy per-row rates.
+  const ssnit = auto ? t.ssnitEmployee : r2(basic * (n(f.ssnit_rate ?? settings?.ssnit_employee_rate ?? 5.5) / 100))
+  const union_dues = auto ? t.unionDues : r2(basic * (n(f.union_dues_rate ?? settings?.union_dues_rate ?? 0) / 100))
+  const ssnit_employer = auto ? t.ssnitEmployer : r2(basic * (n(f.ssnit_employer_rate ?? settings?.ssnit_employer_rate ?? 13) / 100))
+
+  // Taxes: auto value unless the user typed an override amount.
+  const hasVal = (v) => v !== '' && v != null && !Number.isNaN(Number(v))
+  const paye_amount    = auto && !hasVal(f.paye_amount)    ? t.paye        : n(f.paye_amount)
+  const overtime_tax   = auto && !hasVal(f.overtime_tax)   ? t.overtimeTax : n(f.overtime_tax)
+  const bonus_tax      = auto && !hasVal(f.bonus_tax)      ? t.bonusTax    : n(f.bonus_tax)
 
   const deductions = {
     ssnit,
-    paye_amount: n(f.paye_amount),
-    overtime_tax: n(f.overtime_tax),
+    paye_amount,
+    overtime_tax,
+    bonus_tax,
     union_dues,
     rent_deduction: n(f.rent_deduction),
     ssnit_loan: n(f.ssnit_loan),
@@ -41,9 +60,13 @@ export function computePayslip(f) {
   }
   const totalDed = Object.values(deductions).reduce((s, v) => s + v, 0)
 
-  const net = +(gross - totalDed).toFixed(2)
-  // Taxable income ≈ gross − non-taxable allowances − SSNIT (simplified)
-  const taxable = +(gross - ssnit).toFixed(2)
+  const net = r2(gross - totalDed)
+  const taxable = r2(gross - ssnit)
 
-  return { earnings, deductions, gross: +gross.toFixed(2), totalDed: +totalDed.toFixed(2), net, ssnit, union_dues, ssnit_employer, taxable }
+  return {
+    earnings, deductions,
+    gross: r2(gross), totalDed: r2(totalDed), net,
+    ssnit, union_dues, ssnit_employer, taxable,
+    tax: t, autoCalc: auto,
+  }
 }

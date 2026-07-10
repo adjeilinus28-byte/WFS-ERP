@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "WFS Enterprise — industry-agnostic multi-tenant ERP platform by WorkFlow Solutions",
+  "description": "WFS Enterprise \u2014 industry-agnostic multi-tenant ERP platform by WorkFlow Solutions",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -16,7 +16,9 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2",
     "recharts": "^2.12.7",
-    "ws": "^8.18.0"
+    "i18next": "^23.15.1",
+    "react-i18next": "^15.0.2",
+    "i18next-browser-languagedetector": "^8.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

@@ -22,7 +22,7 @@
   /* Text */
   --ice:       241 245 249;
   --ice-dim:   203 213 225;
-  --ice-faint: 100 116 139;
+  --ice-faint: 116 132 157;
 
   /* Hairlines (border-white/N) and hover washes (bg-white/N) */
   --line: 255 255 255;
@@ -44,6 +44,9 @@
 
   /* Ink for text sitting on the accent colour (amber needs dark text in BOTH themes) */
   --ink-on-accent: 8 12 22;
+
+  /* Accent when used AS text (readable variant; equals brand amber in dark) */
+  --accent-ink: 245 158 11;
 }
 
 html.light {
@@ -60,14 +63,14 @@ html.light {
   /* Text — dark slate ladder */
   --ice:       15 23 42;
   --ice-dim:   51 65 85;
-  --ice-faint: 100 116 139;
+  --ice-faint: 94 108 132;
 
   /* Hairlines & washes become dark-slate at low opacity */
   --line: 15 23 42;
   --wash: 15 23 42;
 
   /* Status — darkened for contrast on white (WCAG-friendly) */
-  --ok:   5 150 105;
+  --ok:   4 120 87;
   --warn: 180 83 9;
   --bad:  220 38 38;
   --info: 37 99 235;
@@ -77,6 +80,8 @@ html.light {
 
   --page-g1: #EEF2F7;
   --page-g2: #F8FAFC;
+
+  --accent-ink: 180 83 9;
 }
 
 html, body, #root { height: 100%; }
@@ -102,7 +107,7 @@ body {
   }
   .input {
     @apply w-full rounded-lg border border-white/10 bg-navy/60 px-3 py-2 text-sm text-ice
-           placeholder:text-ice-faint/70 outline-none transition
+           placeholder:text-ice-faint outline-none transition
            focus:border-accent/60 focus:ring-2 focus:ring-accent/20;
   }
   .btn {
@@ -119,6 +124,26 @@ body {
 /* Text on the accent colour must stay dark in both themes (amber is light).
    Pages use `text-navy` for this; in light mode --navy turns light, so pin it. */
 html.light .text-navy { color: rgb(var(--ink-on-accent)); }
+
+/* Amber fails WCAG as text on white; use the darker accent-ink for text only.
+   Buttons, badges, and fills keep the brand amber. */
+html.light .text-accent { color: rgb(var(--accent-ink)); }
+
+/* Visible keyboard focus everywhere (mouse clicks stay clean via :focus-visible). */
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link — first tab stop, visible only when focused */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  padding: 10px 16px; border-radius: 0 0 10px 0;
+  background: rgb(var(--accent)); color: rgb(var(--ink-on-accent));
+  font-weight: 600; font-size: 14px;
+}
+.skip-link:focus { left: 0; }
 
 /* Panels are more opaque in light mode (60% white over grey looks washy). */
 html.light .panel { background-color: rgb(255 255 255 / 0.88); }

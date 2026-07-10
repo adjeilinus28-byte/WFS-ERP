@@ -1,0 +1,51 @@
+{
+  "section": {
+    "overview": "Overview",
+    "operations": "Operations",
+    "supply_chain": "Supply Chain",
+    "people": "People",
+    "finance": "Finance",
+    "compliance": "Compliance",
+    "insight": "Insight",
+    "admin": "Admin"
+  },
+  "nav": {
+    "dashboard": "Command Deck",
+    "news": "News Flash",
+    "assets": "Assets",
+    "work_orders": "Work Orders",
+    "inventory": "Inventory",
+    "procurement": "Procurement",
+    "issuance": "Issuance",
+    "ppe": "PPE Planning",
+    "workforce": "Workforce",
+    "shifts": "Shifts",
+    "hr": "Leave",
+    "catering": "Catering",
+    "ir": "Relations",
+    "accounts": "Accounts",
+    "financials": "Financials",
+    "hse": "HSE & Safety",
+    "training": "Training",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search…",
+    "loading": "Loading…",
+    "sign_out": "Sign out",
+    "close_dialog": "Close dialog",
+    "skip_to_content": "Skip to main content",
+    "open_menu": "Open navigation menu",
+    "theme_to_dark": "Switch to dark theme",
+    "theme_to_light": "Switch to light theme",
+    "change_language": "Change language"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "section": {
+    "overview": "Aperçu",
+    "operations": "Opérations",
+    "supply_chain": "Chaîne d'appro.",
+    "people": "Personnel",
+    "finance": "Finances",
+    "compliance": "Conformité",
+    "insight": "Analyses",
+    "admin": "Administration"
+  },
+  "nav": {
+    "dashboard": "Poste de commande",
+    "news": "Flash info",
+    "assets": "Actifs",
+    "work_orders": "Ordres de travail",
+    "inventory": "Inventaire",
+    "procurement": "Approvisionnement",
+    "issuance": "Sorties de stock",
+    "ppe": "Planification EPI",
+    "workforce": "Effectifs",
+    "shifts": "Quarts de travail",
+    "hr": "Congés",
+    "catering": "Restauration",
+    "ir": "Relations",
+    "accounts": "Comptes",
+    "financials": "États financiers",
+    "hse": "SST & Sécurité",
+    "training": "Formation",
+    "reports": "Rapports",
+    "settings": "Paramètres"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "add": "Ajouter",
+    "search": "Rechercher…",
+    "loading": "Chargement…",
+    "sign_out": "Se déconnecter",
+    "close_dialog": "Fermer la boîte de dialogue",
+    "skip_to_content": "Aller au contenu principal",
+    "open_menu": "Ouvrir le menu de navigation",
+    "theme_to_dark": "Passer au thème sombre",
+    "theme_to_light": "Passer au thème clair",
+    "change_language": "Changer de langue"
+  }
+}
