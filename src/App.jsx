@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeApplier } from './context/ThemeContext'
@@ -5,25 +6,25 @@ import { ToastProvider } from './components/ui'
 import AppShell from './components/AppShell'
 import Login from './pages/Login'
 import NoAccess from './pages/NoAccess'
-import Dashboard from './pages/Dashboard'
-import NewsFlashAdmin from './pages/NewsFlashAdmin'
-import Assets from './pages/Assets'
-import WorkOrders from './pages/WorkOrders'
-import Inventory from './pages/Inventory'
-import Procurement from './pages/Procurement'
-import Issuance from './pages/Issuance'
-import PPEPlanning from './pages/PPEPlanning'
-import Catering from './pages/Catering'
-import IndustrialRelations from './pages/IndustrialRelations'
-import Shifts from './pages/Shifts'
-import Training from './pages/Training'
-import Financials from './pages/Financials'
-import Workforce from './pages/Workforce'
-import HSE from './pages/HSE'
-import Reports from './pages/Reports'
-import HR from './pages/HR'
-import Accounts from './pages/Accounts'
-import Settings from './pages/Settings'
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const NewsFlashAdmin = lazy(() => import('./pages/NewsFlashAdmin'))
+const Assets = lazy(() => import('./pages/Assets'))
+const WorkOrders = lazy(() => import('./pages/WorkOrders'))
+const Inventory = lazy(() => import('./pages/Inventory'))
+const Procurement = lazy(() => import('./pages/Procurement'))
+const Issuance = lazy(() => import('./pages/Issuance'))
+const PPEPlanning = lazy(() => import('./pages/PPEPlanning'))
+const Catering = lazy(() => import('./pages/Catering'))
+const IndustrialRelations = lazy(() => import('./pages/IndustrialRelations'))
+const Shifts = lazy(() => import('./pages/Shifts'))
+const Training = lazy(() => import('./pages/Training'))
+const Financials = lazy(() => import('./pages/Financials'))
+const Workforce = lazy(() => import('./pages/Workforce'))
+const HSE = lazy(() => import('./pages/HSE'))
+const Reports = lazy(() => import('./pages/Reports'))
+const HR = lazy(() => import('./pages/HR'))
+const Accounts = lazy(() => import('./pages/Accounts'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 function Splash({ label = 'Loading…' }) {
   return (
@@ -39,6 +40,35 @@ function Splash({ label = 'Loading…' }) {
   )
 }
 
+// Lightweight skeleton shown while a route chunk loads — mirrors a typical page:
+// header, KPI cards, then a table. Pure CSS shimmer, no data.
+function PageSkeleton() {
+  const bar = 'rounded bg-white/[0.06] animate-pulse'
+  return (
+    <div className="animate-fade-in" aria-busy="true" aria-label="Loading">
+      <div className={`${bar} mb-2 h-3 w-24`} />
+      <div className={`${bar} mb-6 h-8 w-56`} />
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0,1,2,3].map((i) => (
+          <div key={i} className="panel p-5">
+            <div className={`${bar} mb-3 h-3 w-20`} />
+            <div className={`${bar} h-7 w-16`} />
+          </div>
+        ))}
+      </div>
+      <div className="panel p-4">
+        <div className={`${bar} mb-4 h-4 w-40`} />
+        {[0,1,2,3,4].map((i) => (
+          <div key={i} className="flex items-center gap-3 border-t border-white/[0.05] py-3">
+            <div className={`${bar} h-4 flex-1`} style={{ maxWidth: `${70 - i * 8}%` }} />
+            <div className={`${bar} h-4 w-16`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Gate() {
   const { session, loading, membLoaded, memberships, activeOrgId } = useAuth()
 
@@ -49,6 +79,7 @@ function Gate() {
 
   return (
     <AppShell>
+      <Suspense fallback={<PageSkeleton />}>
       <Routes>
         <Route path="/news" element={<NewsFlashAdmin />} />
         <Route path="/" element={<Dashboard />} />
@@ -71,6 +102,7 @@ function Gate() {
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </AppShell>
   )
 }
