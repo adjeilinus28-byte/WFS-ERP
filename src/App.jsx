@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeApplier } from './context/ThemeContext'
 import { ToastProvider } from './components/ui'
 import AppShell from './components/AppShell'
+import { WFSMark } from './components/Brand'
 import Login from './pages/Login'
 import NoAccess from './pages/NoAccess'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -30,10 +31,7 @@ function Splash({ label = 'Loading…' }) {
   return (
     <div className="grid min-h-screen place-items-center">
       <div className="flex flex-col items-center gap-3">
-        <svg viewBox="0 0 64 64" className="h-10 w-10 animate-pulse">
-          <rect width="64" height="64" rx="14" fill="#0E1424" />
-          <path d="M14 20 L24 44 L32 26 L40 44 L50 20" fill="none" stroke="#F59E0B" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <WFSMark size={40} className="h-10 w-10 animate-pulse" />
         <span className="font-mono text-xs uppercase tracking-widest text-ice-faint">{label}</span>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut, Building2, Sun, Moon, Languages } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, Building2, Sun, Moon, Languages, Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { LANGS } from '../i18n'
+import CommandPalette from './CommandPalette'
+import { WFSMark } from './Brand'
 import { visibleModules } from '../lib/modules'
 import { initials } from '../lib/format'
 import { Badge } from './ui'
@@ -48,13 +50,7 @@ function ThemeToggle() {
 }
 
 function Logo() {
-  return (
-    <svg viewBox="0 0 64 64" className="h-7 w-7">
-      <rect width="64" height="64" rx="14" fill="#0E1424" />
-      <path d="M14 20 L24 44 L32 26 L40 44 L50 20" fill="none" stroke="rgb(var(--accent))"
-        strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <WFSMark size={28} className="h-7 w-7" />
 }
 
 export default function AppShell({ children }) {
@@ -102,6 +98,7 @@ export default function AppShell({ children }) {
     <div className="flex h-screen overflow-hidden">
       {/* ── Sidebar ── */}
       <a href="#main" className="skip-link">{t('common.skip_to_content')}</a>
+      <CommandPalette />
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/[0.06] bg-navy-800/80 backdrop-blur-xl transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-4">
           <Logo />
@@ -159,6 +156,12 @@ export default function AppShell({ children }) {
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent-soft font-mono text-xs font-bold text-accent">
               {initials(user?.email?.split('@')[0] || 'U')}
             </div>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('wfs:open-palette'))}
+              className="hidden items-center gap-2 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-ice-faint hover:border-accent/40 hover:text-ice sm:flex"
+              aria-label={t('common.search')} title={t('common.search')}>
+              <Search size={14} />
+              <kbd className="rounded border border-white/15 bg-white/[0.04] px-1 font-mono text-[9px]">⌘K</kbd>
+            </button>
             <LangSwitcher />
             <ThemeToggle />
             <button onClick={signOut} aria-label={t('common.sign_out')} className="rounded-lg p-2 text-ice-faint hover:bg-white/5 hover:text-ice" title={t('common.sign_out')}>
