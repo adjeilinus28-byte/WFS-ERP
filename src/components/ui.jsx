@@ -1,16 +1,16 @@
 import { createContext, useCallback, useContext, useState } from 'react'
 import { CheckCircle2, AlertCircle, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { at } from '../lib/tr'
 
 // ── Boundary translation ─────────────────────────────────────────────────────
 // Shared components auto-translate the label strings pages hand them: the
 // string is slugified into a key under "str" and looked up with itself as the
 // fallback — untranslated strings simply render in English. Add translations
 // in src/locales/<lang>.json under "str" without touching any page.
-const slugKey = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 export function useAutoT() {
-  const { t } = useTranslation()
-  return (v) => (typeof v === 'string' && v.trim() ? t('str.' + slugKey(v), v) : v)
+  useTranslation()          // subscribe so labels re-render on language change
+  return at
 }
 
 // ── Status badge ─────────────────────────────────────────────────────────────
@@ -92,12 +92,24 @@ export function Field({ label, children, span }) {
   )
 }
 
-export function Select({ value, onChange, options, ...rest }) {
+// Sentinel options ("", "all", "any") are always UI text — e.g. "All departments",
+// "Select…". Everything else is assumed to be DATA (department names, employees,
+// vendors) and is left untouched, so we never translate a database value.
+// Pass translateOptions to force-translate a fixed enum list (status, priority…).
+const isSentinel = (v) => v === '' || v === 'all' || v === 'any' || v == null
+
+export function Select({ value, onChange, options, translateOptions = false, ...rest }) {
+  const tr = useAutoT()
+  const lbl = (o) => {
+    const raw = o.label ?? o
+    const val = o.value ?? o
+    return (translateOptions || isSentinel(val)) ? tr(raw) : raw
+  }
   return (
     <select className="input" value={value} onChange={onChange} {...rest}>
       {options.map((o) => (
         <option key={o.value ?? o} value={o.value ?? o} className="bg-navy-700">
-          {o.label ?? o}
+          {lbl(o)}
         </option>
       ))}
     </select>

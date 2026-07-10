@@ -5,6 +5,7 @@ import { useTable } from '../hooks/useTable'
 import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
 import FileUpload from '../components/FileUpload'
 import { money, date } from '../lib/format'
+import { at } from '../lib/tr'
 
 const INV_STATUS = ['draft', 'sent', 'approved', 'partial', 'paid', 'overdue', 'cancelled']
 
@@ -89,8 +90,8 @@ export default function Invoices({ ccy }) {
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <div className="eyebrow">Finance · Accounts Receivable</div>
-        {canWrite && <button className="btn-primary" onClick={openNew}><Plus size={16} /> New invoice</button>}
+        <div className="eyebrow">{at('Finance · Accounts Receivable')}</div>
+        {canWrite && <button className="btn-primary" onClick={openNew}><Plus size={16} /> {at('New invoice')}</button>}
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -108,22 +109,22 @@ export default function Invoices({ ccy }) {
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search invoice, customer…" className="w-48 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
           </div>
           <Filter size={14} className="text-ice-faint" />
-          <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, ...INV_STATUS.map((s) => ({ value: s, label: s }))]} /></div>
-          <div className="w-32"><Select value={fSent} onChange={(e) => setFSent(e.target.value)} options={[{ value: '', label: 'Sent & unsent' }, { value: 'sent', label: 'Sent only' }, { value: 'unsent', label: 'Unsent only' }]} /></div>
+          <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: at('All statuses') }, ...INV_STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+          <div className="w-32"><Select value={fSent} onChange={(e) => setFSent(e.target.value)} options={[{ value: '', label: at('Sent & unsent') }, { value: 'sent', label: at('Sent only') }, { value: 'unsent', label: at('Unsent only') }]} /></div>
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
         </div>
       </div>
 
       <div className="panel overflow-hidden">
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : filtered.length === 0 ? <EmptyState title="No invoices" hint="Raise an invoice, attach the document, and email it to the customer for approval." />
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]"><tr>
-                <th className="th">Invoice #</th><th className="th">Customer</th><th className="th">Due</th>
-                <th className="th">Total</th><th className="th">Doc</th><th className="th">Sent</th>
-                <th className="th">Status</th><th className="th text-right">Actions</th>
+                <th className="th">{at('Invoice #')}</th><th className="th">{at('Customer')}</th><th className="th">{at('Due')}</th>
+                <th className="th">{at('Total')}</th><th className="th">{at('Doc')}</th><th className="th">{at('Sent')}</th>
+                <th className="th">{at('Status')}</th><th className="th text-right">{at('Actions')}</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
@@ -133,7 +134,7 @@ export default function Invoices({ ccy }) {
                     <td className="td whitespace-nowrap">{date(r.due_date)}</td>
                     <td className="td font-mono font-semibold">{money(r.total, ccy)}</td>
                     <td className="td">{r.document_url ? <a href={r.document_url} target="_blank" rel="noreferrer" className="text-info hover:underline"><FileText size={14} className="inline" /></a> : <span className="text-ice-faint">—</span>}</td>
-                    <td className="td">{r.sent ? <Badge tone="ok">sent</Badge> : <Badge tone="mute">no</Badge>}</td>
+                    <td className="td">{r.sent ? <Badge tone="ok">{at('sent')}</Badge> : <Badge tone="mute">{at('no')}</Badge>}</td>
                     <td className="td">
                       {canWrite ? (
                         <select value={r.status} onChange={(e) => setStatus(r, e.target.value)}
@@ -192,7 +193,7 @@ export default function Invoices({ ccy }) {
               <Field label="Notes"><textarea className="input min-h-[60px]" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setDrawer(null)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save invoice'}</button>
             </div>
           </div>

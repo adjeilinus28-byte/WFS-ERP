@@ -7,6 +7,7 @@ import { useDepartments } from '../hooks/useDepartments'
 import Payroll from './Payroll'
 import Invoices from './Invoices'
 import { Landmark, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const INV_STATUS  = ['draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
 const BILL_STATUS = ['draft', 'received', 'partial', 'paid', 'overdue', 'cancelled']
@@ -14,7 +15,7 @@ const PAY_METHOD  = ['bank_transfer', 'cash', 'cheque', 'mobile_money', 'card']
 const PAY_STATUS  = ['draft', 'approved', 'paid']
 
 function Tabs({ tab, setTab }) {
-  const items = [['invoices', 'Invoices (AR)'], ['bills', 'Bills (AP)'], ['payments', 'Payments'], ['payroll', 'Payroll']]
+  const items = [['invoices', at('Invoices (AR)')], ['bills', at('Bills (AP)')], ['payments', at('Payments')], ['payroll', at('Payroll')]]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -47,25 +48,25 @@ export default function Accounts() {
           emptyHint="Record supplier bills and manage your payables."
           searchKeys={['bill_no', 'supplier', 'status']}
           columns={[
-            { key: 'bill_no',    label: 'Bill #',   render: (v) => <span className="font-mono text-accent">{v}</span> },
-            { key: 'supplier',   label: 'Supplier' },
-            { key: 'issue_date', label: 'Issued',   render: (v) => date(v) },
-            { key: 'due_date',   label: 'Due',      render: (v) => date(v) },
-            { key: 'amount',     label: 'Amount',   render: (v) => money(v, ccy) },
-            { key: 'tax',        label: 'Tax',      render: (v) => money(v, ccy) },
-            { key: 'total',      label: 'Total',    render: (v) => <span className="font-semibold">{money(v, ccy)}</span> },
-            { key: 'status',     label: 'Status',   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+            { key: 'bill_no',    label: at('Bill #'),   render: (v) => <span className="font-mono text-accent">{v}</span> },
+            { key: 'supplier',   label: at('Supplier') },
+            { key: 'issue_date', label: at('Issued'),   render: (v) => date(v) },
+            { key: 'due_date',   label: at('Due'),      render: (v) => date(v) },
+            { key: 'amount',     label: at('Amount'),   render: (v) => money(v, ccy) },
+            { key: 'tax',        label: at('Tax'),      render: (v) => money(v, ccy) },
+            { key: 'total',      label: at('Total'),    render: (v) => <span className="font-semibold">{money(v, ccy)}</span> },
+            { key: 'status',     label: at('Status'),   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
           ]}
           fields={[
-            { key: 'bill_no',    label: 'Bill number',     required: true },
-            { key: 'supplier',   label: 'Supplier',        required: true, span: true },
-            { key: 'status',     label: 'Status',          type: 'select', options: BILL_STATUS.map((s) => ({ value: s, label: s })), default: 'received' },
-            { key: 'issue_date', label: 'Issue date',      type: 'date' },
-            { key: 'due_date',   label: 'Due date',        type: 'date' },
-            { key: 'amount',     label: 'Amount (ex tax)', type: 'number', default: 0 },
-            { key: 'tax',        label: 'Tax',             type: 'number', default: 0 },
-            { key: 'total',      label: 'Total',           type: 'number', default: 0 },
-            { key: 'notes',      label: 'Notes',           type: 'textarea', span: true },
+            { key: 'bill_no',    label: at('Bill number'),     required: true },
+            { key: 'supplier',   label: at('Supplier'),        required: true, span: true },
+            { key: 'status',     label: at('Status'),          type: 'select', options: BILL_STATUS.map((s) => ({ value: s, label: s })), default: 'received' },
+            { key: 'issue_date', label: at('Issue date'),      type: 'date' },
+            { key: 'due_date',   label: at('Due date'),        type: 'date' },
+            { key: 'amount',     label: at('Amount (ex tax)'), type: 'number', default: 0 },
+            { key: 'tax',        label: at('Tax'),             type: 'number', default: 0 },
+            { key: 'total',      label: at('Total'),           type: 'number', default: 0 },
+            { key: 'notes',      label: at('Notes'),           type: 'textarea', span: true },
           ]}
           kpis={(rows) => {
             const outstanding = rows.filter((r) => ['received','partial','overdue'].includes(r.status))
@@ -87,20 +88,20 @@ export default function Accounts() {
           eyebrow="Finance" title="Payments" table="payments"
           newLabel="New payment" emptyTitle="No payments recorded"
           emptyHint="Log all incoming and outgoing payments against invoices and bills."
-          searchKeys={['reference', 'notes']}
+          searchKeys={['reference', at('notes')]}
           columns={[
-            { key: 'paid_on',   label: 'Date',      render: (v) => date(v) },
-            { key: 'amount',    label: 'Amount',    render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
-            { key: 'method',    label: 'Method',    render: (v) => v ? <Badge>{v.replace('_', ' ')}</Badge> : '—' },
-            { key: 'reference', label: 'Reference', render: (v) => <span className="font-mono text-xs">{v || '—'}</span> },
-            { key: 'notes',     label: 'Notes' },
+            { key: 'paid_on',   label: at('Date'),      render: (v) => date(v) },
+            { key: 'amount',    label: at('Amount'),    render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
+            { key: 'method',    label: at('Method'),    render: (v) => v ? <Badge>{v.replace('_', ' ')}</Badge> : '—' },
+            { key: 'reference', label: at('Reference'), render: (v) => <span className="font-mono text-xs">{v || '—'}</span> },
+            { key: 'notes',     label: at('Notes') },
           ]}
           fields={[
-            { key: 'amount',    label: 'Amount',              type: 'number', required: true, default: 0 },
-            { key: 'paid_on',   label: 'Payment date',        type: 'date' },
-            { key: 'method',    label: 'Method',              type: 'select', options: PAY_METHOD.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'bank_transfer' },
-            { key: 'reference', label: 'Reference / cheque no.' },
-            { key: 'notes',     label: 'Notes',               type: 'textarea', span: true },
+            { key: 'amount',    label: at('Amount'),              type: 'number', required: true, default: 0 },
+            { key: 'paid_on',   label: at('Payment date'),        type: 'date' },
+            { key: 'method',    label: at('Method'),              type: 'select', options: PAY_METHOD.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'bank_transfer' },
+            { key: 'reference', label: at('Reference / cheque no.') },
+            { key: 'notes',     label: at('Notes'),               type: 'textarea', span: true },
           ]}
           kpis={(rows) => {
             const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0)

@@ -13,6 +13,7 @@ import {
   UtensilsCrossed, Store, CalendarDays, Lock, AlertCircle, Plus, X, Check, Ban, TrendingUp, Users, ChefHat, Moon, PhoneCall,
 } from 'lucide-react'
 import { buildShiftContext, shiftOn } from '../lib/shifts'
+import { at } from '../lib/tr'
 
 const MEALS = ['breakfast', 'lunch', 'dinner']
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
@@ -20,8 +21,8 @@ const iso = (d) => d.toISOString().slice(0, 10)
 const CUTOFF_DAYS = 2
 
 function Tabs({ tab, setTab, canManage }) {
-  const items = [['order', 'My Orders'], ['dashboard', 'Order Dashboard']]
-  if (canManage) { items.push(['callouts', 'Callout Approvals'], ['vendors', 'Vendors'], ['menu', 'Menu Manager']) }
+  const items = [['order', at('My Orders')], ['dashboard', at('Order Dashboard')]]
+  if (canManage) { items.push(['callouts', at('Callout Approvals')], ['vendors', at('Vendors')], ['menu', at('Menu Manager')]) }
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -126,7 +127,7 @@ function MyOrders() {
   if (!me && !loading) return (
     <div className="panel px-6 py-16 text-center">
       <UtensilsCrossed size={28} className="mx-auto text-ice-faint" />
-      <p className="mt-3 font-display text-lg font-bold text-ice">Account not linked to an employee</p>
+      <p className="mt-3 font-display text-lg font-bold text-ice">{at('Account not linked to an employee')}</p>
       <p className="mt-1 text-sm text-ice-faint">Ask an admin to add you in Workforce with this login email so you can place meal orders.</p>
     </div>
   )
@@ -143,7 +144,7 @@ function MyOrders() {
         <StatCard label="On-leave days" value={days.filter((d) => leaveDates.has(d)).length} icon={Ban} />
       </div>
 
-      {loading ? <div className="panel p-8 text-center text-ice-faint">Loading…</div>
+      {loading ? <div className="panel p-8 text-center text-ice-faint">{at('Loading…')}</div>
       : (
         <div className="space-y-3">
           {days.map((date) => {
@@ -159,11 +160,11 @@ function MyOrders() {
                   <div className="font-display text-base font-bold text-ice">
                     {dObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
                   </div>
-                  {onLeave ? <Badge tone="mute"><Ban size={11} className="mr-1 inline" />On leave</Badge>
-                  : isOff && callout?.status === 'approved' ? <Badge tone="ok">Callout approved</Badge>
-                  : isOff ? <Badge tone="mute"><Moon size={11} className="mr-1 inline" />Off day</Badge>
-                  : locked ? <Badge tone="warn"><Lock size={11} className="mr-1 inline" />Locked</Badge>
-                  : <Badge tone="ok">Open</Badge>}
+                  {onLeave ? <Badge tone="mute"><Ban size={11} className="mr-1 inline" />{at('On leave')}</Badge>
+                  : isOff && callout?.status === 'approved' ? <Badge tone="ok">{at('Callout approved')}</Badge>
+                  : isOff ? <Badge tone="mute"><Moon size={11} className="mr-1 inline" />{at('Off day')}</Badge>
+                  : locked ? <Badge tone="warn"><Lock size={11} className="mr-1 inline" />{at('Locked')}</Badge>
+                  : <Badge tone="ok">{at('Open')}</Badge>}
                 </div>
                 {onLeave ? <p className="text-sm text-ice-faint">No meals — you're on approved leave.</p>
                 : offBlocked ? (
@@ -174,7 +175,7 @@ function MyOrders() {
                       : "Off day — no meals unless you're called out to work."}
                     </p>
                     {!callout && !locked && (
-                      <button onClick={() => requestCallout(date)} className="btn-ghost btn-sm"><PhoneCall size={13} /> Request callout meal</button>
+                      <button onClick={() => requestCallout(date)} className="btn-ghost btn-sm"><PhoneCall size={13} /> {at('Request callout meal')}</button>
                     )}
                   </div>
                 ) : (
@@ -253,7 +254,7 @@ function MealSlot({ meal, date, locked, options, order, onPlace, ccy }) {
           <div>
             <div className="mb-1 font-mono text-[9px] uppercase tracking-wider text-ice-faint">1 · Vendor</div>
             <Select value={vendorId} onChange={(e) => { setVendorId(e.target.value); setSel('') }}
-              options={[{ value: '', label: 'Select vendor…' }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} />
+              options={[{ value: '', label: at('Select vendor…') }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} />
           </div>
 
           {/* Step 2 — item (only after a vendor is chosen) */}
@@ -276,7 +277,7 @@ function MealSlot({ meal, date, locked, options, order, onPlace, ccy }) {
           <input value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="Allergies (optional)"
             className="w-full rounded-md border border-white/10 bg-navy/50 px-2 py-1 text-xs text-ice placeholder:text-ice-faint/60 outline-none" />
           <div className="flex gap-1.5">
-            <button onClick={() => commit(sel, false)} disabled={!sel} className="flex-1 rounded-md bg-accent py-1 text-xs font-semibold text-navy disabled:opacity-40"><Check size={12} className="inline" /> Confirm</button>
+            <button onClick={() => commit(sel, false)} disabled={!sel} className="flex-1 rounded-md bg-accent py-1 text-xs font-semibold text-navy disabled:opacity-40"><Check size={12} className="inline" /> {at('Confirm')}</button>
             <button onClick={() => commit(null, true)} className="rounded-md bg-white/5 px-2 py-1 text-xs text-ice-dim hover:text-ice" title="No meal this day"><Ban size={12} /></button>
           </div>
         </div>
@@ -320,16 +321,16 @@ function OrderDashboard() {
       </div>
 
       <div className="panel mb-4 flex flex-wrap items-center gap-2 p-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Day:</span>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Day:')}</span>
         <div className="w-52"><Select value={day} onChange={(e) => setDay(e.target.value)}
-          options={[{ value: '', label: 'All 7 days' }, ...days.map((d) => ({ value: d, label: new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }))]} /></div>
+          options={[{ value: '', label: at('All 7 days') }, ...days.map((d) => ({ value: d, label: new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }))]} /></div>
       </div>
 
       {byItem.length === 0 ? <EmptyState title="No orders yet" hint="Orders placed by the workforce will summarise here per vendor and menu item." />
       : (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="panel p-5">
-            <div className="eyebrow mb-4">Orders per menu item</div>
+            <div className="eyebrow mb-4">{at('Orders per menu item')}</div>
             <ResponsiveContainer width="100%" height={Math.max(240, byItem.length * 34)}>
               <BarChart data={byItem} layout="vertical" margin={{ left: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
@@ -341,9 +342,9 @@ function OrderDashboard() {
             </ResponsiveContainer>
           </div>
           <div className="panel overflow-hidden">
-            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">Breakdown</span></div>
+            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Breakdown')}</span></div>
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr><th className="th">Vendor · Item</th><th className="th">Orders</th><th className="th">Value</th></tr></thead>
+              <thead className="bg-white/[0.02]"><tr><th className="th">Vendor · Item</th><th className="th">{at('Orders')}</th><th className="th">{at('Value')}</th></tr></thead>
               <tbody>
                 {byItem.map((r, i) => (
                   <tr key={i} className="transition hover:bg-white/[0.025]">
@@ -397,23 +398,23 @@ function MenuManager() {
   return (
     <div>
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Vendor:</span>
-        <div className="w-56"><Select value={vendorId} onChange={(e) => setVendorId(e.target.value)} options={[{ value: '', label: 'Select vendor…' }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} /></div>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Vendor:')}</span>
+        <div className="w-56"><Select value={vendorId} onChange={(e) => setVendorId(e.target.value)} options={[{ value: '', label: at('Select vendor…') }, ...vendors.map((v) => ({ value: v.id, label: v.name }))]} /></div>
       </div>
 
       {!vendorId ? <EmptyState title="Select a vendor" hint="Choose a vendor to view and edit their 14-day menu." />
       : (
         <>
           <div className="panel mb-4 p-4">
-            <div className="eyebrow mb-3">Add menu item</div>
+            <div className="eyebrow mb-3">{at('Add menu item')}</div>
             <div className="grid gap-3 sm:grid-cols-5">
               <Field label="Date"><Select value={draft.service_date} onChange={(e) => setDraft({ ...draft, service_date: e.target.value })}
-                options={[{ value: '', label: 'Select…' }, ...days14.filter((d) => !isLocked(d)).map((d) => ({ value: d, label: new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }))]} /></Field>
+                options={[{ value: '', label: at('Select…') }, ...days14.filter((d) => !isLocked(d)).map((d) => ({ value: d, label: new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }))]} /></Field>
               <Field label="Meal"><Select value={draft.meal_type} onChange={(e) => setDraft({ ...draft, meal_type: e.target.value })} options={MEALS.map((m) => ({ value: m, label: m }))} /></Field>
               <div className="sm:col-span-2"><Field label="Item name"><input className="input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></Field></div>
               <Field label="Price"><input className="input" type="number" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} /></Field>
             </div>
-            <button onClick={add} className="btn-primary btn-sm mt-3"><Plus size={14} /> Add item</button>
+            <button onClick={add} className="btn-primary btn-sm mt-3"><Plus size={14} /> {at('Add item')}</button>
           </div>
 
           <div className="space-y-2">
@@ -424,9 +425,9 @@ function MenuManager() {
                 <div key={date} className={`panel p-3 ${locked ? 'opacity-70' : ''}`}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="font-display text-sm font-bold text-ice">{new Date(date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                    {locked ? <Badge tone="warn"><Lock size={10} className="mr-1 inline" />Live/locked</Badge> : <Badge tone="ok">Editable</Badge>}
+                    {locked ? <Badge tone="warn"><Lock size={10} className="mr-1 inline" />Live/locked</Badge> : <Badge tone="ok">{at('Editable')}</Badge>}
                   </div>
-                  {dayItems.length === 0 ? <p className="text-xs text-ice-faint">No items</p>
+                  {dayItems.length === 0 ? <p className="text-xs text-ice-faint">{at('No items')}</p>
                   : (
                     <div className="flex flex-wrap gap-2">
                       {dayItems.map((it) => (
@@ -484,7 +485,7 @@ function CalloutApprovals() {
   return (
     <div className="panel overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
-        <span className="eyebrow">Callout meal requests</span>
+        <span className="eyebrow">{at('Callout meal requests')}</span>
         <button onClick={() => setShowAll(!showAll)} className="text-xs text-ice-dim hover:text-ice">{showAll ? 'Pending only' : 'Show all'}</button>
       </div>
       {shown.length === 0 ? <EmptyState title="No pending callouts" hint="Workers on off days can request a callout meal; approvals happen here." />
@@ -496,8 +497,8 @@ function CalloutApprovals() {
           </div>
           {r.status === 'pending' ? (
             <div className="flex gap-2">
-              <button onClick={() => decide(r, 'approved')} className="btn-primary btn-sm"><Check size={13} /> Approve</button>
-              <button onClick={() => decide(r, 'declined')} className="btn-ghost btn-sm"><X size={13} /> Decline</button>
+              <button onClick={() => decide(r, 'approved')} className="btn-primary btn-sm"><Check size={13} /> {at('Approve')}</button>
+              <button onClick={() => decide(r, 'declined')} className="btn-ghost btn-sm"><X size={13} /> {at('Decline')}</button>
             </div>
           ) : <Badge tone={r.status === 'approved' ? 'ok' : 'mute'}>{r.status}</Badge>}
         </div>
@@ -524,19 +525,19 @@ export default function Catering() {
           newLabel="New vendor" emptyTitle="No vendors" emptyHint="Add catering vendors, then set their menus in the Menu Manager."
           searchKeys={['name', 'contact_name', 'cuisine']}
           columns={[
-            { key: 'name', label: 'Vendor' },
-            { key: 'cuisine', label: 'Cuisine', render: (v) => v ? <Badge>{v}</Badge> : '—' },
-            { key: 'contact_name', label: 'Contact' },
-            { key: 'phone', label: 'Phone' },
-            { key: 'active', label: 'Active', render: (v) => <Badge tone={v ? 'ok' : 'mute'}>{v ? 'active' : 'off'}</Badge> },
+            { key: 'name', label: at('Vendor') },
+            { key: 'cuisine', label: at('Cuisine'), render: (v) => v ? <Badge>{v}</Badge> : '—' },
+            { key: 'contact_name', label: at('Contact') },
+            { key: 'phone', label: at('Phone') },
+            { key: 'active', label: at('Active'), render: (v) => <Badge tone={v ? 'ok' : 'mute'}>{v ? 'active' : 'off'}</Badge> },
           ]}
           fields={[
-            { key: 'name', label: 'Vendor name', required: true, span: true },
-            { key: 'cuisine', label: 'Cuisine' },
-            { key: 'contact_name', label: 'Contact name' },
-            { key: 'phone', label: 'Phone' },
-            { key: 'email', label: 'Email', type: 'email' },
-            { key: 'notes', label: 'Notes', type: 'textarea', span: true },
+            { key: 'name', label: at('Vendor name'), required: true, span: true },
+            { key: 'cuisine', label: at('Cuisine') },
+            { key: 'contact_name', label: at('Contact name') },
+            { key: 'phone', label: at('Phone') },
+            { key: 'email', label: at('Email'), type: 'email' },
+            { key: 'notes', label: at('Notes'), type: 'textarea', span: true },
           ]}
           beforeSave={(p) => ({ ...p, active: p.active ?? true })}
           kpis={(rows) => <>

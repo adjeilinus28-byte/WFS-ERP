@@ -4,20 +4,21 @@ import { useAuth } from '../context/AuthContext'
 import { PageHeader, Field, Select, useToast, Badge } from '../components/ui'
 import { MODULES, ALWAYS_ON } from '../lib/modules'
 import { Check } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const INDUSTRIES = [
-  { value: 'mining', label: 'Mining' },
-  { value: 'oil_gas', label: 'Oil & Gas' },
-  { value: 'manufacturing', label: 'Manufacturing' },
-  { value: 'logistics', label: 'Logistics' },
-  { value: 'general', label: 'General' },
+  { value: 'mining', label: at('Mining') },
+  { value: 'oil_gas', label: at('Oil & Gas') },
+  { value: 'manufacturing', label: at('Manufacturing') },
+  { value: 'logistics', label: at('Logistics') },
+  { value: 'general', label: at('General') },
 ]
 const SWATCHES = ['#F59E0B', '#38BDF8', '#34D399', '#F472B6', '#A78BFA', '#FB7185', '#FACC15']
 
 export default function Settings() {
   const { activeOrg, activeOrgId, role, reloadMemberships } = useAuth()
   const toast = useToast()
-  const canAdmin = ['owner', 'admin'].includes(role)
+  const canAdmin = ['owner', at('admin')].includes(role)
 
   const [form, setForm] = useState({})
   const [modules, setModules] = useState([])
@@ -74,7 +75,7 @@ export default function Settings() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Branding */}
         <div className="panel p-5">
-          <div className="eyebrow mb-4">White-label branding</div>
+          <div className="eyebrow mb-4">{at('White-label branding')}</div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Organization name" span>
               <input className="input" value={form.name || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -105,7 +106,7 @@ export default function Settings() {
             </Field>
           </div>
           <div className="mt-4">
-            <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Accent colour</span>
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Accent colour')}</span>
             <div className="flex flex-wrap items-center gap-2">
               {SWATCHES.map((c) => (
                 <button key={c} disabled={!canAdmin} onClick={() => setForm({ ...form, accent_color: c })}
@@ -121,7 +122,7 @@ export default function Settings() {
 
         {/* Modules */}
         <div className="panel p-5">
-          <div className="eyebrow mb-1">Enabled modules</div>
+          <div className="eyebrow mb-1">{at('Enabled modules')}</div>
           <p className="mb-4 text-xs text-ice-faint">Switch capabilities on or off for this workspace. Dashboard and Settings are always available.</p>
           <div className="space-y-1.5">
             {MODULES.map((m) => {
@@ -133,7 +134,7 @@ export default function Settings() {
                   className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition ${on ? 'border-accent-line bg-accent-soft' : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'}`}>
                   <Icon size={16} className={on ? 'text-accent' : 'text-ice-faint'} />
                   <span className="flex-1 text-sm text-ice">{m.label}</span>
-                  {locked && <span className="font-mono text-[10px] uppercase text-ice-faint">always on</span>}
+                  {locked && <span className="font-mono text-[10px] uppercase text-ice-faint">{at('always on')}</span>}
                   <span className={`grid h-5 w-5 place-items-center rounded ${on ? 'bg-accent text-navy' : 'border border-white/15'}`}>
                     {on && <Check size={13} />}
                   </span>
@@ -145,11 +146,11 @@ export default function Settings() {
 
         {/* Members */}
         <div className="panel p-5 lg:col-span-2">
-          <div className="eyebrow mb-4">Workspace members</div>
+          <div className="eyebrow mb-4">{at('Workspace members')}</div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead><tr>
-                <th className="th">Name</th><th className="th">Email</th><th className="th">Department</th><th className="th">Role</th>
+                <th className="th">{at('Name')}</th><th className="th">{at('Email')}</th><th className="th">{at('Department')}</th><th className="th">{at('Role')}</th>
               </tr></thead>
               <tbody>
                 {members.map((m) => (
@@ -160,7 +161,7 @@ export default function Settings() {
                     <td className="td"><Badge tone="accent">{m.role}</Badge></td>
                   </tr>
                 ))}
-                {members.length === 0 && <tr><td className="td text-ice-faint" colSpan={4}>No other members visible.</td></tr>}
+                {members.length === 0 && <tr><td className="td text-ice-faint" colSpan={4}>{at('No other members visible.')}</td></tr>}
               </tbody>
             </table>
           </div>

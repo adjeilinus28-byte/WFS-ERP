@@ -59,7 +59,7 @@ function Logo() {
 
 export default function AppShell({ children }) {
   const { activeOrg, memberships, switchOrg, signOut, user, role } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)       // mobile nav
   const [orgMenu, setOrgMenu] = useState(false)
   const loc = useLocation()
@@ -167,7 +167,7 @@ export default function AppShell({ children }) {
           </div>
         </header>
 
-        <main id="main" key={loc.pathname} className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 animate-fade-in">
+        <main id="main" key={`${loc.pathname}:${i18n.resolvedLanguage || i18n.language}`} className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 animate-fade-in">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>

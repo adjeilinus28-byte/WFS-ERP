@@ -8,6 +8,7 @@ import { buildShiftContext, shiftOn } from '../lib/shifts'
 import { businessMonthRange, currentBusinessMonth, businessMonthLabel } from '../lib/period'
 import { ghanaHolidays, HOLIDAY_TYPES } from '../lib/holidays'
 import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search, CalendarDays } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const SHIFTS = ['day', 'night', 'off']
 const SHIFT_META = {
@@ -18,7 +19,7 @@ const SHIFT_META = {
 const iso = (d) => d.toISOString().slice(0, 10)
 
 function Tabs({ tab, setTab }) {
-  const items = [['roster', 'Roster'], ['assign', 'Assignments'], ['patterns', 'Patterns'], ['holidays', 'Holidays']]
+  const items = [['roster', at('Roster')], ['assign', at('Assignments')], ['patterns', at('Patterns')], ['holidays', at('Holidays')]]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -56,7 +57,7 @@ function Patterns() {
     <div className="grid gap-4 lg:grid-cols-2">
       {canWrite && (
         <div className="panel p-5">
-          <div className="eyebrow mb-3">New pattern</div>
+          <div className="eyebrow mb-3">{at('New pattern')}</div>
           <div className="space-y-3">
             <Field label="Pattern name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. 4x4 Day/Night" /></Field>
             <Field label="Anchor date (cycle day 1)"><input className="input" type="date" value={form.anchor_date} onChange={(e) => setForm({ ...form, anchor_date: e.target.value })} /></Field>
@@ -83,8 +84,8 @@ function Patterns() {
       )}
 
       <div className="panel overflow-hidden">
-        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">Existing patterns</span></div>
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">{at('Existing patterns')}</span></div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : rows.length === 0 ? <EmptyState title="No patterns" hint="Create a shift cycle to assign to employees." />
         : rows.map((r) => (
           <div key={r.id} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3">
@@ -128,20 +129,20 @@ function Assignments() {
     <div className="grid gap-4 lg:grid-cols-2">
       {canWrite && (
         <div className="panel p-5">
-          <div className="eyebrow mb-3">Assign a pattern</div>
+          <div className="eyebrow mb-3">{at('Assign a pattern')}</div>
           <div className="space-y-3">
-            <Field label="Employee"><Select value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} options={[{ value: '', label: 'Select…' }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
-            <Field label="Pattern"><Select value={form.pattern_id} onChange={(e) => setForm({ ...form, pattern_id: e.target.value })} options={[{ value: '', label: 'Select…' }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></Field>
+            <Field label="Employee"><Select value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} options={[{ value: '', label: at('Select…') }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
+            <Field label="Pattern"><Select value={form.pattern_id} onChange={(e) => setForm({ ...form, pattern_id: e.target.value })} options={[{ value: '', label: at('Select…') }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></Field>
             <Field label="Effective from"><input className="input" type="date" value={form.effective_from} onChange={(e) => setForm({ ...form, effective_from: e.target.value })} /></Field>
-            <button onClick={save} className="btn-primary w-full">Assign pattern</button>
+            <button onClick={save} className="btn-primary w-full">{at('Assign pattern')}</button>
           </div>
           <p className="mt-2 text-[11px] text-ice-faint">A newer assignment (later effective date) supersedes the previous one from that date onward.</p>
         </div>
       )}
 
       <div className="panel overflow-hidden">
-        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">Current assignments</span></div>
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">{at('Current assignments')}</span></div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : rows.length === 0 ? <EmptyState title="No assignments" hint="Assign employees to a pattern; their off days flow into Leave and Catering." />
         : (
           <div className="max-h-[420px] overflow-y-auto">
@@ -270,11 +271,11 @@ function Roster() {
         <span className="min-w-[150px] text-center font-display text-lg font-bold text-ice">{monthName}<span className="ml-2 font-mono text-[11px] font-normal text-ice-faint">{rangeLabel}</span></span>
         <button onClick={() => move(1)} className="btn-ghost btn-sm"><ChevronRight size={15} /></button>
         <div className="ml-auto flex items-center gap-3 text-[11px] text-ice-faint">
-          <span className="flex items-center gap-1"><Sun size={11} style={{ color: SHIFT_META.day.color }} /> Day</span>
-          <span className="flex items-center gap-1"><Moon size={11} style={{ color: SHIFT_META.night.color }} /> Night</span>
-          <span className="flex items-center gap-1"><Ban size={11} className="text-ice-faint" /> Off</span>
-          <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Holiday</span>
-          <span className="flex items-center gap-1"><span className="grid h-3 w-3 place-items-center rounded-sm text-[7px] font-bold text-bad ring-1 ring-bad">A</span> Absent</span>
+          <span className="flex items-center gap-1"><Sun size={11} style={{ color: SHIFT_META.day.color }} /> {at('Day')}</span>
+          <span className="flex items-center gap-1"><Moon size={11} style={{ color: SHIFT_META.night.color }} /> {at('Night')}</span>
+          <span className="flex items-center gap-1"><Ban size={11} className="text-ice-faint" /> {at('Off')}</span>
+          <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> {at('Holiday')}</span>
+          <span className="flex items-center gap-1"><span className="grid h-3 w-3 place-items-center rounded-sm text-[7px] font-bold text-bad ring-1 ring-bad">A</span> {at('Absent')}</span>
         </div>
       </div>
 
@@ -284,12 +285,12 @@ function Roster() {
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ice-faint" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search employee…" className="input pl-8" />
         </div>
-        <div className="w-44"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
-        <div className="w-44"><Select value={patternFilter} onChange={(e) => setPatternFilter(e.target.value)} options={[{ value: '', label: 'All patterns' }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></div>
+        <div className="w-44"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
+        <div className="w-44"><Select value={patternFilter} onChange={(e) => setPatternFilter(e.target.value)} options={[{ value: '', label: at('All patterns') }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></div>
         {canWrite && (
           <div className="inline-flex rounded-lg border border-white/10 bg-navy/60 p-0.5">
-            <button onClick={() => setMode('shifts')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'shifts' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Shifts</button>
-            <button onClick={() => setMode('attendance')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'attendance' ? 'bg-bad text-white' : 'text-ice-dim hover:text-ice'}`}>Attendance</button>
+            <button onClick={() => setMode('shifts')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'shifts' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{at('Shifts')}</button>
+            <button onClick={() => setMode('attendance')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'attendance' ? 'bg-bad text-white' : 'text-ice-dim hover:text-ice'}`}>{at('Attendance')}</button>
           </div>
         )}
         <span className="font-mono text-[11px] text-ice-faint">{assigned.length} shown</span>
@@ -308,7 +309,7 @@ function Roster() {
         <div className="panel overflow-x-auto p-3">
           <table className="w-full border-collapse">
             <thead><tr>
-              <th className="px-2 py-1 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
+              <th className="px-2 py-1 text-left font-mono text-[10px] uppercase text-ice-faint">{at('Employee')}</th>
               {monthDates.map((d) => {
                 const dow = new Date(d).getDay()
                 const isFirst = d.slice(8) === '01'
@@ -391,7 +392,7 @@ function Holidays() {
     <div className="grid gap-4 lg:grid-cols-2">
       {canWrite && (
         <div className="panel p-5">
-          <div className="eyebrow mb-3">Auto-generate</div>
+          <div className="eyebrow mb-3">{at('Auto-generate')}</div>
           <div className="flex items-end gap-2">
             <Field label="Year"><input className="input w-28" type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} /></Field>
             <button onClick={generate} disabled={busy} className="btn-primary"><CalendarDays size={15} /> {busy ? 'Generating…' : `Generate ${year}`}</button>
@@ -399,13 +400,13 @@ function Holidays() {
           <p className="mt-2 text-[11px] text-ice-faint">Adds Ghana public, religious, and international holidays. Fixed and Christian dates are exact; Islamic dates are estimates (marked "est.") — verify and edit below. Holidays are display-only and don't change any shift.</p>
 
           <div className="my-4 h-px bg-white/10" />
-          <div className="eyebrow mb-3">Add manually</div>
+          <div className="eyebrow mb-3">{at('Add manually')}</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Date"><input className="input" type="date" value={form.holiday_date} onChange={(e) => setForm({ ...form, holiday_date: e.target.value })} /></Field>
             <Field label="Type"><Select value={form.holiday_type} onChange={(e) => setForm({ ...form, holiday_type: e.target.value })} options={HOLIDAY_TYPES.map((t) => ({ value: t, label: t }))} /></Field>
             <div className="col-span-2"><Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Company Founders Day" /></Field></div>
           </div>
-          <button onClick={add} className="btn-primary btn-sm mt-3"><Plus size={14} /> Add holiday</button>
+          <button onClick={add} className="btn-primary btn-sm mt-3"><Plus size={14} /> {at('Add holiday')}</button>
         </div>
       )}
 
@@ -417,7 +418,7 @@ function Holidays() {
             <button onClick={() => setYear(year + 1)} className="btn-ghost btn-sm"><ChevronRight size={14} /></button>
           </div>
         </div>
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : shown.length === 0 ? <EmptyState title={`No holidays for ${year}`} hint="Use auto-generate or add them manually." />
         : (
           <div className="max-h-[460px] overflow-y-auto">

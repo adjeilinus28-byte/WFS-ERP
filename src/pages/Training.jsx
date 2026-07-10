@@ -12,13 +12,14 @@ import {
   GraduationCap, CalendarClock, Users, Megaphone, Award, AlertTriangle, Check, X, Plus,
   ClipboardCheck, ShieldCheck, TrendingUp, Clock, Paperclip,
 } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
 const PALETTE = ['rgb(var(--accent))', '#38BDF8', '#34D399', '#F472B6', '#A78BFA', '#FBBF24', '#F87171']
 const TYPES = [
-  ['induction', 'Induction'], ['toolbox_talk', 'Toolbox Talk'], ['refresher', 'Refresher'],
-  ['competency', 'Competency'], ['first_aid', 'First Aid'], ['fire_safety', 'Fire Safety'],
-  ['working_at_heights', 'Working at Heights'], ['confined_space', 'Confined Space'], ['other', 'Other'],
+  ['induction', at('Induction')], ['toolbox_talk', at('Toolbox Talk')], ['refresher', at('Refresher')],
+  ['competency', at('Competency')], ['first_aid', at('First Aid')], ['fire_safety', at('Fire Safety')],
+  ['working_at_heights', at('Working at Heights')], ['confined_space', at('Confined Space')], ['other', at('Other')],
 ]
 const typeLabel = (t) => (TYPES.find((x) => x[0] === t) || [t, t])[1]
 const STATUS = ['scheduled', 'in_progress', 'completed', 'cancelled']
@@ -65,7 +66,7 @@ function TrainingAttachment({ value, name, onChange }) {
 }
 
 function Tabs({ tab, setTab, canManage }) {
-  const items = [['dashboard', 'Dashboard'], ['schedule', 'Schedule'], ['attendance', 'Attendance'], ['matrix', 'Compliance Matrix']]
+  const items = [['dashboard', at('Dashboard')], ['schedule', at('Schedule')], ['attendance', at('Attendance')], ['matrix', at('Compliance Matrix')]]
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -141,8 +142,8 @@ function Schedule() {
 
   return (
     <div>
-      {canManage && <button onClick={() => setDrawer(blank)} className="btn-primary mb-4"><Plus size={15} /> Schedule training</button>}
-      {loading ? <div className="panel p-8 text-center text-ice-faint">Loading…</div>
+      {canManage && <button onClick={() => setDrawer(blank)} className="btn-primary mb-4"><Plus size={15} /> {at('Schedule training')}</button>}
+      {loading ? <div className="panel p-8 text-center text-ice-faint">{at('Loading…')}</div>
       : sessions.length === 0 ? <EmptyState title="No training scheduled" hint="Create a session and assign a department, individuals, or all staff." />
       : (
         <div className="space-y-2">
@@ -154,7 +155,7 @@ function Schedule() {
                   <span className="font-display text-sm font-bold text-ice">{s.title}</span>
                   <Badge>{typeLabel(s.training_type)}</Badge>
                   <Badge tone={s.status === 'completed' ? 'ok' : s.status === 'cancelled' ? 'mute' : 'accent'}>{s.status}</Badge>
-                  {s.announced_at && <Badge tone="ok"><Megaphone size={10} className="mr-1 inline" />announced</Badge>}
+                  {s.announced_at && <Badge tone="ok"><Megaphone size={10} className="mr-1 inline" />{at('announced')}</Badge>}
                 </div>
                 <div className="mt-0.5 text-xs text-ice-faint">
                   {s.scheduled_at ? new Date(s.scheduled_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Unscheduled'}
@@ -173,7 +174,7 @@ function Schedule() {
                       selected = (data || []).map((a) => a.employee_id).filter(Boolean)
                     }
                     setDrawer({ ...s, scheduled_at: s.scheduled_at ? s.scheduled_at.slice(0, 16) : '', selected })
-                  }} className="btn-ghost btn-sm">Edit</button>
+                  }} className="btn-ghost btn-sm">{at('Edit')}</button>
                   <button onClick={() => del(s)} className="text-ice-faint hover:text-bad"><X size={16} /></button>
                 </div>
               )}
@@ -199,17 +200,17 @@ function Schedule() {
               <Field label="Date & time"><input className="input w-full" type="datetime-local" value={drawer.scheduled_at || ''} onChange={(e) => setDrawer({ ...drawer, scheduled_at: e.target.value })} /></Field>
               <Field label="Duration (mins)"><input className="input" type="number" value={drawer.duration_mins || ''} onChange={(e) => setDrawer({ ...drawer, duration_mins: e.target.value })} placeholder="e.g. 60" /></Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Mode"><Select value={drawer.mode} onChange={(e) => setDrawer({ ...drawer, mode: e.target.value })} options={[{ value: 'in_person', label: 'In person' }, { value: 'online', label: 'Online' }]} /></Field>
+                <Field label="Mode"><Select value={drawer.mode} onChange={(e) => setDrawer({ ...drawer, mode: e.target.value })} options={[{ value: 'in_person', label: at('In person') }, { value: 'online', label: at('Online') }]} /></Field>
                 {drawer.mode === 'online'
                   ? <Field label="Join link"><input className="input" value={drawer.link_url || ''} onChange={(e) => setDrawer({ ...drawer, link_url: e.target.value })} /></Field>
                   : <Field label="Venue"><input className="input" value={drawer.venue || ''} onChange={(e) => setDrawer({ ...drawer, venue: e.target.value })} /></Field>}
               </div>
-              <Field label="Audience"><Select value={drawer.audience} onChange={(e) => setDrawer({ ...drawer, audience: e.target.value })} options={[{ value: 'all', label: 'All staff' }, { value: 'department', label: 'A department' }, { value: 'individuals', label: 'Selected individuals' }]} /></Field>
-              {drawer.audience === 'department' && <Field label="Department"><Select value={drawer.department || ''} onChange={(e) => setDrawer({ ...drawer, department: e.target.value })} options={[{ value: '', label: 'Select…' }, ...deptOptions]} /></Field>}
+              <Field label="Audience"><Select value={drawer.audience} onChange={(e) => setDrawer({ ...drawer, audience: e.target.value })} options={[{ value: 'all', label: at('All staff') }, { value: 'department', label: at('A department') }, { value: 'individuals', label: at('Selected individuals') }]} /></Field>
+              {drawer.audience === 'department' && <Field label="Department"><Select value={drawer.department || ''} onChange={(e) => setDrawer({ ...drawer, department: e.target.value })} options={[{ value: '', label: at('Select…') }, ...deptOptions]} /></Field>}
               {drawer.audience === 'individuals' && (
                 <Field label={`Select workers (${(drawer.selected || []).length} chosen)`}>
                   <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-navy/40 p-2">
-                    {employees.length === 0 ? <p className="p-2 text-xs text-ice-faint">No employees found.</p>
+                    {employees.length === 0 ? <p className="p-2 text-xs text-ice-faint">{at('No employees found.')}</p>
                     : employees.map((e) => {
                       const on = (drawer.selected || []).includes(e.id)
                       return (
@@ -275,7 +276,7 @@ function Attendance() {
     <div>
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
         <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Session:</span>
-        <div className="min-w-[280px] flex-1"><Select value={sessionId} onChange={(e) => setSessionId(e.target.value)} options={[{ value: '', label: 'Select a session…' }, ...sessions.map((s) => ({ value: s.id, label: `${s.title} — ${s.scheduled_at ? date(s.scheduled_at) : 'unscheduled'}` }))]} /></div>
+        <div className="min-w-[280px] flex-1"><Select value={sessionId} onChange={(e) => setSessionId(e.target.value)} options={[{ value: '', label: at('Select a session…') }, ...sessions.map((s) => ({ value: s.id, label: `${s.title} — ${s.scheduled_at ? date(s.scheduled_at) : 'unscheduled'}` }))]} /></div>
         {session && <Badge tone="accent">{atts.length} assigned · {completed} completed</Badge>}
       </div>
 
@@ -285,8 +286,8 @@ function Attendance() {
           {canManage && (
             <div className="panel mb-3 flex flex-wrap items-center gap-2 p-3">
               <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Add attendee:</span>
-              <div className="min-w-[220px]"><Select value={addId} onChange={(e) => setAddId(e.target.value)} options={[{ value: '', label: 'Select employee…' }, ...unassigned.map((e) => ({ value: e.id, label: e.full_name }))]} /></div>
-              <button onClick={addPerson} disabled={!addId} className="btn-primary btn-sm"><Plus size={13} /> Add</button>
+              <div className="min-w-[220px]"><Select value={addId} onChange={(e) => setAddId(e.target.value)} options={[{ value: '', label: at('Select employee…') }, ...unassigned.map((e) => ({ value: e.id, label: e.full_name }))]} /></div>
+              <button onClick={addPerson} disabled={!addId} className="btn-primary btn-sm"><Plus size={13} /> {at('Add')}</button>
             </div>
           )}
           <div className="panel overflow-hidden">
@@ -295,7 +296,7 @@ function Attendance() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-white/[0.02]"><tr>
-                    <th className="th">Employee</th><th className="th">Dept</th><th className="th">Status</th><th className="th">Score</th><th className="th">Completed</th><th className="th">Expires</th>{canManage && <th className="th"></th>}
+                    <th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th><th className="th">{at('Status')}</th><th className="th">{at('Score')}</th><th className="th">{at('Completed')}</th><th className="th">{at('Expires')}</th>{canManage && <th className="th"></th>}
                   </tr></thead>
                   <tbody>
                     {atts.map((a) => (
@@ -343,13 +344,13 @@ function Matrix() {
   return (
     <div>
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Department:</span>
-        <div className="w-52"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Department:')}</span>
+        <div className="w-52"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
         <div className="ml-auto flex items-center gap-3 text-[11px]">
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-ok" /> Valid</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-warn" /> Expiring</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-bad" /> Expired</span>
-          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-accent" /> Scheduled</span>
+          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-ok" /> {at('Valid')}</span>
+          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-warn" /> {at('Expiring')}</span>
+          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-bad" /> {at('Expired')}</span>
+          <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-full bg-accent" /> {at('Scheduled')}</span>
         </div>
       </div>
 
@@ -358,7 +359,7 @@ function Matrix() {
         <div className="panel overflow-x-auto p-3">
           <table className="border-collapse">
             <thead><tr>
-              <th className="px-2 py-2 pr-6 text-left font-mono text-[10px] uppercase text-ice-faint">Employee</th>
+              <th className="px-2 py-2 pr-6 text-left font-mono text-[10px] uppercase text-ice-faint">{at('Employee')}</th>
               {typesPresent.map(([t, l]) => (
                 <th key={t} className="p-0 align-bottom" style={{ width: 28 }}>
                   <div className="mx-auto flex h-24 w-7 items-end justify-center pb-1">
@@ -435,8 +436,8 @@ function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="panel p-5">
-          <div className="eyebrow mb-4">Sessions by type</div>
-          {byType.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">No sessions yet</div>
+          <div className="eyebrow mb-4">{at('Sessions by type')}</div>
+          {byType.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No sessions yet')}</div>
           : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={byType} margin={{ left: -10 }}>
@@ -450,8 +451,8 @@ function Dashboard() {
           )}
         </div>
         <div className="panel p-5">
-          <div className="eyebrow mb-4">Certification status</div>
-          {certMix.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">No completions yet</div>
+          <div className="eyebrow mb-4">{at('Certification status')}</div>
+          {certMix.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No completions yet')}</div>
           : (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
@@ -467,7 +468,7 @@ function Dashboard() {
 
       {upcoming.length > 0 && (
         <div className="panel mt-4 overflow-hidden">
-          <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">Next up</span></div>
+          <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Next up')}</span></div>
           {upcoming.slice(0, 6).map((s) => (
             <div key={s.id} className="flex items-center gap-3 border-b border-white/[0.04] px-5 py-3">
               <GraduationCap size={16} className="text-accent" />

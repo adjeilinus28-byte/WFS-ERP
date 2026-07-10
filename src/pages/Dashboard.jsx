@@ -14,6 +14,7 @@ import {
   Wrench, ClipboardList, Boxes, ShieldAlert, AlertTriangle, ArrowUpRight,
   PackageMinus, Wallet, CalendarCheck, HardHat, TrendingUp, Users,
 } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const ACCENT = 'rgb(var(--accent))'
 const PIE = ['#F59E0B', '#60A5FA', '#A78BFA', '#34D399', '#F87171', '#FBBF24']
@@ -53,7 +54,7 @@ export default function Dashboard() {
     return () => { alive = false }
   }, [activeOrgId, mods.join(',')])
 
-  if (!d) return <div className="grid h-64 place-items-center text-ice-faint">Loading command deck…</div>
+  if (!d) return <div className="grid h-64 place-items-center text-ice-faint">{at('Loading command deck…')}</div>
 
   // ── Metrics (guarded by module) ──
   const assetsDown = d.assets.filter((r) => r.status === 'down').length
@@ -97,7 +98,7 @@ export default function Dashboard() {
   })
   d.wos.forEach((w) => {
     const dd = daysUntil(w.due_date)
-    if (dd != null && dd < 0 && !['done', 'cancelled'].includes(w.status)) alerts.push({ tone: 'bad', mod: 'Work Orders', to: '/work-orders', text: `${w.wo_number} overdue: ${w.title}` })
+    if (dd != null && dd < 0 && !['done', at('cancelled')].includes(w.status)) alerts.push({ tone: 'bad', mod: 'Work Orders', to: '/work-orders', text: `${w.wo_number} overdue: ${w.title}` })
   })
   d.inv.filter((r) => Number(r.qty_on_hand) <= Number(r.reorder_level)).forEach((it) =>
     alerts.push({ tone: 'warn', mod: 'Inventory', to: '/inventory', text: `${it.name} below reorder (${it.qty_on_hand} ${it.uom})` }))
@@ -105,7 +106,7 @@ export default function Dashboard() {
     alerts.push({ tone: 'bad', mod: 'Accounts', to: '/accounts', text: `Invoice ${r.invoice_no} overdue — ${money(r.total, ccy)}` }))
   d.leave.filter((r) => r.status === 'pending').forEach((r) =>
     alerts.push({ tone: 'warn', mod: 'Leave', to: '/hr', text: `Leave request pending: ${r.employee_name}` }))
-  d.hse.filter((h) => ['high', 'critical'].includes(h.severity) && h.status !== 'closed').forEach((h) =>
+  d.hse.filter((h) => ['high', at('critical')].includes(h.severity) && h.status !== 'closed').forEach((h) =>
     alerts.push({ tone: 'bad', mod: 'HSE', to: '/hse', text: `${h.incident_no} ${h.severity} — ${(h.incident_type || '').replace('_', ' ')}` }))
   d.docs.filter((x) => ['expired', 'critical', 'expiring'].includes(x.expiry_status)).forEach((x) =>
     alerts.push({ tone: x.expiry_status === 'expiring' ? 'warn' : 'bad', mod: 'Compliance', to: '/hse', text: `${x.name} ${x.expiry_status === 'expired' ? 'expired' : `expires ${date(x.expiry_date)}`}` }))
@@ -126,8 +127,8 @@ export default function Dashboard() {
         {/* Work orders chart (if enabled) else fall back to safety */}
         {has('work_orders') && (
           <div className="panel p-5 lg:col-span-3">
-            <div className="eyebrow mb-4">Work orders by status</div>
-            {woByStatus.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">No work orders yet</div>
+            <div className="eyebrow mb-4">{at('Work orders by status')}</div>
+            {woByStatus.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No work orders yet')}</div>
             : (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={woByStatus} margin={{ left: -18 }}>
@@ -147,11 +148,11 @@ export default function Dashboard() {
         {/* Active alerts */}
         <div className={`panel flex flex-col p-5 ${has('work_orders') ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
           <div className="mb-3 flex items-center justify-between">
-            <span className="eyebrow">Active alerts</span>
+            <span className="eyebrow">{at('Active alerts')}</span>
             <Badge tone={alerts.length ? 'bad' : 'ok'}>{alerts.length}</Badge>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: 320 }}>
-            {alerts.length === 0 ? <div className="grid h-40 place-items-center text-sm text-ice-faint">All clear — no active alerts</div>
+            {alerts.length === 0 ? <div className="grid h-40 place-items-center text-sm text-ice-faint">{at('All clear — no active alerts')}</div>
             : alerts.slice(0, 40).map((a, i) => (
               <Link key={i} to={a.to} className="flex items-start gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition hover:bg-white/[0.05]">
                 <AlertTriangle size={15} className={`mt-0.5 ${a.tone === 'bad' ? 'text-bad' : 'text-warn'}`} />
@@ -171,15 +172,15 @@ export default function Dashboard() {
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           {has('accounts') && (
             <div className="panel p-5">
-              <div className="eyebrow mb-4">Finance snapshot</div>
+              <div className="eyebrow mb-4">{at('Finance snapshot')}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
-                  <div className="text-xs text-ice-faint">Receivable (AR)</div>
+                  <div className="text-xs text-ice-faint">{at('Receivable (AR)')}</div>
                   <div className="mt-1 font-display text-xl font-bold text-warn">{money(outstandingAR, ccy)}</div>
                   <div className="mt-0.5 text-[11px] text-ice-faint">{d.invoices.filter((r) => r.status === 'overdue').length} overdue</div>
                 </div>
                 <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
-                  <div className="text-xs text-ice-faint">Payable (AP)</div>
+                  <div className="text-xs text-ice-faint">{at('Payable (AP)')}</div>
                   <div className="mt-1 font-display text-xl font-bold text-ice">{money(payableAP, ccy)}</div>
                   <div className="mt-0.5 text-[11px] text-ice-faint">{d.bills.filter((r) => r.status !== 'paid').length} open bills</div>
                 </div>
@@ -188,7 +189,7 @@ export default function Dashboard() {
           )}
           {has('hse') && safetyByType.length > 0 && (
             <div className="panel p-5">
-              <div className="eyebrow mb-4">Safety interactions this month</div>
+              <div className="eyebrow mb-4">{at('Safety interactions this month')}</div>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={safetyByType} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3}>

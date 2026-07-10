@@ -1,16 +1,14 @@
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard } from '../components/ui'
 import { money, date, daysUntil } from '../lib/format'
-import { useAuth } from '../context/AuthContext'
 import { Wrench, AlertTriangle, Activity, CalendarClock } from 'lucide-react'
 import { useDepartments } from '../hooks/useDepartments'
+import { at } from '../lib/tr'
 
 const STATUS = ['operational', 'maintenance', 'down', 'retired']
 const CRIT = ['low', 'medium', 'high', 'critical']
 
 export default function Assets() {
-  const { activeOrg } = useAuth()
-  const ccy = activeOrg?.currency || 'GHS'
   const { options: deptOptions } = useDepartments()
   return (
     <ModuleScaffold
@@ -19,33 +17,33 @@ export default function Assets() {
       emptyHint="Add your equipment to track status, criticality, and service schedules."
       searchKeys={['asset_code', 'name', 'category', 'location']}
       columns={[
-        { key: 'asset_code', label: 'Code', render: (v) => <span className="font-mono text-accent">{v}</span> },
-        { key: 'name', label: 'Asset' },
-        { key: 'category', label: 'Category' },
-        { key: 'location', label: 'Location' },
-        { key: 'criticality', label: 'Criticality', render: (v) => <Badge tone={v === 'critical' || v === 'high' ? 'bad' : 'mute'}>{v}</Badge> },
-        { key: 'status', label: 'Status', render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
-        { key: 'next_service_date', label: 'Next service', render: (v) => {
+        { key: 'asset_code', label: at('Code'), render: (v) => <span className="font-mono text-accent">{v}</span> },
+        { key: 'name', label: at('Asset') },
+        { key: 'category', label: at('Category') },
+        { key: 'location', label: at('Location') },
+        { key: 'criticality', label: at('Criticality'), render: (v) => <Badge tone={v === 'critical' || v === 'high' ? 'bad' : 'mute'}>{v}</Badge> },
+        { key: 'status', label: at('Status'), render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+        { key: 'next_service_date', label: at('Next service'), render: (v) => {
           const d = daysUntil(v)
           return <span className={d != null && d <= 7 ? 'text-warn' : ''}>{date(v)}</span>
         } },
       ]}
       fields={[
-        { key: 'asset_code', label: 'Asset code', required: true },
-        { key: 'name', label: 'Name', required: true },
-        { key: 'category', label: 'Category' },
-        { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'operational' },
-        { key: 'criticality', label: 'Criticality', type: 'select', options: CRIT.map((s) => ({ value: s, label: s })), default: 'medium' },
-        { key: 'location', label: 'Location' },
-        { key: 'department', label: 'Department', type: 'select', options: deptOptions },
-        { key: 'manufacturer', label: 'Manufacturer' },
-        { key: 'model', label: 'Model' },
-        { key: 'serial_no', label: 'Serial no.' },
-        { key: 'commissioned_on', label: 'Commissioned', type: 'date' },
-        { key: 'purchase_cost', label: 'Purchase cost', type: 'number' },
-        { key: 'next_service_date', label: 'Next service', type: 'date' },
-        { key: 'meter_reading', label: 'Meter (hrs/km)', type: 'number' },
-        { key: 'notes', label: 'Notes', type: 'textarea', span: true },
+        { key: 'asset_code', label: at('Asset code'), required: true },
+        { key: 'name', label: at('Name'), required: true },
+        { key: 'category', label: at('Category') },
+        { key: 'status', label: at('Status'), type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'operational' },
+        { key: 'criticality', label: at('Criticality'), type: 'select', options: CRIT.map((s) => ({ value: s, label: s })), default: 'medium' },
+        { key: 'location', label: at('Location') },
+        { key: 'department', label: at('Department'), type: 'select', options: deptOptions },
+        { key: 'manufacturer', label: at('Manufacturer') },
+        { key: 'model', label: at('Model') },
+        { key: 'serial_no', label: at('Serial no.') },
+        { key: 'commissioned_on', label: at('Commissioned'), type: 'date' },
+        { key: 'purchase_cost', label: at('Purchase cost'), type: 'number' },
+        { key: 'next_service_date', label: at('Next service'), type: 'date' },
+        { key: 'meter_reading', label: at('Meter (hrs/km)'), type: 'number' },
+        { key: 'notes', label: at('Notes'), type: 'textarea', span: true },
       ]}
       kpis={(rows) => {
         const down = rows.filter((r) => r.status === 'down').length
@@ -56,7 +54,7 @@ export default function Assets() {
           <StatCard label="Assets down" value={down} tone={down ? 'bad' : 'ok'} icon={AlertTriangle} sub={`${rows.length} total`} />
           <StatCard label="Critical" value={crit} icon={Activity} />
           <StatCard label="Service due ≤7d" value={dueSoon} tone={dueSoon ? 'bad' : 'ok'} icon={CalendarClock} />
-          <StatCard label="Fleet value" value={money(value, ccy)} icon={Wrench} />
+          <StatCard label="Fleet value" value={money(value)} icon={Wrench} />
         </>
       }}
     />

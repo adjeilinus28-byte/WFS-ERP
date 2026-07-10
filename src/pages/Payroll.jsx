@@ -9,12 +9,13 @@ import { money, date, num } from '../lib/format'
 import { businessMonthKey, currentBusinessMonthLabel } from '../lib/period'
 import { computePayslip } from '../lib/payroll'
 import { applyBands, DEFAULT_GH_BANDS } from '../lib/tax'
+import { at } from '../lib/tr'
 
 const PAY_STATUS = ['draft', 'approved', 'paid']
 const thisPeriod = () => businessMonthKey(new Date())
 
 function SubTabs({ tab, setTab }) {
-  const items = [['slips', 'Payslips'], ['status', 'Status'], ['tax', 'Tax & Deductions']]
+  const items = [['slips', at('Payslips')], ['status', at('Status')], ['tax', at('Tax & Deductions')]]
   return (
     <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -34,7 +35,7 @@ const money0 = (v, ccy) => money(v, ccy)
 function TaxSettings({ ccy, taxConfig, onSaved }) {
   const { activeOrgId, role } = useAuth()
   const toast = useToast()
-  const canAdmin = ['owner', 'admin'].includes(role)
+  const canAdmin = ['owner', at('admin')].includes(role)
   const [s, setS] = useState(null)
   const [bands, setBands] = useState([])
   const [saving, setSaving] = useState(false)
@@ -49,7 +50,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
     setBands(taxConfig.bands?.length ? taxConfig.bands : DEFAULT_GH_BANDS.map((b) => ({ ...b, org_id: activeOrgId, country: 'GH' })))
   }, [taxConfig, activeOrgId])
 
-  if (!s) return <div className="panel p-8 text-center text-ice-faint">Loading tax settings…</div>
+  if (!s) return <div className="panel p-8 text-center text-ice-faint">{at('Loading tax settings…')}</div>
 
   const setBand = (i, k, v) => setBands((p) => p.map((b, idx) => idx === i ? { ...b, [k]: v === '' ? (k === 'band_amount' ? null : '') : Number(v) } : b))
   const addBand = () => setBands((p) => [...p, { org_id: activeOrgId, country: s.country, band_order: p.length + 1, band_amount: 0, rate: 0 }])
@@ -76,7 +77,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
       <div className="space-y-4">
         <div className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="eyebrow">Statutory rates</span>
+            <span className="eyebrow">{at('Statutory rates')}</span>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
               <input type="checkbox" checked={!!s.auto_calculate} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]"
                 onChange={(e) => setS({ ...s, auto_calculate: e.target.checked })} />
@@ -86,14 +87,14 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Country of operations">
               <Select value={s.country} disabled={!canAdmin} onChange={(e) => setS({ ...s, country: e.target.value })}
-                options={[{ value: 'GH', label: 'Ghana (GRA)' }, { value: 'OTHER', label: 'Other / custom' }]} />
+                options={[{ value: 'GH', label: at('Ghana (GRA)') }, { value: 'OTHER', label: at('Other / custom') }]} />
             </Field>
             <Field label="Union dues rate (% of basic)"><input className="input" type="number" step="0.1" value={s.union_dues_rate ?? 0} disabled={!canAdmin} onChange={(e) => setS({ ...s, union_dues_rate: e.target.value })} /></Field>
           </div>
         </div>
 
         <div className="panel p-5">
-          <div className="eyebrow mb-3">SSNIT / Social Security</div>
+          <div className="eyebrow mb-3">{at('SSNIT / Social Security')}</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Employee contribution (% of basic)"><input className="input" type="number" step="0.1" value={s.ssnit_employee_rate ?? 5.5} disabled={!canAdmin} onChange={(e) => setS({ ...s, ssnit_employee_rate: e.target.value })} /></Field>
             <Field label="Employer contribution (% of basic)"><input className="input" type="number" step="0.1" value={s.ssnit_employer_rate ?? 13} disabled={!canAdmin} onChange={(e) => setS({ ...s, ssnit_employer_rate: e.target.value })} /></Field>
@@ -103,7 +104,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
 
         <div className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="eyebrow">Overtime tax</span>
+            <span className="eyebrow">{at('Overtime tax')}</span>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
               <input type="checkbox" checked={!!s.overtime_tax_enabled} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]" onChange={(e) => setS({ ...s, overtime_tax_enabled: e.target.checked })} /> Enabled
             </label>
@@ -118,7 +119,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
 
         <div className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="eyebrow">Bonus tax</span>
+            <span className="eyebrow">{at('Bonus tax')}</span>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-ice">
               <input type="checkbox" checked={!!s.bonus_tax_enabled} disabled={!canAdmin} className="h-4 w-4 accent-[rgb(var(--accent))]" onChange={(e) => setS({ ...s, bonus_tax_enabled: e.target.checked })} /> Enabled
             </label>
@@ -134,12 +135,12 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
       <div className="space-y-4">
         <div className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <span className="eyebrow">Graduated PAYE bands (monthly)</span>
-            {canAdmin && <button onClick={addBand} className="btn-ghost btn-sm"><Plus size={13} /> Band</button>}
+            <span className="eyebrow">{at('Graduated PAYE bands (monthly)')}</span>
+            {canAdmin && <button onClick={addBand} className="btn-ghost btn-sm"><Plus size={13} /> {at('Band')}</button>}
           </div>
           <div className="space-y-2">
             <div className="grid grid-cols-[2rem_1fr_1fr_1.5rem] gap-2 font-mono text-[10px] uppercase text-ice-faint">
-              <span>#</span><span>Band amount ({ccy})</span><span>Rate (%)</span><span />
+              <span>#</span><span>Band amount ({ccy})</span><span>{at('Rate (%)')}</span><span />
             </div>
             {bands.map((b, i) => (
               <div key={i} className="grid grid-cols-[2rem_1fr_1fr_1.5rem] items-center gap-2">
@@ -156,11 +157,11 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
         </div>
 
         <div className="panel p-5">
-          <div className="eyebrow mb-3">Preview</div>
+          <div className="eyebrow mb-3">{at('Preview')}</div>
           <Field label={`Chargeable income (${ccy})`}><input className="input" type="number" value={preview} onChange={(e) => setPreview(Number(e.target.value || 0))} /></Field>
           <div className="mt-3 rounded-lg border border-white/10 bg-navy/50 p-3">
             <table className="w-full text-xs">
-              <thead><tr className="text-ice-faint"><th className="py-1 text-left font-mono text-[10px] uppercase">Band</th><th className="text-right font-mono text-[10px] uppercase">Taxed</th><th className="text-right font-mono text-[10px] uppercase">Rate</th><th className="text-right font-mono text-[10px] uppercase">Tax</th></tr></thead>
+              <thead><tr className="text-ice-faint"><th className="py-1 text-left font-mono text-[10px] uppercase">{at('Band')}</th><th className="text-right font-mono text-[10px] uppercase">{at('Taxed')}</th><th className="text-right font-mono text-[10px] uppercase">{at('Rate')}</th><th className="text-right font-mono text-[10px] uppercase">{at('Tax')}</th></tr></thead>
               <tbody>
                 {breakdown.map((b) => (
                   <tr key={b.band_order} className="border-t border-white/[0.05]">
@@ -173,7 +174,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
               </tbody>
             </table>
             <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
-              <span className="text-sm font-semibold text-ice">Total PAYE</span>
+              <span className="text-sm font-semibold text-ice">{at('Total PAYE')}</span>
               <span className="font-display text-lg font-bold text-accent">{money(previewTax, ccy)}</span>
             </div>
             <div className="mt-1 text-right text-[11px] text-ice-faint">Effective rate {preview > 0 ? ((previewTax / preview) * 100).toFixed(1) : '0.0'}%</div>
@@ -181,7 +182,7 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
         </div>
 
         <div className="rounded-lg border border-warn/30 bg-warn/10 p-3 text-[11px] text-ice/90">
-          <b>Verify before running live payroll.</b> These bands and rates are seeded with Ghana (GRA) values but are amended by Finance Acts. Confirm them against the current GRA schedule for your tax year. WFS Enterprise is not a tax advisor and doesn't file on your behalf.
+          <b>{at('Verify before running live payroll.')}</b> These bands and rates are seeded with Ghana (GRA) values but are amended by Finance Acts. Confirm them against the current GRA schedule for your tax year. WFS Enterprise is not a tax advisor and doesn't file on your behalf.
         </div>
 
         {canAdmin && <button onClick={save} disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Save tax settings'}</button>}
@@ -351,26 +352,26 @@ export default function Payroll({ ccy }) {
               </div>
               <Filter size={14} className="text-ice-faint" />
               <div className="w-36"><Select value={fPeriod} onChange={(e) => setFPeriod(e.target.value)}
-                options={[{ value: '', label: 'All periods' }, ...(periods.includes(thisPeriod()) ? periods : [thisPeriod(), ...periods]).map((p) => ({ value: p, label: p }))]} /></div>
-              <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
+                options={[{ value: '', label: at('All periods') }, ...(periods.includes(thisPeriod()) ? periods : [thisPeriod(), ...periods]).map((p) => ({ value: p, label: p }))]} /></div>
+              <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
               <span className="font-mono text-[11px] text-ice-faint">{filtered.length}</span>
               <div className="ml-auto flex gap-2">
                 {canWrite && <button onClick={() => sendBatch('all')} disabled={sending || filtered.length === 0} className="btn-ghost btn-sm"><Send size={13} /> {sending ? 'Sending…' : 'Generate & send all'}</button>}
-                {canWrite && <button onClick={openNew} className="btn-primary btn-sm"><Plus size={14} /> New slip</button>}
+                {canWrite && <button onClick={openNew} className="btn-primary btn-sm"><Plus size={14} /> {at('New slip')}</button>}
               </div>
             </div>
           </div>
 
           <div className="panel overflow-hidden">
-            {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+            {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
             : filtered.length === 0 ? <EmptyState title="No payslips for this filter" hint="Add a slip or change the period/department filter." />
             : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-white/[0.02]"><tr>
-                    <th className="th">Period</th><th className="th">Employee</th><th className="th">Dept</th>
-                    <th className="th">Gross</th><th className="th">Deductions</th><th className="th">Net</th>
-                    <th className="th">Status</th><th className="th">Slip</th><th className="th text-right">Actions</th>
+                    <th className="th">{at('Period')}</th><th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th>
+                    <th className="th">{at('Gross')}</th><th className="th">{at('Deductions')}</th><th className="th">{at('Net')}</th>
+                    <th className="th">{at('Status')}</th><th className="th">{at('Slip')}</th><th className="th text-right">{at('Actions')}</th>
                   </tr></thead>
                   <tbody>
                     {filtered.map((r) => (
@@ -382,7 +383,7 @@ export default function Payroll({ ccy }) {
                         <td className="td font-mono text-bad">{money(r.deductions, ccy)}</td>
                         <td className="td font-mono font-semibold text-ok">{money(r.net_pay, ccy)}</td>
                         <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
-                        <td className="td">{r.payslip_sent ? <Badge tone="ok">sent</Badge> : <Badge tone="mute">not sent</Badge>}</td>
+                        <td className="td">{r.payslip_sent ? <Badge tone="ok">{at('sent')}</Badge> : <Badge tone="mute">{at('not sent')}</Badge>}</td>
                         <td className="td text-right">
                           <div className="inline-flex gap-1">
                             {canWrite && <button onClick={() => sendBatch(r.id)} disabled={sending} className="rounded-md p-1.5 text-ice-faint hover:bg-accent/10 hover:text-accent" title="Send this payslip"><Send size={14} /></button>}
@@ -404,14 +405,14 @@ export default function Payroll({ ccy }) {
 
       {sub === 'status' && (
         <div className="panel overflow-hidden">
-          {statusLoading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+          {statusLoading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
           : status.length === 0 ? <EmptyState title="No payroll history" hint="Once you save payslips, each employee's latest month appears here." />
           : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-white/[0.02]"><tr>
-                  <th className="th">Employee</th><th className="th">Department</th><th className="th">Last period</th>
-                  <th className="th">Last net</th><th className="th">Status</th><th className="th">Payslip</th>
+                  <th className="th">{at('Employee')}</th><th className="th">{at('Department')}</th><th className="th">{at('Last period')}</th>
+                  <th className="th">{at('Last net')}</th><th className="th">{at('Status')}</th><th className="th">{at('Payslip')}</th>
                 </tr></thead>
                 <tbody>
                   {status.map((r, i) => (
@@ -421,7 +422,7 @@ export default function Payroll({ ccy }) {
                       <td className="td font-mono text-accent">{r.last_period}</td>
                       <td className="td font-mono">{money(r.last_net, ccy)}</td>
                       <td className="td"><Badge tone={statusTone(r.last_status)}>{r.last_status}</Badge></td>
-                      <td className="td">{r.payslip_sent ? <Badge tone="ok">sent {r.sent_at ? date(r.sent_at) : ''}</Badge> : <Badge tone="warn">pending</Badge>}</td>
+                      <td className="td">{r.payslip_sent ? <Badge tone="ok">sent {r.sent_at ? date(r.sent_at) : ''}</Badge> : <Badge tone="warn">{at('pending')}</Badge>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -446,12 +447,12 @@ export default function Payroll({ ccy }) {
                 <Field label="Status"><Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={PAY_STATUS.map((s) => ({ value: s, label: s }))} /></Field>
               </div>
               <Field label="Employee *"><Select value={form.employee_id} onChange={(e) => pickEmployee(e.target.value)}
-                options={[{ value: '', label: 'Select employee…' }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
+                options={[{ value: '', label: at('Select employee…') }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
               {!form.employee_id && <Field label="…or type a name"><input className="input" value={form.employee_name} onChange={(e) => setForm({ ...form, employee_name: e.target.value })} /></Field>}
 
               {/* Header / shift info */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                <div className="eyebrow mb-2">Employee & shift info</div>
+                <div className="eyebrow mb-2">{at('Employee & shift info')}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Job title"><input className="input" value={form.job_title || ''} onChange={(e) => setForm({ ...form, job_title: e.target.value })} /></Field>
                   <Field label="Badge no."><input className="input" value={form.badge_no || ''} onChange={(e) => setForm({ ...form, badge_no: e.target.value })} /></Field>
@@ -468,7 +469,7 @@ export default function Payroll({ ccy }) {
 
               {/* Earnings */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                <div className="eyebrow mb-2">Earnings</div>
+                <div className="eyebrow mb-2">{at('Earnings')}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Basic salary"><input className="input" type="number" value={form.basic_pay} onChange={(e) => setForm({ ...form, basic_pay: e.target.value })} /></Field>
                   <Field label="Salary difference"><input className="input" type="number" value={form.salary_difference} onChange={(e) => setForm({ ...form, salary_difference: e.target.value })} /></Field>
@@ -490,8 +491,8 @@ export default function Payroll({ ccy }) {
               {/* Deductions with percentages */}
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="eyebrow">Deductions</span>
-                  {calc.autoCalc && <Badge tone="ok">auto-calculated</Badge>}
+                  <span className="eyebrow">{at('Deductions')}</span>
+                  {calc.autoCalc && <Badge tone="ok">{at('auto-calculated')}</Badge>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label={`SSNIT / SSF rate (%) → ${money(calc.ssnit, ccy)}`}><input className="input" type="number" step="0.1" value={form.ssnit_rate} onChange={(e) => setForm({ ...form, ssnit_rate: e.target.value })} disabled={calc.autoCalc} /></Field>
@@ -519,17 +520,17 @@ export default function Payroll({ ccy }) {
 
               {/* Totals */}
               <div className="rounded-lg border border-white/10 bg-navy/50 px-3 py-2.5 text-sm">
-                <div className="flex justify-between"><span className="text-ice-faint">Gross earnings</span><span className="font-mono text-ice">{money(calc.gross, ccy)}</span></div>
-                <div className="flex justify-between"><span className="text-ice-faint">Total deductions</span><span className="font-mono text-bad">−{money(calc.totalDed, ccy)}</span></div>
-                <div className="mt-1 flex justify-between border-t border-white/10 pt-1"><span className="font-semibold text-ice">Net pay</span><span className="font-mono font-bold text-ok">{money(calc.net, ccy)}</span></div>
+                <div className="flex justify-between"><span className="text-ice-faint">{at('Gross earnings')}</span><span className="font-mono text-ice">{money(calc.gross, ccy)}</span></div>
+                <div className="flex justify-between"><span className="text-ice-faint">{at('Total deductions')}</span><span className="font-mono text-bad">−{money(calc.totalDed, ccy)}</span></div>
+                <div className="mt-1 flex justify-between border-t border-white/10 pt-1"><span className="font-semibold text-ice">{at('Net pay')}</span><span className="font-mono font-bold text-ok">{money(calc.net, ccy)}</span></div>
                 <div className="mt-2 flex justify-between border-t border-white/[0.06] pt-2 text-xs"><span className="text-ice-faint">Employer SSNIT ({form.ssnit_employer_rate}%)</span><span className="font-mono text-ice-dim">{money(calc.ssnit_employer, ccy)}</span></div>
-                <div className="flex justify-between text-xs"><span className="text-ice-faint">Taxable income</span><span className="font-mono text-ice-dim">{money(calc.taxable, ccy)}</span></div>
+                <div className="flex justify-between text-xs"><span className="text-ice-faint">{at('Taxable income')}</span><span className="font-mono text-ice-dim">{money(calc.taxable, ccy)}</span></div>
               </div>
 
               <Field label="Notes"><textarea className="input min-h-[50px]" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setDrawer(null)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save payslip'}</button>
             </div>
           </div>

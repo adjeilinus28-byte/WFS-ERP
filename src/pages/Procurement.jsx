@@ -9,12 +9,13 @@ import { useDepartments } from '../hooks/useDepartments'
 import {
   ShoppingCart, Truck, FileClock, Wallet, Plus, X, Check, Send, ArrowRight, FileText, Clock,
 } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const PO_STATUS = ['draft', 'sent', 'received', 'closed', 'cancelled']
 const PRIORITY = ['low', 'normal', 'high', 'urgent']
 
 function Tabs({ tab, setTab }) {
-  const items = [['requests', 'Purchase Requests'], ['orders', 'Purchase Orders'], ['suppliers', 'Suppliers']]
+  const items = [['requests', at('Purchase Requests')], ['orders', at('Purchase Orders')], ['suppliers', at('Suppliers')]]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -105,7 +106,7 @@ function Requests({ suppliers }) {
   return (
     <>
       <PageHeader eyebrow="Supply Chain" title="Purchase Requests">
-        <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> New request</button>
+        <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> {at('New request')}</button>
       </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -116,15 +117,15 @@ function Requests({ suppliers }) {
       </div>
 
       <div className="panel overflow-hidden">
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : rows.length === 0 ? <EmptyState title="No purchase requests" hint="Submit a request to route it to a department or operations head for approval." />
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]"><tr>
-                <th className="th">Ref</th><th className="th">Title</th><th className="th">Dept</th>
-                <th className="th">Approver</th><th className="th">Est. total</th><th className="th">Priority</th>
-                <th className="th">Status</th><th className="th text-right">Actions</th>
+                <th className="th">{at('Ref')}</th><th className="th">{at('Title')}</th><th className="th">{at('Dept')}</th>
+                <th className="th">{at('Approver')}</th><th className="th">{at('Est. total')}</th><th className="th">{at('Priority')}</th>
+                <th className="th">{at('Status')}</th><th className="th text-right">{at('Actions')}</th>
               </tr></thead>
               <tbody>
                 {rows.map((r) => (
@@ -139,10 +140,10 @@ function Requests({ suppliers }) {
                     <td className="td text-right">
                       <div className="inline-flex gap-1">
                         {canApprove && r.status === 'pending' && (
-                          <button onClick={() => { setDecide(r); setNote('') }} className="rounded-md bg-ok/10 px-2 py-1 text-xs text-ok hover:bg-ok/20">Review</button>
+                          <button onClick={() => { setDecide(r); setNote('') }} className="rounded-md bg-ok/10 px-2 py-1 text-xs text-ok hover:bg-ok/20">{at('Review')}</button>
                         )}
                         {r.status === 'approved' && (
-                          <button onClick={() => convert(r)} className="rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25">Convert to PO</button>
+                          <button onClick={() => convert(r)} className="rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25">{at('Convert to PO')}</button>
                         )}
                         <button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><X size={14} /></button>
                       </div>
@@ -161,14 +162,14 @@ function Requests({ suppliers }) {
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
           <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-              <h2 className="font-display text-lg font-bold text-ice">New Purchase Request</h2>
+              <h2 className="font-display text-lg font-bold text-ice">{at('New Purchase Request')}</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
             </div>
             <div className="space-y-4 p-5">
               <Field label="Title *"><input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="What needs procuring" /></Field>
               <Field label="Department"><Select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} options={[{ value: '', label: '—' }, ...deptOptions]} /></Field>
               <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                <div className="eyebrow mb-2">Route approval to</div>
+                <div className="eyebrow mb-2">{at('Route approval to')}</div>
                 <div className="grid grid-cols-1 gap-3">
                   <Field label="Approver name (dept / ops head)"><input className="input" value={form.approver_name} onChange={(e) => setForm({ ...form, approver_name: e.target.value })} /></Field>
                   <Field label="Approver email *"><input className="input" type="email" value={form.approver_email} onChange={(e) => setForm({ ...form, approver_email: e.target.value })} placeholder="head@company.com" /></Field>
@@ -184,7 +185,7 @@ function Requests({ suppliers }) {
               <Field label="Justification"><textarea className="input min-h-[80px]" value={form.justification} onChange={(e) => setForm({ ...form, justification: e.target.value })} /></Field>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(false)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setDrawer(false)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={submit} disabled={saving} className="btn-primary">{saving ? 'Submitting…' : 'Submit request'}</button>
             </div>
           </div>
@@ -196,14 +197,14 @@ function Requests({ suppliers }) {
         <div className="fixed inset-0 z-50 grid place-items-center p-4">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDecide(null)} />
           <div className="panel relative w-full max-w-md p-5 animate-rise">
-            <h3 className="font-display text-lg font-bold text-ice">Review request</h3>
+            <h3 className="font-display text-lg font-bold text-ice">{at('Review request')}</h3>
             <p className="mt-1 text-sm text-ice-faint">{decide.title} · est. {money(decide.est_total, ccy)}</p>
             {decide.justification && <p className="mt-2 rounded bg-white/[0.03] px-3 py-2 text-sm text-ice/80">{decide.justification}</p>}
             <Field label="Decision note (optional)"><textarea className="input mt-2 min-h-[60px]" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
             <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setDecide(null)} className="btn-ghost">Cancel</button>
-              <button onClick={() => decideNow('declined')} className="btn bg-bad/15 text-bad hover:bg-bad/25"><X size={15} /> Decline</button>
-              <button onClick={() => decideNow('approved')} className="btn-primary"><Check size={15} /> Approve</button>
+              <button onClick={() => setDecide(null)} className="btn-ghost">{at('Cancel')}</button>
+              <button onClick={() => decideNow('declined')} className="btn bg-bad/15 text-bad hover:bg-bad/25"><X size={15} /> {at('Decline')}</button>
+              <button onClick={() => decideNow('approved')} className="btn-primary"><Check size={15} /> {at('Approve')}</button>
             </div>
           </div>
         </div>
@@ -249,26 +250,26 @@ function PurchaseOrders({ suppliers }) {
   return (
     <>
       <PageHeader eyebrow="Supply Chain" title="Purchase Orders">
-        {canWrite && <button className="btn-primary" onClick={() => setEdit({ po_number: `PO-${Date.now().toString().slice(-6)}`, status: 'draft', total: 0, currency: ccy })}><Plus size={16} /> New PO</button>}
+        {canWrite && <button className="btn-primary" onClick={() => setEdit({ po_number: `PO-${Date.now().toString().slice(-6)}`, status: 'draft', total: 0, currency: ccy })}><Plus size={16} /> {at('New PO')}</button>}
       </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Total POs" value={rows.length} icon={ShoppingCart} />
         <StatCard label="Awaiting supplier" value={rows.filter((r) => r.status === 'sent' && r.supplier_status === 'pending').length} tone="warn" icon={Clock} />
         <StatCard label="Accepted" value={rows.filter((r) => r.supplier_status === 'accepted').length} tone="ok" icon={Check} />
-        <StatCard label="Committed" value={money(rows.filter((r) => ['draft', 'sent'].includes(r.status)).reduce((s, r) => s + Number(r.total || 0), 0), ccy)} icon={Wallet} />
+        <StatCard label="Committed" value={money(rows.filter((r) => ['draft', at('sent')].includes(r.status)).reduce((s, r) => s + Number(r.total || 0), 0), ccy)} icon={Wallet} />
       </div>
 
       <div className="panel overflow-hidden">
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : rows.length === 0 ? <EmptyState title="No purchase orders" hint="Convert an approved request, or create a PO directly." />
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]"><tr>
-                <th className="th">PO #</th><th className="th">Supplier</th><th className="th">Total</th>
-                <th className="th">Expected</th><th className="th">Status</th><th className="th">Supplier resp.</th>
-                <th className="th text-right">Actions</th>
+                <th className="th">{at('PO #')}</th><th className="th">{at('Supplier')}</th><th className="th">{at('Total')}</th>
+                <th className="th">{at('Expected')}</th><th className="th">{at('Status')}</th><th className="th">{at('Supplier resp.')}</th>
+                <th className="th text-right">{at('Actions')}</th>
               </tr></thead>
               <tbody>
                 {rows.map((r) => (
@@ -281,9 +282,9 @@ function PurchaseOrders({ suppliers }) {
                     <td className="td">{r.supplier_status ? <Badge tone={supTone(r.supplier_status)}>{r.supplier_status}</Badge> : '—'}</td>
                     <td className="td text-right">
                       <div className="inline-flex gap-1">
-                        {canWrite && <button onClick={() => setEdit(r)} className="rounded-md bg-white/5 px-2 py-1 text-xs text-ice-dim hover:text-ice">Edit</button>}
+                        {canWrite && <button onClick={() => setEdit(r)} className="rounded-md bg-white/5 px-2 py-1 text-xs text-ice-dim hover:text-ice">{at('Edit')}</button>}
                         {canWrite && r.supplier_status !== 'accepted' && (
-                          <button onClick={() => send(r)} className="rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25"><Send size={12} className="inline" /> Send</button>
+                          <button onClick={() => send(r)} className="rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25"><Send size={12} className="inline" /> {at('Send')}</button>
                         )}
                         {canWrite && <button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><X size={14} /></button>}
                       </div>
@@ -315,10 +316,10 @@ function PurchaseOrders({ suppliers }) {
               <Field label="Expected date"><input className="input" type="date" value={edit.expected_date || ''} onChange={(e) => setEdit({ ...edit, expected_date: e.target.value })} /></Field>
               <Field label="CC others on supplier email (comma-separated)"><input className="input" value={edit.cc_emails || ''} onChange={(e) => setEdit({ ...edit, cc_emails: e.target.value })} placeholder="buyer@company.com" /></Field>
               <Field label="Notes"><textarea className="input min-h-[70px]" value={edit.notes || ''} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></Field>
-              {edit.supplier_status === 'accepted' && <p className="rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-xs text-ok">Supplier accepted — a bill was created in Accounts → Bills.</p>}
+              {edit.supplier_status === 'accepted' && <p className="rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-xs text-ok">{at('Supplier accepted — a bill was created in Accounts → Bills.')}</p>}
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setEdit(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setEdit(null)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save PO'}</button>
             </div>
           </div>
@@ -345,18 +346,18 @@ export default function Procurement() {
           emptyHint="Build your approved vendor list. Add an email so POs can be sent for approval."
           searchKeys={['name', 'contact_name', 'email', 'category']}
           columns={[
-            { key: 'name', label: 'Supplier' },
-            { key: 'category', label: 'Category', render: (v) => v ? <Badge>{v}</Badge> : '—' },
-            { key: 'contact_name', label: 'Contact' },
-            { key: 'email', label: 'Email', render: (v) => v || <span className="text-warn">no email</span> },
-            { key: 'phone', label: 'Phone' },
+            { key: 'name', label: at('Supplier') },
+            { key: 'category', label: at('Category'), render: (v) => v ? <Badge>{v}</Badge> : '—' },
+            { key: 'contact_name', label: at('Contact') },
+            { key: 'email', label: at('Email'), render: (v) => v || <span className="text-warn">{at('no email')}</span> },
+            { key: 'phone', label: at('Phone') },
           ]}
           fields={[
-            { key: 'name', label: 'Supplier name', required: true, span: true },
-            { key: 'category', label: 'Category' },
-            { key: 'contact_name', label: 'Contact name' },
-            { key: 'email', label: 'Email (for PO approval)', type: 'email' },
-            { key: 'phone', label: 'Phone' },
+            { key: 'name', label: at('Supplier name'), required: true, span: true },
+            { key: 'category', label: at('Category') },
+            { key: 'contact_name', label: at('Contact name') },
+            { key: 'email', label: at('Email (for PO approval)'), type: 'email' },
+            { key: 'phone', label: at('Phone') },
           ]}
         />
       )}

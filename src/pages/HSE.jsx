@@ -9,13 +9,14 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { ShieldAlert, Flame, FileWarning, ShieldCheck, FileText, Download, Printer, Plus, X, Search } from 'lucide-react'
 import { useDepartments } from '../hooks/useDepartments'
+import { at } from '../lib/tr'
 
 const ITYPE = ['near_miss', 'injury', 'spill', 'equipment', 'environmental']
 const SEV = ['low', 'medium', 'high', 'critical']
 const ISTATUS = ['open', 'investigating', 'closed']
 
 function Tabs({ tab, setTab }) {
-  const items = [['incidents', 'Incidents'], ['docs', 'Compliance Documents'], ['kiosk', 'Document Kiosk'], ['safety', 'Safety Interactions']]
+  const items = [['incidents', at('Incidents')], ['docs', at('Compliance Documents')], ['kiosk', at('Document Kiosk')], ['safety', at('Safety Interactions')]]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -54,7 +55,7 @@ function ComplianceDocs() {
   const [saving, setSaving] = useState(false)
   const canWrite = role && role !== 'viewer'
 
-  const exp = rows.filter((r) => ['expired', 'critical'].includes(r.expiry_status)).length
+  const exp = rows.filter((r) => ['expired', at('critical')].includes(r.expiry_status)).length
   const soon = rows.filter((r) => r.expiry_status === 'expiring').length
 
   const empty = { name: '', doc_type: '', category: '', entity_ref: '', issued_on: '', expiry_date: '', file_url: '', in_kiosk: true, description: '' }
@@ -79,8 +80,8 @@ function ComplianceDocs() {
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
-        <div className="eyebrow">Compliance register</div>
-        {canWrite && <button className="btn-primary btn-sm" onClick={openNew}><Plus size={14} /> Add document</button>}
+        <div className="eyebrow">{at('Compliance register')}</div>
+        {canWrite && <button className="btn-primary btn-sm" onClick={openNew}><Plus size={14} /> {at('Add document')}</button>}
       </div>
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Documents" value={rows.length} icon={ShieldCheck} />
@@ -94,13 +95,13 @@ function ComplianceDocs() {
         emptyHint="Track permits, certificates, insurance, and licences with expiry alerts."
         onEdit={canWrite ? openEdit : undefined} onDelete={canWrite ? del : undefined}
         columns={[
-          { key: 'name', label: 'Document' },
-          { key: 'doc_type', label: 'Type', render: (v) => v ? <Badge>{v}</Badge> : '—' },
-          { key: 'file_url', label: 'File', render: (v) => v ? <a href={v} target="_blank" rel="noreferrer" className="text-info hover:underline"><FileText size={14} className="inline" /></a> : '—' },
-          { key: 'in_kiosk', label: 'Kiosk', render: (v) => v ? <Badge tone="ok">shown</Badge> : <Badge tone="mute">hidden</Badge> },
-          { key: 'expiry_date', label: 'Expires', render: (v) => date(v) },
-          { key: 'days_to_expiry', label: 'Days left', render: (v) => v == null ? '—' : <span className={v < 0 ? 'text-bad' : v < 45 ? 'text-warn' : ''}>{v}</span> },
-          { key: 'expiry_status', label: 'Status', render: (v) => <Badge tone={DOC_TONE[v] || 'mute'}>{v.replace('_', ' ')}</Badge> },
+          { key: 'name', label: at('Document') },
+          { key: 'doc_type', label: at('Type'), render: (v) => v ? <Badge>{v}</Badge> : '—' },
+          { key: 'file_url', label: at('File'), render: (v) => v ? <a href={v} target="_blank" rel="noreferrer" className="text-info hover:underline"><FileText size={14} className="inline" /></a> : '—' },
+          { key: 'in_kiosk', label: at('Kiosk'), render: (v) => v ? <Badge tone="ok">{at('shown')}</Badge> : <Badge tone="mute">{at('hidden')}</Badge> },
+          { key: 'expiry_date', label: at('Expires'), render: (v) => date(v) },
+          { key: 'days_to_expiry', label: at('Days left'), render: (v) => v == null ? '—' : <span className={v < 0 ? 'text-bad' : v < 45 ? 'text-warn' : ''}>{v}</span> },
+          { key: 'expiry_status', label: at('Status'), render: (v) => <Badge tone={DOC_TONE[v] || 'mute'}>{v.replace('_', ' ')}</Badge> },
         ]}
       />
 
@@ -133,7 +134,7 @@ function ComplianceDocs() {
               <Field label="Description"><textarea className="input min-h-[60px]" value={form.description || ''} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(null)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setDrawer(null)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save document'}</button>
             </div>
           </div>
@@ -162,16 +163,16 @@ function DocumentKiosk() {
           <Search size={15} className="text-ice-faint" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search documents…" className="w-56 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
         </div>
-        <button onClick={() => setCat('')} className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${cat === '' ? 'border-accent-line bg-accent-soft text-accent' : 'border-white/10 text-ice-dim hover:text-ice'}`}>All</button>
+        <button onClick={() => setCat('')} className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${cat === '' ? 'border-accent-line bg-accent-soft text-accent' : 'border-white/10 text-ice-dim hover:text-ice'}`}>{at('All')}</button>
         {cats.map((c) => <button key={c} onClick={() => setCat(c)} className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold ${cat === c ? 'border-accent-line bg-accent-soft text-accent' : 'border-white/10 text-ice-dim hover:text-ice'}`}>{c}</button>)}
         <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} document(s)</span>
       </div>
 
-      {loading ? <div className="panel p-8 text-center text-ice-faint">Loading…</div>
+      {loading ? <div className="panel p-8 text-center text-ice-faint">{at('Loading…')}</div>
       : filtered.length === 0 ? (
         <div className="panel px-6 py-16 text-center">
           <FileText size={28} className="mx-auto text-ice-faint" />
-          <p className="mt-3 font-display text-lg font-bold text-ice">No documents in the kiosk yet</p>
+          <p className="mt-3 font-display text-lg font-bold text-ice">{at('No documents in the kiosk yet')}</p>
           <p className="mt-1 text-sm text-ice-faint">Upload files in Compliance Documents and tick "Show in Document Kiosk".</p>
         </div>
       ) : (
@@ -187,13 +188,13 @@ function DocumentKiosk() {
               {r.description && <p className="mt-2 line-clamp-2 text-xs text-ice-faint">{r.description}</p>}
               <div className="mt-1 text-[11px] text-ice-faint">
                 {r.expiry_date ? `Expires ${date(r.expiry_date)}` : 'No expiry'}
-                {r.days_to_expiry != null && r.days_to_expiry < 0 && <span className="text-bad"> · expired</span>}
+                {r.days_to_expiry != null && r.days_to_expiry < 0 && <span className="text-bad"> {at('· expired')}</span>}
               </div>
               <div className="mt-3 flex gap-2">
-                <a href={r.file_url} target="_blank" rel="noreferrer" className="btn-primary btn-sm flex-1"><Download size={14} /> Download</a>
+                <a href={r.file_url} target="_blank" rel="noreferrer" className="btn-primary btn-sm flex-1"><Download size={14} /> {at('Download')}</a>
                 <a href={r.file_url} target="_blank" rel="noreferrer" className="btn-ghost btn-sm" title="Open / print"><Printer size={14} /></a>
               </div>
-              {['expired', 'critical'].includes(r.expiry_status) && (
+              {['expired', at('critical')].includes(r.expiry_status) && (
                 <p className="mt-2 rounded bg-bad/10 px-2 py-1 text-[10px] text-bad">⚠ This document is out of date — verify before field use.</p>
               )}
             </div>
@@ -226,28 +227,28 @@ export default function HSE() {
             }
           }}
           columns={[
-            { key: 'incident_no', label: 'Ref', render: (v) => <span className="font-mono text-accent">{v}</span> },
-            { key: 'incident_type', label: 'Type', render: (v) => <Badge>{v.replace('_', ' ')}</Badge> },
-            { key: 'severity', label: 'Severity', render: (v) => <Badge tone={v === 'critical' || v === 'high' ? 'bad' : v === 'medium' ? 'warn' : 'mute'}>{v}</Badge> },
-            { key: 'location', label: 'Location' },
-            { key: 'occurred_at', label: 'Occurred', render: (v) => date(v) },
-            { key: 'status', label: 'Status', render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+            { key: 'incident_no', label: at('Ref'), render: (v) => <span className="font-mono text-accent">{v}</span> },
+            { key: 'incident_type', label: at('Type'), render: (v) => <Badge>{v.replace('_', ' ')}</Badge> },
+            { key: 'severity', label: at('Severity'), render: (v) => <Badge tone={v === 'critical' || v === 'high' ? 'bad' : v === 'medium' ? 'warn' : 'mute'}>{v}</Badge> },
+            { key: 'location', label: at('Location') },
+            { key: 'occurred_at', label: at('Occurred'), render: (v) => date(v) },
+            { key: 'status', label: at('Status'), render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
           ]}
           fields={[
-            { key: 'incident_no', label: 'Incident ref', required: true },
-            { key: 'incident_type', label: 'Type', type: 'select', options: ITYPE.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'near_miss' },
-            { key: 'severity', label: 'Severity', type: 'select', options: SEV.map((s) => ({ value: s, label: s })), default: 'low' },
-            { key: 'status', label: 'Status', type: 'select', options: ISTATUS.map((s) => ({ value: s, label: s })), default: 'open' },
-            { key: 'location', label: 'Location' },
-            { key: 'department', label: 'Department', type: 'select', options: deptOptions },
-            { key: 'occurred_at', label: 'Occurred at', type: 'date' },
-            { key: 'reported_by', label: 'Reported by' },
-            { key: 'description', label: 'Description', type: 'textarea', span: true },
-            { key: 'corrective_action', label: 'Corrective action', type: 'textarea', span: true },
+            { key: 'incident_no', label: at('Incident ref'), required: true },
+            { key: 'incident_type', label: at('Type'), type: 'select', options: ITYPE.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'near_miss' },
+            { key: 'severity', label: at('Severity'), type: 'select', options: SEV.map((s) => ({ value: s, label: s })), default: 'low' },
+            { key: 'status', label: at('Status'), type: 'select', options: ISTATUS.map((s) => ({ value: s, label: s })), default: 'open' },
+            { key: 'location', label: at('Location') },
+            { key: 'department', label: at('Department'), type: 'select', options: deptOptions },
+            { key: 'occurred_at', label: at('Occurred at'), type: 'date' },
+            { key: 'reported_by', label: at('Reported by') },
+            { key: 'description', label: at('Description'), type: 'textarea', span: true },
+            { key: 'corrective_action', label: at('Corrective action'), type: 'textarea', span: true },
           ]}
           kpis={(rows) => {
             const open = rows.filter((r) => r.status !== 'closed').length
-            const crit = rows.filter((r) => ['high', 'critical'].includes(r.severity) && r.status !== 'closed').length
+            const crit = rows.filter((r) => ['high', at('critical')].includes(r.severity) && r.status !== 'closed').length
             const month = rows.filter((r) => new Date(r.occurred_at) > new Date(Date.now() - 30 * 86400000)).length
             return <>
               <StatCard label="Total logged" value={rows.length} icon={ShieldAlert} />

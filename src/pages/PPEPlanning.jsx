@@ -10,13 +10,14 @@ import { PageHeader, StatCard, Badge, Select, useToast, EmptyState } from '../co
 import { money, num } from '../lib/format'
 import { businessMonthKey, businessMonthLabel, inCurrentBusinessMonth } from '../lib/period'
 import { Shirt, Footprints, Ruler, Wallet, PackageMinus, AlertTriangle, TrendingUp, Users } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
 const monthKey = (d) => (d ? businessMonthKey(d) : '')
 const monthLabel = (k) => businessMonthLabel(k)
 
 function Tabs({ tab, setTab }) {
-  const items = [['sizes', 'Size Demand'], ['requirements', 'Dept Requirements'], ['consumption', 'Consumption Analysis']]
+  const items = [['sizes', at('Size Demand')], ['requirements', at('Dept Requirements')], ['consumption', at('Consumption Analysis')]]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
@@ -69,8 +70,8 @@ export default function PPEPlanning() {
 
       {/* Global dept filter */}
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Department:</span>
-        <div className="w-52"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Department:')}</span>
+        <div className="w-52"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
         <span className="ml-auto font-mono text-[11px] text-ice-faint">{emps.length} employee(s)</span>
       </div>
 
@@ -91,14 +92,14 @@ export default function PPEPlanning() {
 
           {/* PPE stock coverage */}
           <div className="panel mt-4 overflow-hidden">
-            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">PPE / uniform stock coverage</span></div>
+            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('PPE / uniform stock coverage')}</span></div>
             {ppeItems.length === 0 ? <EmptyState title="No PPE items in inventory" hint="Tag inventory items with category 'ppe' or 'uniform' to track them here." />
             : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-white/[0.02]"><tr>
-                    <th className="th">Item</th><th className="th">On hand</th><th className="th">Reorder</th>
-                    <th className="th">Workforce need</th><th className="th">Status</th>
+                    <th className="th">{at('Item')}</th><th className="th">{at('On hand')}</th><th className="th">{at('Reorder')}</th>
+                    <th className="th">{at('Workforce need')}</th><th className="th">{at('Status')}</th>
                   </tr></thead>
                   <tbody>
                     {ppeItems.map((it) => {
@@ -111,7 +112,7 @@ export default function PPEPlanning() {
                           <td className="td font-mono">{num(it.qty_on_hand)} {it.uom}</td>
                           <td className="td font-mono">{num(it.reorder_level)}</td>
                           <td className="td font-mono">{need}</td>
-                          <td className="td">{low ? <Badge tone="bad">reorder</Badge> : short ? <Badge tone="warn">short vs workforce</Badge> : <Badge tone="ok">ok</Badge>}</td>
+                          <td className="td">{low ? <Badge tone="bad">{at('reorder')}</Badge> : short ? <Badge tone="warn">{at('short vs workforce')}</Badge> : <Badge tone="ok">ok</Badge>}</td>
                         </tr>
                       )
                     })}
@@ -134,7 +135,7 @@ function SizeChart({ title, data, icon: Icon }) {
   return (
     <div className="panel p-5">
       <div className="mb-4 flex items-center gap-2"><Icon size={15} className="text-accent" /><span className="eyebrow">{title}</span></div>
-      {data.length === 0 ? <div className="grid h-48 place-items-center text-sm text-ice-faint">No sizes recorded</div>
+      {data.length === 0 ? <div className="grid h-48 place-items-center text-sm text-ice-faint">{at('No sizes recorded')}</div>
       : (
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data} margin={{ left: -20 }}>
@@ -169,14 +170,14 @@ function Requirements({ employees, deptOptions }) {
 
   return (
     <div className="panel overflow-hidden">
-      <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">Required PPE / uniforms per department</span></div>
+      <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Required PPE / uniforms per department')}</span></div>
       {rows.length === 0 ? <EmptyState title="No employees" hint="Add employees with sizing to see department requirements." />
       : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-white/[0.02]"><tr>
-              <th className="th">Department</th><th className="th">Headcount</th>
-              <th className="th">Top sizes needed</th><th className="th">Waist sizes needed</th><th className="th">Shoe sizes needed</th>
+              <th className="th">{at('Department')}</th><th className="th">{at('Headcount')}</th>
+              <th className="th">{at('Top sizes needed')}</th><th className="th">{at('Waist sizes needed')}</th><th className="th">{at('Shoe sizes needed')}</th>
             </tr></thead>
             <tbody>
               {rows.map((r, i) => (
@@ -233,8 +234,8 @@ function Consumption({ issuances, ccy, deptOptions }) {
   return (
     <div>
       <div className="panel mb-4 flex flex-wrap items-center gap-2 p-3">
-        <div className="w-40"><Select value={period} onChange={(e) => setPeriod(e.target.value)} options={[{ value: 'this_month', label: 'This month' }, { value: 'last_90', label: 'Last 90 days' }, { value: 'this_year', label: 'This year' }, { value: 'all', label: 'All time' }]} /></div>
-        <div className="w-48"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
+        <div className="w-40"><Select value={period} onChange={(e) => setPeriod(e.target.value)} options={[{ value: 'this_month', label: at('This month') }, { value: 'last_90', label: at('Last 90 days') }, { value: 'this_year', label: at('This year') }, { value: 'all', label: at('All time') }]} /></div>
+        <div className="w-48"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -248,7 +249,7 @@ function Consumption({ issuances, ccy, deptOptions }) {
       : (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="panel p-5">
-            <div className="eyebrow mb-4">Spend by department</div>
+            <div className="eyebrow mb-4">{at('Spend by department')}</div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={byDept} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
@@ -260,7 +261,7 @@ function Consumption({ issuances, ccy, deptOptions }) {
             </ResponsiveContainer>
           </div>
           <div className="panel p-5">
-            <div className="eyebrow mb-4">Consumption trend</div>
+            <div className="eyebrow mb-4">{at('Consumption trend')}</div>
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={trend} margin={{ left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -276,9 +277,9 @@ function Consumption({ issuances, ccy, deptOptions }) {
           </div>
 
           <div className="panel overflow-hidden lg:col-span-2">
-            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">Department breakdown</span></div>
+            <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Department breakdown')}</span></div>
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr><th className="th">Department</th><th className="th">Qty issued</th><th className="th">Total cost</th><th className="th">% of spend</th></tr></thead>
+              <thead className="bg-white/[0.02]"><tr><th className="th">{at('Department')}</th><th className="th">{at('Qty issued')}</th><th className="th">{at('Total cost')}</th><th className="th">{at('% of spend')}</th></tr></thead>
               <tbody>
                 {byDept.map((r, i) => (
                   <tr key={i} className="transition hover:bg-white/[0.025]">

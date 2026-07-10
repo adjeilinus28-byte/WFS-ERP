@@ -16,14 +16,15 @@ import {
   Scale, BookOpen, TrendingUp, Landmark, RefreshCw, Plus, X, Check, AlertTriangle,
   FileSpreadsheet, Activity, Download, Lock,
 } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
 const TONE_HEX = { ok: '#16a34a', warn: '#F59E0B', bad: '#dc2626', mute: '#475569' }
 
 function Tabs({ tab, setTab }) {
   const items = [
-    ['overview', 'Analysis'], ['balance', 'Balance Sheet'], ['income', 'Income Statement'],
-    ['cash', 'Cash Flow'], ['trial', 'Trial Balance'], ['journal', 'Journal'], ['coa', 'Chart of Accounts'],
+    ['overview', at('Analysis')], ['balance', at('Balance Sheet')], ['income', at('Income Statement')],
+    ['cash', at('Cash Flow')], ['trial', at('Trial Balance')], ['journal', at('Journal')], ['coa', at('Chart of Accounts')],
   ]
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
@@ -175,7 +176,7 @@ export default function Financials() {
       }
 
       // Payroll → DR Salaries + Employer SSNIT, CR Net wages / SSNIT / PAYE / accruals
-      const { data: pays } = await supabase.from('payroll').select('*').eq('org_id', activeOrgId).in('status', ['approved', 'paid'])
+      const { data: pays } = await supabase.from('payroll').select('*').eq('org_id', activeOrgId).in('status', ['approved', at('paid')])
       for (const p of pays || []) {
         const gross = Number(p.gross_pay || 0), net = Number(p.net_pay || 0)
         if (!gross) continue
@@ -207,30 +208,30 @@ export default function Financials() {
     link.download = `trial-balance-${endPeriod}.csv`; link.click()
   }
 
-  if (loading) return <div className="grid h-64 place-items-center text-ice-faint">Loading ledger…</div>
+  if (loading) return <div className="grid h-64 place-items-center text-ice-faint">{at('Loading ledger…')}</div>
 
   const periodLabel = scope === 'fy' ? `FY ${fiscalYearOf(period, fyStart)}` : businessMonthLabel(period)
 
   return (
     <div>
       <PageHeader eyebrow="Finance" title="Financial Statements">
-        <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> Export</button>
+        <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> {at('Export')}</button>
         {canPost && <button className="btn-primary" onClick={syncLedger} disabled={syncing}><RefreshCw size={15} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Syncing…' : 'Sync ledger'}</button>}
       </PageHeader>
 
       {/* Period selector */}
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Period:</span>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Period:')}</span>
         <div className="w-44"><Select value={period} onChange={(e) => setPeriod(e.target.value)} options={allPeriods.map((p) => ({ value: p, label: businessMonthLabel(p) }))} /></div>
         <div className="inline-flex rounded-lg border border-white/10 bg-navy/60 p-0.5">
-          <button onClick={() => setScope('period')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'period' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Month</button>
-          <button onClick={() => setScope('fy')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'fy' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Fiscal year</button>
+          <button onClick={() => setScope('period')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'period' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{at('Month')}</button>
+          <button onClick={() => setScope('fy')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'fy' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{at('Fiscal year')}</button>
         </div>
         <span className="font-mono text-[11px] text-ice-faint">{periodLabel} · business month 21st–20th</span>
         <span className="ml-auto">
           {tbTotals.balanced
-            ? <Badge tone="ok"><Check size={11} className="mr-1 inline" />Books balanced</Badge>
-            : <Badge tone="bad"><AlertTriangle size={11} className="mr-1 inline" />Out of balance</Badge>}
+            ? <Badge tone="ok"><Check size={11} className="mr-1 inline" />{at('Books balanced')}</Badge>
+            : <Badge tone="bad"><AlertTriangle size={11} className="mr-1 inline" />{at('Out of balance')}</Badge>}
         </span>
       </div>
 
@@ -268,14 +269,14 @@ function Analysis({ bs, is, isPrior, ratioList, ccy, tb, allPeriods }) {
 
       {!bs.balanced && (
         <div className="mb-4 rounded-lg border border-bad/40 bg-bad/10 p-3 text-sm text-ice">
-          <b>Balance sheet does not balance</b> — difference of {money(bs.check, ccy)}. This usually means an entry was posted without an offsetting line, or opening balances were never captured. Review the Trial Balance.
+          <b>{at('Balance sheet does not balance')}</b> — difference of {money(bs.check, ccy)}. This usually means an entry was posted without an offsetting line, or opening balances were never captured. Review the Trial Balance.
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="panel p-5">
           <div className="eyebrow mb-4">Revenue &amp; net income trend</div>
-          {trend.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">No posted activity yet</div> : (
+          {trend.length === 0 ? <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No posted activity yet')}</div> : (
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={trend} margin={{ left: -10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
@@ -340,21 +341,21 @@ function BalanceSheetView({ bs, ccy, label }) {
   const section = (title, list) => (
     <>
       <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{title}</div>
-      {list.length === 0 ? <p className="py-1 text-xs text-ice-faint/60">None</p>
+      {list.length === 0 ? <p className="py-1 text-xs text-ice-faint/60">{at('None')}</p>
         : list.map((a) => <Row key={a.account_id} label={`${a.code} · ${a.name}${a.is_contra ? ' (contra)' : ''}`} value={a.is_contra ? -a.balance : a.balance} ccy={ccy} indent />)}
     </>
   )
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="panel p-5">
-        <div className="mb-1 eyebrow">Assets</div>
+        <div className="mb-1 eyebrow">{at('Assets')}</div>
         <div className="text-[11px] text-ice-faint">As at end of {label}</div>
         {section('Current assets', bs.currentAssets)}
         <Row label="Total current assets" value={bs.totalCurrentAssets} ccy={ccy} bold />
         {section('Non-current assets', bs.fixedAssets)}
         <Row label="Total non-current assets" value={bs.totalFixedAssets} ccy={ccy} bold />
         <div className="mt-3 flex items-center justify-between rounded-lg bg-accent-soft px-3 py-2">
-          <span className="font-semibold text-ice">TOTAL ASSETS</span>
+          <span className="font-semibold text-ice">{at('TOTAL ASSETS')}</span>
           <span className="font-display text-lg font-bold text-accent">{money(bs.totalAssets, ccy)}</span>
         </div>
       </div>
@@ -385,22 +386,22 @@ function BalanceSheetView({ bs, ccy, label }) {
 function IncomeView({ is, ccy, label }) {
   return (
     <div className="panel mx-auto max-w-2xl p-6">
-      <div className="mb-1 eyebrow">Income Statement</div>
+      <div className="mb-1 eyebrow">{at('Income Statement')}</div>
       <div className="mb-4 text-[11px] text-ice-faint">For the period {label}</div>
-      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Revenue</div>
+      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Revenue')}</div>
       {is.income.map((a) => <Row key={a.account_id} label={`${a.code} · ${a.name}`} value={a.balance} ccy={ccy} indent />)}
       <Row label="Total revenue" value={is.revenue} ccy={ccy} bold />
 
-      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Cost of sales</div>
-      {is.cogs.length === 0 ? <p className="py-1 text-xs text-ice-faint/60">None</p> : is.cogs.map((a) => <Row key={a.account_id} label={`${a.code} · ${a.name}`} value={a.balance} ccy={ccy} indent />)}
+      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Cost of sales')}</div>
+      {is.cogs.length === 0 ? <p className="py-1 text-xs text-ice-faint/60">{at('None')}</p> : is.cogs.map((a) => <Row key={a.account_id} label={`${a.code} · ${a.name}`} value={a.balance} ccy={ccy} indent />)}
       <Row label="Gross profit" value={is.grossProfit} ccy={ccy} bold tone={is.grossProfit >= 0 ? 'ok' : 'bad'} />
 
-      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Operating expenses</div>
+      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Operating expenses')}</div>
       {is.opex.map((a) => <Row key={a.account_id} label={`${a.code} · ${a.name}`} value={a.balance} ccy={ccy} indent />)}
       <Row label="Total operating expenses" value={is.operatingExpenses} ccy={ccy} bold />
 
       <div className="mt-4 flex items-center justify-between rounded-lg bg-accent-soft px-3 py-2.5">
-        <span className="font-semibold text-ice">NET INCOME</span>
+        <span className="font-semibold text-ice">{at('NET INCOME')}</span>
         <span className={`font-display text-xl font-bold ${is.netIncome >= 0 ? 'text-ok' : 'text-bad'}`}>{money(is.netIncome, ccy)}</span>
       </div>
       {is.revenue > 0 && (
@@ -417,10 +418,10 @@ function IncomeView({ is, ccy, label }) {
 function CashFlowView({ cf, ccy, label }) {
   return (
     <div className="panel mx-auto max-w-2xl p-6">
-      <div className="mb-1 eyebrow">Cash Flow Statement</div>
+      <div className="mb-1 eyebrow">{at('Cash Flow Statement')}</div>
       <div className="mb-4 text-[11px] text-ice-faint">Indirect method · {label}</div>
 
-      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Operating activities</div>
+      <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Operating activities')}</div>
       <Row label="Net income" value={cf.netIncome} ccy={ccy} indent />
       <Row label="Add: depreciation" value={cf.depreciation} ccy={ccy} indent />
       <Row label="Change in receivables" value={cf.arChange} ccy={ccy} indent />
@@ -431,16 +432,16 @@ function CashFlowView({ cf, ccy, label }) {
       <Row label="Change in payroll liabilities" value={cf.wagesChange} ccy={ccy} indent />
       <Row label="Net cash from operating" value={cf.operating} ccy={ccy} bold tone={cf.operating >= 0 ? 'ok' : 'bad'} />
 
-      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Investing activities</div>
+      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Investing activities')}</div>
       <Row label="Purchase of fixed assets" value={cf.investing} ccy={ccy} indent />
       <Row label="Net cash from investing" value={cf.investing} ccy={ccy} bold />
 
-      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">Financing activities</div>
+      <div className="mt-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Financing activities')}</div>
       <Row label="Loans and share capital" value={cf.financing} ccy={ccy} indent />
       <Row label="Net cash from financing" value={cf.financing} ccy={ccy} bold />
 
       <div className="mt-4 flex items-center justify-between rounded-lg bg-accent-soft px-3 py-2.5">
-        <span className="font-semibold text-ice">NET CHANGE IN CASH</span>
+        <span className="font-semibold text-ice">{at('NET CHANGE IN CASH')}</span>
         <span className={`font-display text-xl font-bold ${cf.netChange >= 0 ? 'text-ok' : 'text-bad'}`}>{money(cf.netChange, ccy)}</span>
       </div>
       <Row label="Opening cash" value={cf.openingCash} ccy={ccy} />
@@ -458,16 +459,16 @@ function TrialBalanceView({ accounts, totals, ccy }) {
   return (
     <div className="panel overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-        <span className="eyebrow">Trial balance</span>
-        {totals.balanced ? <Badge tone="ok">Debits = Credits</Badge> : <Badge tone="bad">Difference {money(totals.debit - totals.credit, ccy)}</Badge>}
+        <span className="eyebrow">{at('Trial balance')}</span>
+        {totals.balanced ? <Badge tone="ok">{at('Debits = Credits')}</Badge> : <Badge tone="bad">Difference {money(totals.debit - totals.credit, ccy)}</Badge>}
       </div>
       {active.length === 0 ? <EmptyState title="No posted activity" hint="Use “Sync ledger” to post your invoices, bills, payroll, and issuances." />
       : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-white/[0.02]"><tr>
-              <th className="th">Code</th><th className="th">Account</th><th className="th">Type</th>
-              <th className="th text-right">Debit</th><th className="th text-right">Credit</th><th className="th text-right">Balance</th>
+              <th className="th">{at('Code')}</th><th className="th">{at('Account')}</th><th className="th">{at('Type')}</th>
+              <th className="th text-right">{at('Debit')}</th><th className="th text-right">{at('Credit')}</th><th className="th text-right">{at('Balance')}</th>
             </tr></thead>
             <tbody>
               {active.map((a) => (
@@ -481,7 +482,7 @@ function TrialBalanceView({ accounts, totals, ccy }) {
                 </tr>
               ))}
               <tr className="border-t-2 border-white/15 bg-white/[0.03]">
-                <td className="td" colSpan={3}><b>Totals</b></td>
+                <td className="td" colSpan={3}><b>{at('Totals')}</b></td>
                 <td className="td text-right font-mono font-bold">{money(totals.debit, ccy)}</td>
                 <td className="td text-right font-mono font-bold">{money(totals.credit, ccy)}</td>
                 <td className="td"></td>
@@ -533,39 +534,39 @@ function JournalView({ entries, accounts, ccy, canPost, onChange }) {
 
   return (
     <div>
-      {canPost && <button onClick={() => setOpen(!open)} className="btn-primary mb-4"><Plus size={15} /> New journal entry</button>}
+      {canPost && <button onClick={() => setOpen(!open)} className="btn-primary mb-4"><Plus size={15} /> {at('New journal entry')}</button>}
 
       {open && (
         <div className="panel mb-4 p-5">
-          <div className="eyebrow mb-3">Manual journal entry</div>
+          <div className="eyebrow mb-3">{at('Manual journal entry')}</div>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Date"><input className="input" type="date" value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></Field>
             <div className="col-span-2"><Field label="Memo"><input className="input" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} placeholder="e.g. Monthly depreciation" /></Field></div>
           </div>
           <div className="mt-3 space-y-2">
             <div className="grid grid-cols-[1fr_7rem_7rem_1.5rem] gap-2 font-mono text-[10px] uppercase text-ice-faint">
-              <span>Account</span><span>Debit</span><span>Credit</span><span />
+              <span>{at('Account')}</span><span>{at('Debit')}</span><span>{at('Credit')}</span><span />
             </div>
             {form.lines.map((l, i) => (
               <div key={i} className="grid grid-cols-[1fr_7rem_7rem_1.5rem] items-center gap-2">
-                <Select value={l.account_id} onChange={(e) => setLine(i, 'account_id', e.target.value)} options={[{ value: '', label: 'Select account…' }, ...opts]} />
+                <Select value={l.account_id} onChange={(e) => setLine(i, 'account_id', e.target.value)} options={[{ value: '', label: at('Select account…') }, ...opts]} />
                 <input className="input" type="number" value={l.debit} onChange={(e) => setLine(i, 'debit', e.target.value)} disabled={!!Number(l.credit)} />
                 <input className="input" type="number" value={l.credit} onChange={(e) => setLine(i, 'credit', e.target.value)} disabled={!!Number(l.debit)} />
                 <button onClick={() => delLine(i)} className="text-ice-faint hover:text-bad"><X size={13} /></button>
               </div>
             ))}
-            <button onClick={addLine} className="btn-ghost btn-sm"><Plus size={13} /> Line</button>
+            <button onClick={addLine} className="btn-ghost btn-sm"><Plus size={13} /> {at('Line')}</button>
           </div>
           <div className="mt-3 flex items-center justify-between rounded-lg border border-white/10 bg-navy/50 px-3 py-2 text-sm">
             <span className="text-ice-dim">Debits {money(dTot, ccy)} · Credits {money(cTot, ccy)}</span>
-            {balanced ? <Badge tone="ok">Balanced</Badge> : <Badge tone="bad">Difference {money(dTot - cTot, ccy)}</Badge>}
+            {balanced ? <Badge tone="ok">{at('Balanced')}</Badge> : <Badge tone="bad">Difference {money(dTot - cTot, ccy)}</Badge>}
           </div>
-          <button onClick={save} disabled={!balanced} className="btn-primary mt-3 w-full disabled:opacity-40">Post entry</button>
+          <button onClick={save} disabled={!balanced} className="btn-primary mt-3 w-full disabled:opacity-40">{at('Post entry')}</button>
         </div>
       )}
 
       <div className="panel overflow-hidden">
-        <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">Journal entries</span></div>
+        <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Journal entries')}</span></div>
         {entries.length === 0 ? <EmptyState title="No entries" hint="Sync the ledger or post a manual journal." />
         : entries.map((e) => (
           <div key={e.id} className="flex items-center gap-3 border-b border-white/[0.04] px-5 py-3">
@@ -573,7 +574,7 @@ function JournalView({ entries, accounts, ccy, canPost, onChange }) {
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs text-accent">{e.entry_no || e.id.slice(0, 8)}</span>
                 <Badge tone="mute">{e.source_type}</Badge>
-                {e.posted && <Badge tone="ok"><Lock size={9} className="mr-1 inline" />posted</Badge>}
+                {e.posted && <Badge tone="ok"><Lock size={9} className="mr-1 inline" />{at('posted')}</Badge>}
               </div>
               <div className="truncate text-sm text-ice">{e.memo || '—'}</div>
             </div>
@@ -590,7 +591,7 @@ function JournalView({ entries, accounts, ccy, canPost, onChange }) {
 function ChartOfAccounts({ accounts, onChange }) {
   const { activeOrgId, role } = useAuth()
   const toast = useToast()
-  const canWrite = ['owner', 'admin'].includes(role)
+  const canWrite = ['owner', at('admin')].includes(role)
   const [form, setForm] = useState({ code: '', name: '', account_type: 'expense', subtype: 'operating_expense', normal_balance: 'debit', is_contra: false })
 
   const add = async () => {
@@ -609,19 +610,19 @@ function ChartOfAccounts({ accounts, onChange }) {
     <div className="grid gap-4 lg:grid-cols-3">
       {canWrite && (
         <div className="panel p-5">
-          <div className="eyebrow mb-3">Add account</div>
+          <div className="eyebrow mb-3">{at('Add account')}</div>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Code"><input className="input" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="6000" /></Field>
-              <Field label="Normal balance"><Select value={form.normal_balance} onChange={(e) => setForm({ ...form, normal_balance: e.target.value })} options={[{ value: 'debit', label: 'Debit' }, { value: 'credit', label: 'Credit' }]} /></Field>
+              <Field label="Normal balance"><Select value={form.normal_balance} onChange={(e) => setForm({ ...form, normal_balance: e.target.value })} options={[{ value: 'debit', label: at('Debit') }, { value: 'credit', label: at('Credit') }]} /></Field>
             </div>
             <Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-            <Field label="Type"><Select value={form.account_type} onChange={(e) => setForm({ ...form, account_type: e.target.value, normal_balance: ['asset', 'expense'].includes(e.target.value) ? 'debit' : 'credit' })} options={TYPES.map((t) => ({ value: t, label: t }))} /></Field>
+            <Field label="Type"><Select value={form.account_type} onChange={(e) => setForm({ ...form, account_type: e.target.value, normal_balance: ['asset', at('expense')].includes(e.target.value) ? 'debit' : 'credit' })} options={TYPES.map((t) => ({ value: t, label: t }))} /></Field>
             <Field label="Subtype"><input className="input" value={form.subtype} onChange={(e) => setForm({ ...form, subtype: e.target.value })} placeholder="current_asset" /></Field>
-            <label className="flex items-center gap-2 text-xs text-ice"><input type="checkbox" checked={form.is_contra} onChange={(e) => setForm({ ...form, is_contra: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> Contra account</label>
-            <button onClick={add} className="btn-primary w-full"><Plus size={14} /> Add account</button>
+            <label className="flex items-center gap-2 text-xs text-ice"><input type="checkbox" checked={form.is_contra} onChange={(e) => setForm({ ...form, is_contra: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> {at('Contra account')}</label>
+            <button onClick={add} className="btn-primary w-full"><Plus size={14} /> {at('Add account')}</button>
           </div>
-          <p className="mt-2 text-[11px] text-ice-faint">Subtypes drive statement grouping: <code>current_asset</code>, <code>fixed_asset</code>, <code>current_liability</code>, <code>long_term_liability</code>, <code>cost_of_sales</code>, <code>operating_expense</code>.</p>
+          <p className="mt-2 text-[11px] text-ice-faint">Subtypes drive statement grouping: <code>current_asset</code>, <code>fixed_asset</code>, <code>current_liability</code>, <code>long_term_liability</code>, <code>{at('cost_of_sales')}</code>, <code>operating_expense</code>.</p>
         </div>
       )}
 
@@ -629,12 +630,12 @@ function ChartOfAccounts({ accounts, onChange }) {
         {byType.map(([t, list]) => (
           <div key={t} className="panel overflow-hidden">
             <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">{t}s</span></div>
-            {list.length === 0 ? <p className="p-4 text-xs text-ice-faint">None</p>
+            {list.length === 0 ? <p className="p-4 text-xs text-ice-faint">{at('None')}</p>
               : list.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-2">
                   <span className="w-14 font-mono text-xs text-accent">{a.code}</span>
                   <span className="flex-1 text-sm text-ice">{a.name}</span>
-                  {a.is_contra && <Badge tone="warn">contra</Badge>}
+                  {a.is_contra && <Badge tone="warn">{at('contra')}</Badge>}
                   <Badge tone="mute">{a.normal_balance}</Badge>
                   <span className="font-mono text-[10px] text-ice-faint">{a.subtype}</span>
                 </div>

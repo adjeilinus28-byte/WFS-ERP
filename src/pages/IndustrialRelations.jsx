@@ -12,6 +12,7 @@ import {
   Inbox, ShieldQuestion, Heart, Search, Send, Phone, Check, AlertTriangle, Lock, Copy,
   MessageSquare, UserCheck, ClipboardList, TrendingUp, Clock,
 } from 'lucide-react'
+import { at } from '../lib/tr'
 
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
 const CATEGORIES = ['harassment', 'pay', 'workload', 'safety', 'interpersonal', 'wellbeing', 'other']
@@ -59,20 +60,20 @@ function DropBox() {
   if (issued) return (
     <div className="panel mx-auto max-w-lg p-6 text-center">
       <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-ok/15 text-ok"><Check size={24} /></div>
-      <h3 className="font-display text-lg font-bold text-ice">Concern submitted confidentially</h3>
+      <h3 className="font-display text-lg font-bold text-ice">{at('Concern submitted confidentially')}</h3>
       <p className="mt-1 text-sm text-ice-faint">Save these — you'll need both to check status or reply. They won't be shown again.</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg border border-white/10 bg-navy/50 p-3"><div className="text-[10px] uppercase text-ice-faint">Case ID</div><div className="font-mono text-lg font-bold text-accent">{issued.case_id}</div></div>
-        <div className="rounded-lg border border-white/10 bg-navy/50 p-3"><div className="text-[10px] uppercase text-ice-faint">Access code</div><div className="font-mono text-lg font-bold text-ice">{issued.access_code}</div></div>
+        <div className="rounded-lg border border-white/10 bg-navy/50 p-3"><div className="text-[10px] uppercase text-ice-faint">{at('Case ID')}</div><div className="font-mono text-lg font-bold text-accent">{issued.case_id}</div></div>
+        <div className="rounded-lg border border-white/10 bg-navy/50 p-3"><div className="text-[10px] uppercase text-ice-faint">{at('Access code')}</div><div className="font-mono text-lg font-bold text-ice">{issued.access_code}</div></div>
       </div>
-      <button onClick={() => { navigator.clipboard?.writeText(`Case ${issued.case_id} / Code ${issued.access_code}`); toast.success('Copied') }} className="btn-ghost btn-sm mt-4"><Copy size={14} /> Copy</button>
-      <button onClick={() => setIssued(null)} className="btn-primary btn-sm mt-4 ml-2">Done</button>
+      <button onClick={() => { navigator.clipboard?.writeText(`Case ${issued.case_id} / Code ${issued.access_code}`); toast.success('Copied') }} className="btn-ghost btn-sm mt-4"><Copy size={14} /> {at('Copy')}</button>
+      <button onClick={() => setIssued(null)} className="btn-primary btn-sm mt-4 ml-2">{at('Done')}</button>
     </div>
   )
 
   return (
     <div className="panel mx-auto max-w-lg p-6">
-      <div className="mb-4 flex items-center gap-2"><ShieldQuestion size={18} className="text-accent" /><h3 className="font-display text-lg font-bold text-ice">Log a concern</h3></div>
+      <div className="mb-4 flex items-center gap-2"><ShieldQuestion size={18} className="text-accent" /><h3 className="font-display text-lg font-bold text-ice">{at('Log a concern')}</h3></div>
       <p className="mb-4 text-sm text-ice-faint">Raise a work-related concern or complaint. It's handled confidentially by the Industrial Relations officer.</p>
 
       <label className="mb-4 flex items-center gap-2 rounded-lg border border-white/10 bg-navy/40 px-3 py-2.5 text-sm text-ice">
@@ -130,12 +131,12 @@ function CaseLookup() {
 
   return (
     <div className="panel mx-auto max-w-lg p-6">
-      <div className="mb-4 flex items-center gap-2"><Search size={18} className="text-accent" /><h3 className="font-display text-lg font-bold text-ice">Check your case</h3></div>
+      <div className="mb-4 flex items-center gap-2"><Search size={18} className="text-accent" /><h3 className="font-display text-lg font-bold text-ice">{at('Check your case')}</h3></div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Case ID"><input className="input font-mono" value={caseId} onChange={(e) => setCaseId(e.target.value)} placeholder="IR-XXXXXX" /></Field>
         <Field label="Access code"><input className="input font-mono" value={code} onChange={(e) => setCode(e.target.value)} /></Field>
       </div>
-      <button onClick={lookup} className="btn-primary btn-sm mt-3">Look up</button>
+      <button onClick={lookup} className="btn-primary btn-sm mt-3">{at('Look up')}</button>
 
       {data && (
         <div className="mt-5 border-t border-white/10 pt-4">
@@ -158,7 +159,7 @@ function CaseLookup() {
                 {m.body}
               </div>
             ))}
-            {(data.thread || []).length === 0 && <p className="text-sm text-ice-faint">No messages yet.</p>}
+            {(data.thread || []).length === 0 && <p className="text-sm text-ice-faint">{at('No messages yet.')}</p>}
           </div>
 
           <div className="mt-3 flex gap-2">
@@ -177,7 +178,7 @@ function CaseLookup() {
                 ))}
               </div>
               <textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} placeholder="Any comment (optional)" className="input mb-2 min-h-[60px]" />
-              <button onClick={submitFeedback} className="btn-primary btn-sm w-full">Submit feedback</button>
+              <button onClick={submitFeedback} className="btn-primary btn-sm w-full">{at('Submit feedback')}</button>
             </div>
           )}
           {data.has_feedback && <div className="mt-4 rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-center text-xs text-ok">Thank you — your feedback has been recorded.</div>}
@@ -198,11 +199,11 @@ function IROView() {
 
   // Case ageing: days since last update, flagged when open and stale
   const ageDays = (r) => Math.floor((Date.now() - new Date(r.updated_at || r.created_at)) / 86400000)
-  const isStale = (r) => !['resolved', 'closed'].includes(r.status) && ageDays(r) >= 7
+  const isStale = (r) => !['resolved', at('closed')].includes(r.status) && ageDays(r) >= 7
 
   const filtered = rows.filter((r) => (!fStatus || r.status === fStatus) && (!staleOnly || isStale(r)))
-  const openCount = rows.filter((r) => !['resolved', 'closed'].includes(r.status)).length
-  const urgent = rows.filter((r) => ['high', 'urgent'].includes(r.severity) && !['resolved', 'closed'].includes(r.status))
+  const openCount = rows.filter((r) => !['resolved', at('closed')].includes(r.status)).length
+  const urgent = rows.filter((r) => ['high', at('urgent')].includes(r.severity) && !['resolved', at('closed')].includes(r.status))
 
   const staleCases = rows.filter(isStale)
 
@@ -237,20 +238,20 @@ function IROView() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="panel overflow-hidden lg:col-span-2">
           <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2.5">
-            <span className="eyebrow">Concerns</span>
+            <span className="eyebrow">{at('Concerns')}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => setStaleOnly(!staleOnly)} className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${staleOnly ? 'border-bad/40 bg-bad/10 text-bad' : 'border-white/10 text-ice-dim hover:text-ice'}`}>Stale only</button>
-              <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'All statuses' }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+              <button onClick={() => setStaleOnly(!staleOnly)} className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${staleOnly ? 'border-bad/40 bg-bad/10 text-bad' : 'border-white/10 text-ice-dim hover:text-ice'}`}>{at('Stale only')}</button>
+              <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: at('All statuses') }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
             </div>
           </div>
-          {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+          {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
           : filtered.length === 0 ? <EmptyState title="No concerns" hint="Submitted concerns appear here for review and classification." />
           : (
             <div className="max-h-[520px] overflow-y-auto">
               {filtered.map((r) => (
                 <button key={r.id} onClick={() => setSel(r)} className={`flex w-full items-center gap-3 border-b border-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.03] ${sel?.id === r.id ? 'bg-white/[0.04]' : ''}`}>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2"><span className="font-mono text-xs text-accent">{r.case_id}</span>{r.anonymous && <Lock size={11} className="text-ice-faint" />}{['high', 'urgent'].includes(r.severity) && <Badge tone="bad">{r.severity}</Badge>}{isStale(r) && <Badge tone="bad"><Clock size={9} className="mr-0.5 inline" />{ageDays(r)}d</Badge>}</div>
+                    <div className="flex items-center gap-2"><span className="font-mono text-xs text-accent">{r.case_id}</span>{r.anonymous && <Lock size={11} className="text-ice-faint" />}{['high', at('urgent')].includes(r.severity) && <Badge tone="bad">{r.severity}</Badge>}{isStale(r) && <Badge tone="bad"><Clock size={9} className="mr-0.5 inline" />{ageDays(r)}d</Badge>}</div>
                     <div className="truncate text-sm text-ice">{r.subject}</div>
                   </div>
                   <Badge tone={statusTone(r.status)}>{r.status}</Badge>
@@ -265,20 +266,20 @@ function IROView() {
           {!sel ? <div className="grid h-full min-h-[300px] place-items-center text-center text-sm text-ice-faint">Select a concern to classify or refer</div>
           : (
             <div>
-              <div className="mb-1 flex items-center gap-2"><span className="font-mono text-accent">{sel.case_id}</span>{sel.anonymous ? <Badge tone="mute">anonymous</Badge> : <Badge>{sel.employee_name}</Badge>}</div>
+              <div className="mb-1 flex items-center gap-2"><span className="font-mono text-accent">{sel.case_id}</span>{sel.anonymous ? <Badge tone="mute">{at('anonymous')}</Badge> : <Badge>{sel.employee_name}</Badge>}</div>
               <h3 className="font-display text-base font-bold text-ice">{sel.subject}</h3>
               {sel.details && <p className="mt-2 rounded-lg bg-white/[0.03] p-3 text-sm text-ice/85">{sel.details}</p>}
               <div className="mt-2 text-xs text-ice-faint">{sel.department || 'No dept'} · logged {date(sel.created_at)}</div>
 
               <div className="mt-4 space-y-3">
-                <Field label="Category"><Select value={sel.category || ''} onChange={(e) => patch(sel.id, { category: e.target.value, status: sel.status === 'new' ? 'classified' : sel.status })} options={[{ value: '', label: 'Classify…' }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]} /></Field>
+                <Field label="Category"><Select value={sel.category || ''} onChange={(e) => patch(sel.id, { category: e.target.value, status: sel.status === 'new' ? 'classified' : sel.status })} options={[{ value: '', label: at('Classify…') }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]} /></Field>
                 <Field label="Severity"><Select value={sel.severity || 'normal'} onChange={(e) => patch(sel.id, { severity: e.target.value })} options={SEVERITY.map((s) => ({ value: s, label: s }))} /></Field>
                 <Field label="Status"><Select value={sel.status} onChange={(e) => patch(sel.id, { status: e.target.value })} options={STATUS.map((s) => ({ value: s, label: s }))} /></Field>
               </div>
 
               {!sel.referred_to_counsellor ? (
-                <button onClick={() => refer(sel)} className="btn-primary mt-4 w-full"><Heart size={15} /> Refer to counsellor</button>
-              ) : <div className="mt-4 rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-center text-xs text-ok">Referred to counsellor</div>}
+                <button onClick={() => refer(sel)} className="btn-primary mt-4 w-full"><Heart size={15} /> {at('Refer to counsellor')}</button>
+              ) : <div className="mt-4 rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-center text-xs text-ok">{at('Referred to counsellor')}</div>}
             </div>
           )}
         </div>
@@ -331,7 +332,7 @@ function CounsellorView() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="panel overflow-hidden">
-        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">My cases</span></div>
+        <div className="border-b border-white/[0.06] px-4 py-2.5"><span className="eyebrow">{at('My cases')}</span></div>
         {cases.length === 0 ? <EmptyState title="No referred cases" hint="Cases referred by the IRO appear here." />
         : cases.map((c) => (
           <button key={c.id} onClick={() => loadThread(c)} className={`flex w-full items-center gap-2 border-b border-white/[0.04] px-4 py-3 text-left transition hover:bg-white/[0.03] ${sel?.id === c.id ? 'bg-white/[0.04]' : ''}`}>
@@ -396,9 +397,9 @@ export default function IndustrialRelations() {
   const isIRO = role === 'owner' || role === 'admin' || email === (activeOrg?.iro_email || '').toLowerCase()
   const isCounsellor = role === 'owner' || role === 'admin' || email === (activeOrg?.counsellor_email || '').toLowerCase()
 
-  const tabs = [['drop', 'Log a Concern'], ['lookup', 'Check My Case']]
-  if (isIRO) tabs.push(['iro', 'IR Officer'])
-  if (isCounsellor) tabs.push(['counsellor', 'Counsellor'])
+  const tabs = [['drop', at('Log a Concern')], ['lookup', at('Check My Case')]]
+  if (isIRO) tabs.push(['iro', at('IR Officer')])
+  if (isCounsellor) tabs.push(['counsellor', at('Counsellor')])
   const [tab, setTab] = useState('drop')
 
   return (

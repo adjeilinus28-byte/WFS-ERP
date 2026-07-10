@@ -8,11 +8,12 @@ import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState, PageH
 import PhotoUpload from '../components/PhotoUpload'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { date } from '../lib/format'
+import { at } from '../lib/tr'
 
 const FORM_META = {
-  ccv:   { label: 'CCV',    full: 'Critical Control Verification', icon: ShieldCheck },
-  pto:   { label: 'PTO',    full: 'Planned Task Observation',      icon: Eye },
-  take5: { label: 'Take 5', full: 'Take 5 (Stop·Look·Assess·Manage)', icon: ClipboardCheck },
+  ccv:   { label: at('CCV'),    full: 'Critical Control Verification', icon: ShieldCheck },
+  pto:   { label: at('PTO'),    full: 'Planned Task Observation',      icon: Eye },
+  take5: { label: at('Take 5'), full: 'Take 5 (Stop·Look·Assess·Manage)', icon: ClipboardCheck },
 }
 
 function notify(org_id, interaction_id) {
@@ -46,7 +47,7 @@ function KpiDashboard({ targets }) {
   const totalDone = kpi.reduce((s, k) => s + Number(k.done_this_month || 0), 0)
   const period = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
-  if (loading) return <div className="panel p-8 text-center text-ice-faint">Loading KPIs…</div>
+  if (loading) return <div className="panel p-8 text-center text-ice-faint">{at('Loading KPIs…')}</div>
 
   return (
     <div>
@@ -62,7 +63,7 @@ function KpiDashboard({ targets }) {
         <div className="panel overflow-hidden">
           <table className="w-full">
             <thead className="bg-white/[0.02]"><tr>
-              <th className="th">Observer</th><th className="th">Role</th>
+              <th className="th">{at('Observer')}</th><th className="th">{at('Role')}</th>
               {['ccv', 'pto', 'take5'].map((ft) => <th key={ft} className="th">{FORM_META[ft].label}</th>)}
             </tr></thead>
             <tbody>
@@ -167,9 +168,9 @@ function InteractionLog() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
           <Search size={15} className="text-ice-faint" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" className="w-44 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={at('Search…')} className="w-44 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
         </div>
-        <div className="w-36"><Select value={fType} onChange={(e) => setFType(e.target.value)} options={[{ value: '', label: 'All types' }, ...Object.keys(FORM_META).map((k) => ({ value: k, label: FORM_META[k].label }))]} /></div>
+        <div className="w-36"><Select value={fType} onChange={(e) => setFType(e.target.value)} options={[{ value: '', label: at('All types') }, ...Object.keys(FORM_META).map((k) => ({ value: k, label: FORM_META[k].label }))]} /></div>
         {openActions > 0 && <Badge tone="bad">{openActions} open action(s)</Badge>}
         {canWrite && (
           <div className="ml-auto flex gap-2">
@@ -181,14 +182,14 @@ function InteractionLog() {
       </div>
 
       <div className="panel overflow-hidden">
-        {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
         : filtered.length === 0 ? <EmptyState title="No safety interactions yet" hint="Log a CCV, PTO, or Take 5 using the buttons above." />
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]"><tr>
-                <th className="th">Ref</th><th className="th">Type</th><th className="th">Observer</th>
-                <th className="th">Location</th><th className="th">Date</th><th className="th">Action</th><th className="th text-right">·</th>
+                <th className="th">{at('Ref')}</th><th className="th">{at('Type')}</th><th className="th">{at('Observer')}</th>
+                <th className="th">{at('Location')}</th><th className="th">{at('Date')}</th><th className="th">{at('Action')}</th><th className="th text-right">·</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
@@ -200,7 +201,7 @@ function InteractionLog() {
                     <td className="td whitespace-nowrap">{date(r.observed_on)}</td>
                     <td className="td">
                       {r.action_required ? (
-                        r.action_status === 'closed' ? <Badge tone="ok">closed</Badge>
+                        r.action_status === 'closed' ? <Badge tone="ok">{at('closed')}</Badge>
                         : <button onClick={() => closeAction(r)} className="rounded-md bg-warn/10 px-2 py-1 text-xs text-warn hover:bg-warn/20">close action →</button>
                       ) : <span className="text-ice-faint">—</span>}
                     </td>
@@ -234,13 +235,13 @@ function InteractionLog() {
               {form.form_type === 'ccv' && (
                 <>
                   <Field label="Critical control verified"><input className="input" value={form.critical_control} onChange={(e) => setForm({ ...form, critical_control: e.target.value })} /></Field>
-                  <label className="flex items-center gap-2 text-sm text-ice"><input type="checkbox" checked={form.control_effective} onChange={(e) => setForm({ ...form, control_effective: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> Control was in place & effective</label>
+                  <label className="flex items-center gap-2 text-sm text-ice"><input type="checkbox" checked={form.control_effective} onChange={(e) => setForm({ ...form, control_effective: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> {at('Control was in place & effective')}</label>
                 </>
               )}
               {form.form_type === 'take5' && (
                 <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                  <div className="eyebrow mb-2">Take 5 checklist</div>
-                  {[['t5_stop', 'Stop — pause before starting'], ['t5_look', 'Look — identify hazards'], ['t5_assess', 'Assess — the risks'], ['t5_manage', 'Manage — controls in place']].map(([k, lbl]) => (
+                  <div className="eyebrow mb-2">{at('Take 5 checklist')}</div>
+                  {[['t5_stop', at('Stop — pause before starting')], ['t5_look', at('Look — identify hazards')], ['t5_assess', at('Assess — the risks')], ['t5_manage', at('Manage — controls in place')]].map(([k, lbl]) => (
                     <label key={k} className="flex items-center gap-2 py-1 text-sm text-ice"><input type="checkbox" checked={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> {lbl}</label>
                   ))}
                 </div>
@@ -262,11 +263,11 @@ function InteractionLog() {
               {/* CCV action assignment */}
               {form.form_type === 'ccv' && (
                 <div className="rounded-lg border border-white/10 bg-navy/40 p-3">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-ice"><input type="checkbox" checked={form.action_required} onChange={(e) => setForm({ ...form, action_required: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> Raise an action to close out</label>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-ice"><input type="checkbox" checked={form.action_required} onChange={(e) => setForm({ ...form, action_required: e.target.checked })} className="h-4 w-4 accent-[rgb(var(--accent))]" /> {at('Raise an action to close out')}</label>
                   {form.action_required && (
                     <div className="mt-3 space-y-3">
                       <Field label="Action required"><textarea className="input min-h-[50px]" value={form.action_description} onChange={(e) => setForm({ ...form, action_description: e.target.value })} /></Field>
-                      <Field label="Action to (responsible person)"><Select value={form.assigned_to_id} onChange={(e) => pickAssignee(e.target.value)} options={[{ value: '', label: 'Select…' }, ...employees.map((e) => ({ value: e.id, label: e.email ? e.full_name : `${e.full_name} (no email)` }))]} /></Field>
+                      <Field label="Action to (responsible person)"><Select value={form.assigned_to_id} onChange={(e) => pickAssignee(e.target.value)} options={[{ value: '', label: at('Select…') }, ...employees.map((e) => ({ value: e.id, label: e.email ? e.full_name : `${e.full_name} (no email)` }))]} /></Field>
                       <Field label="Due date"><input className="input" type="date" value={form.action_due} onChange={(e) => setForm({ ...form, action_due: e.target.value })} /></Field>
                       <p className="text-[11px] text-ice-faint">On save, the assignee is emailed automatically to close this action out.</p>
                     </div>
@@ -275,7 +276,7 @@ function InteractionLog() {
               )}
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(false)} className="btn-ghost">Cancel</button>
+              <button onClick={() => setDrawer(false)} className="btn-ghost">{at('Cancel')}</button>
               <button onClick={save} disabled={saving} className="btn-primary">{saving ? 'Saving…' : `Log ${FORM_META[form.form_type].label}`}</button>
             </div>
           </div>
@@ -290,7 +291,7 @@ export default function SafetyInteractions() {
   const [sub, setSub] = useState('log')
   const { rows: targets } = useTable('safety_targets')
 
-  const tabs = [['log', 'Log & Actions'], ['kpi', 'KPI Dashboard'], ['targets', 'Role Targets']]
+  const tabs = [['log', at('Log & Actions')], ['kpi', at('KPI Dashboard')], ['targets', at('Role Targets')]]
 
   return (
     <div>
@@ -307,16 +308,16 @@ export default function SafetyInteractions() {
           eyebrow="HSE" title="Monthly Role Targets" table="safety_targets"
           newLabel="New target" emptyTitle="No targets set"
           emptyHint="Set how many CCVs, PTOs, and Take 5s each role must complete per month."
-          searchKeys={['role', 'form_type']}
+          searchKeys={['role', at('form_type')]}
           columns={[
-            { key: 'role', label: 'Role', render: (v) => <Badge>{v}</Badge> },
-            { key: 'form_type', label: 'Type', render: (v) => <Badge tone="accent">{FORM_META[v]?.label || v}</Badge> },
-            { key: 'monthly_target', label: 'Monthly target', render: (v) => <span className="font-mono">{v}</span> },
+            { key: 'role', label: at('Role'), render: (v) => <Badge>{v}</Badge> },
+            { key: 'form_type', label: at('Type'), render: (v) => <Badge tone="accent">{FORM_META[v]?.label || v}</Badge> },
+            { key: 'monthly_target', label: at('Monthly target'), render: (v) => <span className="font-mono">{v}</span> },
           ]}
           fields={[
-            { key: 'role', label: 'Role', required: true },
-            { key: 'form_type', label: 'Form type', type: 'select', options: Object.keys(FORM_META).map((k) => ({ value: k, label: FORM_META[k].full })), default: 'ccv' },
-            { key: 'monthly_target', label: 'Monthly target', type: 'number', default: 0 },
+            { key: 'role', label: at('Role'), required: true },
+            { key: 'form_type', label: at('Form type'), type: 'select', options: Object.keys(FORM_META).map((k) => ({ value: k, label: FORM_META[k].full })), default: 'ccv' },
+            { key: 'monthly_target', label: at('Monthly target'), type: 'number', default: 0 },
           ]}
         />
       )}
