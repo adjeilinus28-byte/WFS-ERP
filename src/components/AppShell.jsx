@@ -1,10 +1,30 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut, Building2 } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, Building2, Sun, Moon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { visibleModules } from '../lib/modules'
 import { initials } from '../lib/format'
 import { Badge } from './ui'
+
+
+// Light/dark theme toggle — persists to localStorage, applied pre-paint by index.html.
+function ThemeToggle() {
+  const [light, setLight] = useState(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('light'))
+  const flip = () => {
+    const next = !light
+    document.documentElement.classList.toggle('light', next)
+    try { localStorage.setItem('wfs-theme', next ? 'light' : 'dark') } catch { /* private mode */ }
+    setLight(next)
+  }
+  return (
+    <button onClick={flip} className="rounded-lg p-2 text-ice-faint hover:bg-white/5 hover:text-ice"
+      title={light ? 'Switch to dark theme' : 'Switch to light theme'}
+      aria-label={light ? 'Switch to dark theme' : 'Switch to light theme'}>
+      {light ? <Moon size={17} /> : <Sun size={17} />}
+    </button>
+  )
+}
 
 function Logo() {
   return (
@@ -114,6 +134,7 @@ export default function AppShell({ children }) {
             <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent-soft font-mono text-xs font-bold text-accent">
               {initials(user?.email?.split('@')[0] || 'U')}
             </div>
+            <ThemeToggle />
             <button onClick={signOut} className="rounded-lg p-2 text-ice-faint hover:bg-white/5 hover:text-ice" title="Sign out">
               <LogOut size={17} />
             </button>
