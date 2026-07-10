@@ -7,6 +7,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script>
+      // Apply saved theme before first paint (defaults to system preference).
+      try {
+        var t = localStorage.getItem('wfs-theme');
+        if (t === 'light' || (!t && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+          document.documentElement.classList.add('light');
+        }
+      } catch (e) {}
+    </script>
     <title>WFS Enterprise — Operations Platform</title>
     <meta name="description" content="WFS Enterprise: industry-agnostic ERP for mining, oil & gas, and high-production operations. Powered by WorkFlow Solutions." />
   </head>

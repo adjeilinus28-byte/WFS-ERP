@@ -4,18 +4,45 @@ export default {
   theme: {
     extend: {
       colors: {
-        // WFS brand — structural chrome stays fixed; accent is tenant-themable via CSS var
-        navy:   { DEFAULT: '#080C16', 800: '#0E1424', 700: '#141C30', 600: '#1B2640', 500: '#27324F' },
-        ice:    { DEFAULT: '#F1F5F9', dim: '#CBD5E1', faint: '#64748B' },
+        // All structural colors read CSS variables (see index.css) so the app
+        // can switch between the dark (default) and light themes at runtime.
+        navy: {
+          DEFAULT: 'rgb(var(--navy) / <alpha-value>)',
+          900: 'rgb(var(--navy-900) / <alpha-value>)',
+          800: 'rgb(var(--navy-800) / <alpha-value>)',
+          700: 'rgb(var(--navy-700) / <alpha-value>)',
+          600: 'rgb(var(--navy-600) / <alpha-value>)',
+          500: 'rgb(var(--navy-500) / <alpha-value>)',
+        },
+        ice: {
+          DEFAULT: 'rgb(var(--ice) / <alpha-value>)',
+          dim:     'rgb(var(--ice-dim) / <alpha-value>)',
+          faint:   'rgb(var(--ice-faint) / <alpha-value>)',
+        },
         accent: {
           DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
           soft:    'rgb(var(--accent) / 0.14)',
           line:    'rgb(var(--accent) / 0.32)',
         },
-        ok:   '#34D399',
-        warn: '#FBBF24',
-        bad:  '#F87171',
-        info: '#60A5FA',
+        ok:   'rgb(var(--ok) / <alpha-value>)',
+        warn: 'rgb(var(--warn) / <alpha-value>)',
+        bad:  'rgb(var(--bad) / <alpha-value>)',
+        info: 'rgb(var(--info) / <alpha-value>)',
+      },
+      // border-white/N is used app-wide as "hairline". Point it at --line so
+      // hairlines are white-on-dark and slate-on-light without touching pages.
+      borderColor: {
+        white: 'rgb(var(--line) / <alpha-value>)',
+      },
+      // bg-white/[0.0x] hover washes flip the same way via --wash.
+      backgroundColor: {
+        white: 'rgb(var(--wash) / <alpha-value>)',
+      },
+      ringColor: {
+        white: 'rgb(var(--line) / <alpha-value>)',
+      },
+      divideColor: {
+        white: 'rgb(var(--line) / <alpha-value>)',
       },
       fontFamily: {
         display: ['Syne', 'system-ui', 'sans-serif'],
@@ -23,8 +50,8 @@ export default {
         mono:    ['"DM Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
-        deck: '0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 30px -12px rgba(0,0,0,0.6)',
-        pop:  '0 18px 50px -12px rgba(0,0,0,0.7)',
+        deck: 'var(--shadow-deck)',
+        pop:  'var(--shadow-pop)',
       },
       keyframes: {
         'slide-in': { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(0)' } },
