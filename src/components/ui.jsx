@@ -1,5 +1,17 @@
 import { createContext, useCallback, useContext, useState } from 'react'
 import { CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
+// ── Boundary translation ─────────────────────────────────────────────────────
+// Shared components auto-translate the label strings pages hand them: the
+// string is slugified into a key under "str" and looked up with itself as the
+// fallback — untranslated strings simply render in English. Add translations
+// in src/locales/<lang>.json under "str" without touching any page.
+const slugKey = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+export function useAutoT() {
+  const { t } = useTranslation()
+  return (v) => (typeof v === 'string' && v.trim() ? t('str.' + slugKey(v), v) : v)
+}
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 const TONE = {
@@ -29,25 +41,27 @@ export const statusTone = (s = '') => {
 
 // ── KPI tile ─────────────────────────────────────────────────────────────────
 export function StatCard({ label, value, sub, tone = 'accent', icon: Icon }) {
+  const at = useAutoT()
   return (
     <div className="panel p-4 animate-rise">
       <div className="flex items-start justify-between">
-        <span className="eyebrow">{label}</span>
+        <span className="eyebrow">{at(label)}</span>
         {Icon && <Icon size={16} className="text-ice-faint" />}
       </div>
       <div className="mt-3 font-mono text-2xl font-medium tracking-tight text-ice">{value}</div>
-      {sub && <div className={`mt-1 text-xs ${tone === 'bad' ? 'text-bad' : tone === 'ok' ? 'text-ok' : 'text-ice-faint'}`}>{sub}</div>}
+      {sub && <div className={`mt-1 text-xs ${tone === 'bad' ? 'text-bad' : tone === 'ok' ? 'text-ok' : 'text-ice-faint'}`}>{at(sub)}</div>}
     </div>
   )
 }
 
 // ── Page header ──────────────────────────────────────────────────────────────
 export function PageHeader({ eyebrow, title, children }) {
+  const at = useAutoT()
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">{title}</h1>
+        {eyebrow && <div className="eyebrow mb-1">{at(eyebrow)}</div>}
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">{at(title)}</h1>
       </div>
       <div className="flex items-center gap-2">{children}</div>
     </div>
@@ -56,11 +70,12 @@ export function PageHeader({ eyebrow, title, children }) {
 
 // ── Empty state ──────────────────────────────────────────────────────────────
 export function EmptyState({ title, hint, action }) {
+  const at = useAutoT()
   return (
     <div className="panel flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
       <div className="h-10 w-10 rounded-lg border border-white/10 bg-white/[0.03]" />
-      <p className="font-display text-lg font-bold text-ice">{title}</p>
-      {hint && <p className="max-w-sm text-sm text-ice-faint">{hint}</p>}
+      <p className="font-display text-lg font-bold text-ice">{at(title)}</p>
+      {hint && <p className="max-w-sm text-sm text-ice-faint">{at(hint)}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   )
@@ -68,9 +83,10 @@ export function EmptyState({ title, hint, action }) {
 
 // ── Form field ───────────────────────────────────────────────────────────────
 export function Field({ label, children, span }) {
+  const at = useAutoT()
   return (
     <label className={`block ${span ? 'sm:col-span-2' : ''}`}>
-      <span className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">{label}</span>
+      <span className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at(label)}</span>
       {children}
     </label>
   )

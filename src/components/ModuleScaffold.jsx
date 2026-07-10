@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { useAuth } from '../context/AuthContext'
-import { useToast } from './ui'
+import { useToast, useAutoT } from './ui'
 import { PageHeader } from './ui'
 import DataTable from './DataTable'
 import Drawer from './Drawer'
@@ -18,6 +18,7 @@ export default function ModuleScaffold({
   beforeSave,                   // optional (payload) => payload  (e.g. inject defaults)
   afterSave,                    // optional (record, isNew) => void (e.g. fire notification)
 }) {
+  const at = useAutoT()
   const { role } = useAuth()
   const toast = useToast()
   const { rows, loading, insert, update, remove } = useTable(table)
@@ -52,7 +53,7 @@ export default function ModuleScaffold({
       <PageHeader eyebrow={eyebrow} title={title}>
         {canWrite && (
           <button className="btn-primary" onClick={() => setDrawer({ open: true, row: null })}>
-            <Plus size={16} /> {newLabel}
+            <Plus size={16} /> {at(newLabel)}
           </button>
         )}
       </PageHeader>
@@ -70,7 +71,7 @@ export default function ModuleScaffold({
       <Drawer
         open={drawer.open}
         onClose={() => setDrawer({ open: false, row: null })}
-        title={drawer.row ? `Edit ${title}` : newLabel}
+        title={drawer.row ? `${at('Edit')} ${at(title)}` : at(newLabel)}
         fields={fields} initial={drawer.row} onSubmit={save} submitting={saving}
       />
     </>

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Search, Pencil, Trash2 } from 'lucide-react'
-import { EmptyState } from './ui'
+import { EmptyState, useAutoT } from './ui'
 
 export default function DataTable({ columns, rows, loading, onEdit, onDelete, searchKeys, emptyTitle, emptyHint }) {
+  const at = useAutoT()
   const [q, setQ] = useState('')
 
   const filtered = useMemo(() => {
@@ -18,7 +19,7 @@ export default function DataTable({ columns, rows, loading, onEdit, onDelete, se
         <Search size={15} className="text-ice-faint" />
         <input
           value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Search…"
+          placeholder={at('Search…')}
           className="w-full bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none"
         />
         <span className="font-mono text-[11px] text-ice-faint">{filtered.length}</span>
@@ -37,7 +38,7 @@ export default function DataTable({ columns, rows, loading, onEdit, onDelete, se
           <table className="w-full">
             <thead className="bg-white/[0.02]">
               <tr>
-                {columns.map((c) => <th key={c.key} className="th whitespace-nowrap">{c.label}</th>)}
+                {columns.map((c) => <th key={c.key} className="th whitespace-nowrap">{at(c.label)}</th>)}
                 {(onEdit || onDelete) && <th className="th text-right">Actions</th>}
               </tr>
             </thead>
