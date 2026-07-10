@@ -2,24 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme tokens ─────────────────────────────────────────────────────────
+   Dark is the default (WFS brand). Adding .light to <html> flips every token;
+   all Tailwind colour utilities read these variables (see tailwind.config.js). */
 :root {
+  color-scheme: dark;              /* native controls (date pickers, scrollbars) */
+
   /* Tenant accent (R G B). Overridden at runtime by ThemeContext. Default = WFS gold. */
   --accent: 245 158 11;
+
+  /* Surfaces */
+  --navy:     8 12 22;
+  --navy-900: 10 16 30;
+  --navy-800: 14 20 36;
+  --navy-700: 20 28 48;
+  --navy-600: 27 38 64;
+  --navy-500: 39 50 79;
+
+  /* Text */
+  --ice:       241 245 249;
+  --ice-dim:   203 213 225;
+  --ice-faint: 100 116 139;
+
+  /* Hairlines (border-white/N) and hover washes (bg-white/N) */
+  --line: 255 255 255;
+  --wash: 255 255 255;
+
+  /* Status */
+  --ok:   52 211 153;
+  --warn: 251 191 36;
+  --bad:  248 113 113;
+  --info: 96 165 250;
+
+  /* Elevation */
+  --shadow-deck: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 30px -12px rgba(0,0,0,0.6);
+  --shadow-pop:  0 18px 50px -12px rgba(0,0,0,0.7);
+
+  /* Page background */
+  --page-g1: #141C30;
+  --page-g2: #080C16;
+
+  /* Ink for text sitting on the accent colour (amber needs dark text in BOTH themes) */
+  --ink-on-accent: 8 12 22;
+}
+
+html.light {
+  color-scheme: light;
+
+  /* Surfaces — white cards on a cool grey page */
+  --navy:     226 232 240;   /* inputs, chips (used at /40–/60 opacity) */
+  --navy-900: 255 255 255;   /* drawers */
+  --navy-800: 255 255 255;   /* panels */
+  --navy-700: 241 245 249;
+  --navy-600: 203 213 225;
+  --navy-500: 148 163 184;
+
+  /* Text — dark slate ladder */
+  --ice:       15 23 42;
+  --ice-dim:   51 65 85;
+  --ice-faint: 100 116 139;
+
+  /* Hairlines & washes become dark-slate at low opacity */
+  --line: 15 23 42;
+  --wash: 15 23 42;
+
+  /* Status — darkened for contrast on white (WCAG-friendly) */
+  --ok:   5 150 105;
+  --warn: 180 83 9;
+  --bad:  220 38 38;
+  --info: 37 99 235;
+
+  --shadow-deck: 0 1px 2px rgba(15,23,42,0.06), 0 10px 28px -14px rgba(15,23,42,0.14);
+  --shadow-pop:  0 18px 50px -18px rgba(15,23,42,0.28);
+
+  --page-g1: #EEF2F7;
+  --page-g2: #F8FAFC;
 }
 
 html, body, #root { height: 100%; }
 
 body {
   margin: 0;
-  background: radial-gradient(1200px 600px at 85% -10%, #141C30 0%, #080C16 55%) fixed;
-  color: theme('colors.ice.DEFAULT');
+  background: radial-gradient(1200px 600px at 85% -10%, var(--page-g1) 0%, var(--page-g2) 55%) fixed;
+  color: rgb(var(--ice));
   font-family: theme('fontFamily.sans');
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #1B2640; border-radius: 8px; border: 2px solid #080C16; }
-::-webkit-scrollbar-thumb:hover { background: #27324F; }
+::-webkit-scrollbar-thumb { background: rgb(var(--navy-600)); border-radius: 8px; border: 2px solid var(--page-g2); }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--navy-500)); }
 
 @layer components {
   .panel {
@@ -37,12 +109,19 @@ body {
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold
            transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
-  .btn-primary { @apply btn bg-accent text-navy hover:brightness-110; }
+  .btn-primary { @apply btn bg-accent hover:brightness-110; color: rgb(var(--ink-on-accent)); }
   .btn-ghost   { @apply btn border border-white/10 text-ice hover:bg-white/[0.04]; }
   .btn-sm      { @apply px-2.5 py-1.5 text-xs; }
   .th { @apply px-3 py-2 text-left font-mono text-[11px] uppercase tracking-wider text-ice-faint; }
   .td { @apply px-3 py-2.5 text-sm text-ice/90 border-t border-white/[0.05]; }
 }
+
+/* Text on the accent colour must stay dark in both themes (amber is light).
+   Pages use `text-navy` for this; in light mode --navy turns light, so pin it. */
+html.light .text-navy { color: rgb(var(--ink-on-accent)); }
+
+/* Panels are more opaque in light mode (60% white over grey looks washy). */
+html.light .panel { background-color: rgb(255 255 255 / 0.88); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
