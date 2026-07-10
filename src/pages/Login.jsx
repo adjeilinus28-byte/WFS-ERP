@@ -97,7 +97,15 @@ export default function Login() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#080C16] text-ice">
+    <div className="relative min-h-screen overflow-hidden bg-[#080C16] text-ice" style={{
+      // This screen is always dark; pin the token ladder so it reads correctly
+      // even when the app is in light mode.
+      '--ice': '241 245 249',
+      '--ice-dim': '203 213 225',
+      '--ice-faint': '148 163 184',
+      '--accent': '245 158 11',
+      '--ink-on-accent': '8 12 22',
+    }}>
       <OpsBackdrop />
 
       {/* Split layout: brand story (lg+) | sign-in card */}
@@ -107,13 +115,13 @@ export default function Login() {
           <div className="flex items-center gap-3">
             <WFSMark size={40} />
             <div>
-              <div className="font-display text-lg font-extrabold leading-none tracking-tight">WFS Enterprise</div>
+              <div className="font-display text-lg font-extrabold leading-none tracking-tight text-ice">WFS Enterprise</div>
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-ice-faint">Operations Platform</div>
             </div>
           </div>
 
           <div className="max-w-lg">
-            <h2 className="font-display text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
+            <h2 className="font-display text-[2.6rem] font-extrabold leading-[1.05] tracking-tight text-ice" style={{ textShadow: '0 2px 24px rgba(8,12,22,0.6)' }}>
               Every layer of your operation, <span className="text-accent">in one deck.</span>
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-ice-dim">
@@ -132,21 +140,21 @@ export default function Login() {
         </div>
 
         {/* Right — sign-in */}
-        <div className="flex items-center justify-center px-4 py-10 lg:bg-white/[0.015] lg:backdrop-blur-sm">
+        <div className="flex items-center justify-center px-4 py-10 lg:bg-black/20 lg:backdrop-blur-sm">
           <div className="w-full max-w-sm">
             {/* Compact brand for mobile */}
             <div className="mb-7 flex flex-col items-center text-center lg:hidden">
               <WFSMark size={52} />
-              <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight">WFS Enterprise</h1>
+              <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight text-ice">WFS Enterprise</h1>
               <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-ice-faint">Operations Platform</p>
             </div>
 
             <div className="mb-6 hidden lg:block">
-              <h1 className="font-display text-2xl font-extrabold tracking-tight">Sign in</h1>
+              <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">Sign in</h1>
               <p className="mt-1 text-sm text-ice-faint">Welcome back. Enter your credentials to continue.</p>
             </div>
 
-            <form onSubmit={signIn} className="panel space-y-4 p-6">
+            <form onSubmit={signIn} className="space-y-4 rounded-xl border border-white/10 bg-[#0E1424] p-6 shadow-pop">
               <div>
                 <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Work email</label>
                 <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
