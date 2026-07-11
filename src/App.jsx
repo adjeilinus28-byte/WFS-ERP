@@ -110,6 +110,7 @@ function SubscribedApp() {
         <Route path="/hr" element={<HR />} />
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/subscribe" element={<Subscribe />} />
+        <Route path="/admin" element={<AdminConsole />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />

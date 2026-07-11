@@ -7,7 +7,8 @@
     "finance": "Finances",
     "compliance": "Conformité",
     "insight": "Analyses",
-    "admin": "Administration"
+    "admin": "Administration",
+    "platform": "Plateforme"
   },
   "nav": {
     "dashboard": "Poste de commande",
@@ -29,7 +30,8 @@
     "training": "Formation",
     "reports": "Rapports",
     "settings": "Paramètres",
-    "approvals": "Approbations"
+    "approvals": "Approbations",
+    "admin": "Console admin"
   },
   "common": {
     "save": "Enregistrer",
@@ -955,6 +957,35 @@
     "no_subscription_price_is_set_contact_support": "Aucun prix d'abonnement défini. Contactez le support.",
     "payment_window_closed_you_can_try_again_anytime": "Fenêtre de paiement fermée. Réessayez à tout moment.",
     "success": "réussi",
-    "failed": "échoué"
+    "failed": "échoué",
+    "admin_console": "Console admin",
+    "platform": "Plateforme",
+    "organizations": "Organisations",
+    "on_trial": "En essai",
+    "est_monthly": "Mensuel est.",
+    "tenants": "Locataires",
+    "platform_settings": "Paramètres de la plateforme",
+    "no_organizations_yet": "Aucune organisation pour le moment",
+    "members": "membres",
+    "ended": "terminé",
+    "manage": "Gérer",
+    "1_month": "+1 mois",
+    "12_months": "+12 mois",
+    "comp_free": "Offrir (gratuit)",
+    "reactivate": "Réactiver",
+    "suspend": "Suspendre",
+    "suspended": "suspendu",
+    "extended_1_month": "Prolongé d'1 mois",
+    "extended_12_months": "Prolongé de 12 mois",
+    "comped": "Offert",
+    "reactivated": "Réactivé",
+    "monthly_price": "Prix mensuel",
+    "free_trial_length_days": "Durée d'essai gratuit (jours)",
+    "paystack_public_key": "Clé publique Paystack",
+    "save_settings": "Enregistrer les paramètres",
+    "price_changes_apply_to_new_subscriptions_and_renewals_existing_paid_periods_are_unchanged": "Les changements de prix s'appliquent aux nouveaux abonnements et renouvellements. Les périodes déjà payées restent inchangées.",
+    "this_area_is_for_platform_administrators_only": "Cette zone est réservée aux administrateurs de la plateforme.",
+    "save_failed": "Échec de l'enregistrement",
+    "load_failed": "Échec du chargement"
   }
 }

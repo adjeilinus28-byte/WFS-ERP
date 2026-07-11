@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Menu, X, ChevronDown, LogOut, Building2, Sun, Moon, Languages, Search } from 'lucide-react'
+import { Menu, X, ChevronDown, LogOut, Building2, Sun, Moon, Languages, Search, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from 'react-i18next'
 import { LANGS } from '../i18n'
@@ -56,7 +56,7 @@ function Logo() {
 }
 
 export default function AppShell({ children }) {
-  const { activeOrg, memberships, switchOrg, signOut, user, role } = useAuth()
+  const { activeOrg, memberships, switchOrg, signOut, user, role, isOwner } = useAuth()
   const { t, i18n } = useTranslation()
   const [open, setOpen] = useState(false)       // mobile nav
   const [orgMenu, setOrgMenu] = useState(false)
@@ -93,6 +93,26 @@ export default function AppShell({ children }) {
           </div>
         </div>
       ))}
+
+      {isOwner && (
+        <div>
+          <div className="px-2 pb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ice-faint/70">{t('section.platform', 'Platform')}</div>
+          <div className="space-y-0.5">
+            <NavLink to="/admin" onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `group flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition ${
+                  isActive ? 'bg-accent-soft text-ice' : 'text-ice-dim hover:bg-white/[0.04] hover:text-ice'
+                }`}>
+              {({ isActive }) => (
+                <>
+                  <ShieldCheck size={17} className={isActive ? 'text-accent' : 'text-ice-faint group-hover:text-ice-dim'} />
+                  <span className="font-medium">{t('nav.admin', 'Admin console')}</span>
+                </>
+              )}
+            </NavLink>
+          </div>
+        </div>
+      )}
     </nav>
   )
 
