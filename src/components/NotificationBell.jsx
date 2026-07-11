@@ -25,6 +25,10 @@ export default function NotificationBell() {
 
   const go = (n) => { setOpen(false); navigate(n.link) }
 
+  // Explicit, opaque panel colour per theme (the app toggles `.light` on <html>).
+  // Read fresh each render so it's correct whenever the panel opens.
+  const isLight = typeof document !== 'undefined' && document.documentElement.classList.contains('light')
+
   return (
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen((o) => !o)}
@@ -40,7 +44,7 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 z-[70] mt-2 w-80 overflow-hidden rounded-xl border border-white/10 shadow-pop animate-rise"
-          style={{ backgroundColor: 'rgb(var(--navy-800))' }}
+          style={{ backgroundColor: isLight ? '#FFFFFF' : '#0E1424' }}
           role="dialog" aria-label={at('Notifications')}>
           <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-2.5">
             <span className="font-display text-sm font-bold text-ice">{at('Notifications')}</span>
@@ -60,7 +64,7 @@ export default function NotificationBell() {
             ) : items.map((n) => {
               const Icon = KIND_ICON[n.kind] || Bell
               return (
-                <div key={n.ref_id} className="group flex items-start gap-3 border-b border-white/[0.06] px-4 py-3 hover:bg-navy-700/50">
+                <div key={n.ref_id} className="group flex items-start gap-3 border-b border-white/[0.06] px-4 py-3 hover:bg-black/[0.03]">
                   <span className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${DOT[n.severity] || 'bg-info'}`} />
                   <button onClick={() => go(n)} className="min-w-0 flex-1 text-left">
                     <span className="flex items-center gap-1.5 text-sm text-ice">
