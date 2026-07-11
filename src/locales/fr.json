@@ -905,6 +905,10 @@
     "could_not_raise_bill": "Impossible de créer la facture",
     "cash": "Espèces",
     "mobile_money": "Mobile money",
-    "cheque": "Chèque"
+    "cheque": "Chèque",
+    "notifications": "Notifications",
+    "mark_all_read": "Tout marquer comme lu",
+    "all_caught_up": "Tout est à jour",
+    "dismiss": "Ignorer"
   }
 }
