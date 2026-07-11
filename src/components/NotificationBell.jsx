@@ -43,7 +43,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-[70] mt-2 w-80 overflow-hidden rounded-xl border border-white/10 shadow-pop animate-rise"
+        <div className="absolute right-0 z-[70] mt-2 w-80 overflow-hidden rounded-xl border border-white/10 shadow-pop animate-fade-in"
           style={{ backgroundColor: isLight ? '#FFFFFF' : '#0E1424' }}
           role="dialog" aria-label={at('Notifications')}>
           <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-2.5">
