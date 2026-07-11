@@ -7,6 +7,8 @@ import AppShell from './components/AppShell'
 import { WFSMark } from './components/Brand'
 import Login from './pages/Login'
 import CreateOrg from './pages/CreateOrg'
+import Subscribe from './pages/Subscribe'
+import { useSubscription } from './hooks/useSubscription'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const NewsFlashAdmin = lazy(() => import('./pages/NewsFlashAdmin'))
 const Assets = lazy(() => import('./pages/Assets'))
@@ -76,6 +78,15 @@ function Gate() {
   if (!membLoaded) return <Splash label="Loading workspace" />
   if (memberships.length === 0 || !activeOrgId) return <CreateOrg />
 
+  return <SubscribedApp />
+}
+
+// Gates the app behind an active subscription. Expired orgs see Subscribe;
+// platform owners (super-admins) and trial/active orgs pass through.
+function SubscribedApp() {
+  const { gated } = useSubscription()
+  if (gated) return <Subscribe />
+
   return (
     <AppShell>
       <Suspense fallback={<PageSkeleton />}>
@@ -98,6 +109,7 @@ function Gate() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/hr" element={<HR />} />
         <Route path="/accounts" element={<Accounts />} />
+        <Route path="/subscribe" element={<Subscribe />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />

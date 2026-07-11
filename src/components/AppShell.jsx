@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { LANGS } from '../i18n'
 import CommandPalette from './CommandPalette'
 import NotificationBell from './NotificationBell'
+import SubChip from './SubChip'
 import { WFSMark } from './Brand'
 import { visibleModules } from '../lib/modules'
 import { initials } from '../lib/format'
@@ -163,6 +164,7 @@ export default function AppShell({ children }) {
               <Search size={14} />
               <kbd className="rounded border border-white/15 bg-white/[0.04] px-1 font-mono text-[9px]">⌘K</kbd>
             </button>
+            <SubChip />
             <NotificationBell />
             <LangSwitcher />
             <ThemeToggle />

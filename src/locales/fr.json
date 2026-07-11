@@ -934,6 +934,27 @@
     "signed_in_as": "Connecté en tant que",
     "sign_out": "Se déconnecter",
     "organization_name_is_required": "Le nom de l'organisation est requis",
-    "could_not_create_organization": "Impossible de créer l'organisation"
+    "could_not_create_organization": "Impossible de créer l'organisation",
+    "subscribe_to_wfs_enterprise": "Abonnez-vous à WFS Enterprise",
+    "subscription_expired": "Abonnement expiré",
+    "your_access_is_paused_renew_to_continue_using_wfs_enterprise": "Votre accès est suspendu. Renouvelez pour continuer à utiliser WFS Enterprise.",
+    "your_free_trial_has": "Votre essai gratuit a",
+    "subscribe_anytime_to_keep_your_workspace_active": "Abonnez-vous à tout moment pour garder votre espace actif.",
+    "keep_your_workspace_active_with_a_monthly_subscription": "Gardez votre espace actif avec un abonnement mensuel.",
+    "all_modules_unlimited_records": "Tous les modules et enregistrements illimités",
+    "every_team_member_on_your_workspace": "Tous les membres de votre équipe",
+    "offline_ready_auto_updating": "Prêt hors ligne, mise à jour automatique",
+    "priority_support": "Support prioritaire",
+    "subscribe": "S'abonner",
+    "opening": "Ouverture…",
+    "secure_payment_via_paystack_card_mobile_money_or_bank": "Paiement sécurisé via Paystack — carte, mobile money ou banque.",
+    "payment_history": "Historique des paiements",
+    "manage_subscription": "Gérer l'abonnement",
+    "payment_is_not_configured_yet_please_try_again_later": "Le paiement n'est pas encore configuré. Réessayez plus tard.",
+    "payment_is_still_loading_try_again_in_a_moment": "Le paiement charge encore — réessayez dans un instant.",
+    "no_subscription_price_is_set_contact_support": "Aucun prix d'abonnement défini. Contactez le support.",
+    "payment_window_closed_you_can_try_again_anytime": "Fenêtre de paiement fermée. Réessayez à tout moment.",
+    "success": "réussi",
+    "failed": "échoué"
   }
 }
