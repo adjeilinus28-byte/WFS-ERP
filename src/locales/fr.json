@@ -891,6 +891,20 @@
     "journal_posted": "Écriture comptabilisée",
     "code_and_name_required": "Code et nom requis",
     "account_added": "Compte ajouté",
-    "switch_capabilities_on_or_off_for_this_workspace_dashboard_and_settings_are_always_available": "Activez ou désactivez les fonctionnalités de cet espace. Le Poste de commande et les Paramètres sont toujours disponibles."
+    "switch_capabilities_on_or_off_for_this_workspace_dashboard_and_settings_are_always_available": "Activez ou désactivez les fonctionnalités de cet espace. Le Poste de commande et les Paramètres sont toujours disponibles.",
+    "pay": "Payer",
+    "pay_bill": "Payer la facture",
+    "outstanding": "Solde dû",
+    "record_payment": "Enregistrer le paiement",
+    "enter_a_payment_amount": "Saisissez un montant",
+    "payment_recorded_bill_updated": "Paiement enregistré — facture mise à jour",
+    "could_not_record_payment": "Impossible d'enregistrer le paiement",
+    "billed": "Facturé",
+    "bill_raised_see_accounts_bills": "Facture créée — voir Comptes → Factures",
+    "bill_already_exists_opened_in_accounts_bills": "La facture existe déjà — ouverte dans Comptes → Factures",
+    "could_not_raise_bill": "Impossible de créer la facture",
+    "cash": "Espèces",
+    "mobile_money": "Mobile money",
+    "cheque": "Chèque"
   }
 }

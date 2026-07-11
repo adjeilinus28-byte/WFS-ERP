@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import ModuleScaffold from '../components/ModuleScaffold'
-import { Badge, statusTone, StatCard } from '../components/ui'
+import { Badge, statusTone, StatCard, Field, Select, useToast } from '../components/ui'
+import { supabase } from '../lib/supabase'
+import { at } from '../lib/tr'
 import { money, date } from '../lib/format'
 import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
 import Payroll from './Payroll'
 import Invoices from './Invoices'
 import { Landmark, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-react'
-import { at } from '../lib/tr'
 
 const INV_STATUS  = ['draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
 const BILL_STATUS = ['draft', 'received', 'partial', 'paid', 'overdue', 'cancelled']
@@ -15,7 +16,7 @@ const PAY_METHOD  = ['bank_transfer', 'cash', 'cheque', 'mobile_money', 'card']
 const PAY_STATUS  = ['draft', 'approved', 'paid']
 
 function Tabs({ tab, setTab }) {
-  const items = [['invoices', at('Invoices (AR)')], ['bills', at('Bills (AP)')], ['payments', at('Payments')], ['payroll', at('Payroll')]]
+  const items = [['invoices', 'Invoices (AR)'], ['bills', 'Bills (AP)'], ['payments', 'Payments'], ['payroll', 'Payroll']]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -31,9 +32,11 @@ function Tabs({ tab, setTab }) {
 
 export default function Accounts() {
   const [tab, setTab] = useState('invoices')
-  const { activeOrg } = useAuth()
+  const { activeOrg, activeOrgId } = useAuth()
   const ccy = activeOrg?.currency || 'GHS'
   const { options: deptOptions } = useDepartments()
+  const [payBill, setPayBill] = useState(null)     // bill row being paid
+  const [billsKey, setBillsKey] = useState(0)       // bump to force bills reload
 
   return (
     <div>
@@ -43,30 +46,37 @@ export default function Accounts() {
 
       {tab === 'bills' && (
         <ModuleScaffold
+          key={billsKey}
           eyebrow="Finance" title="Bills — Accounts Payable" table="bills"
           newLabel="New bill" emptyTitle="No bills"
           emptyHint="Record supplier bills and manage your payables."
           searchKeys={['bill_no', 'supplier', 'status']}
           columns={[
-            { key: 'bill_no',    label: at('Bill #'),   render: (v) => <span className="font-mono text-accent">{v}</span> },
-            { key: 'supplier',   label: at('Supplier') },
-            { key: 'issue_date', label: at('Issued'),   render: (v) => date(v) },
-            { key: 'due_date',   label: at('Due'),      render: (v) => date(v) },
-            { key: 'amount',     label: at('Amount'),   render: (v) => money(v, ccy) },
-            { key: 'tax',        label: at('Tax'),      render: (v) => money(v, ccy) },
-            { key: 'total',      label: at('Total'),    render: (v) => <span className="font-semibold">{money(v, ccy)}</span> },
-            { key: 'status',     label: at('Status'),   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+            { key: 'bill_no',    label: 'Bill #',   render: (v) => <span className="font-mono text-accent">{v}</span> },
+            { key: 'supplier',   label: 'Supplier' },
+            { key: 'issue_date', label: 'Issued',   render: (v) => date(v) },
+            { key: 'due_date',   label: 'Due',      render: (v) => date(v) },
+            { key: 'amount',     label: 'Amount',   render: (v) => money(v, ccy) },
+            { key: 'tax',        label: 'Tax',      render: (v) => money(v, ccy) },
+            { key: 'total',      label: 'Total',    render: (v) => <span className="font-semibold">{money(v, ccy)}</span> },
+            { key: 'status',     label: 'Status',   render: (v) => <Badge tone={statusTone(v)}>{v}</Badge> },
+            { key: 'id',         label: '',         render: (_v, r) => (
+              ['paid', 'void', 'cancelled'].includes(r.status)
+                ? null
+                : <button onClick={(e) => { e.stopPropagation(); setPayBill(r) }}
+                    className="rounded-md bg-ok/15 px-2 py-1 text-xs text-ok hover:bg-ok/25">{at('Pay')}</button>
+            ) },
           ]}
           fields={[
-            { key: 'bill_no',    label: at('Bill number'),     required: true },
-            { key: 'supplier',   label: at('Supplier'),        required: true, span: true },
-            { key: 'status',     label: at('Status'),          type: 'select', options: BILL_STATUS.map((s) => ({ value: s, label: s })), default: 'received' },
-            { key: 'issue_date', label: at('Issue date'),      type: 'date' },
-            { key: 'due_date',   label: at('Due date'),        type: 'date' },
-            { key: 'amount',     label: at('Amount (ex tax)'), type: 'number', default: 0 },
-            { key: 'tax',        label: at('Tax'),             type: 'number', default: 0 },
-            { key: 'total',      label: at('Total'),           type: 'number', default: 0 },
-            { key: 'notes',      label: at('Notes'),           type: 'textarea', span: true },
+            { key: 'bill_no',    label: 'Bill number',     required: true },
+            { key: 'supplier',   label: 'Supplier',        required: true, span: true },
+            { key: 'status',     label: 'Status',          type: 'select', options: BILL_STATUS.map((s) => ({ value: s, label: s })), default: 'received' },
+            { key: 'issue_date', label: 'Issue date',      type: 'date' },
+            { key: 'due_date',   label: 'Due date',        type: 'date' },
+            { key: 'amount',     label: 'Amount (ex tax)', type: 'number', default: 0 },
+            { key: 'tax',        label: 'Tax',             type: 'number', default: 0 },
+            { key: 'total',      label: 'Total',           type: 'number', default: 0 },
+            { key: 'notes',      label: 'Notes',           type: 'textarea', span: true },
           ]}
           kpis={(rows) => {
             const outstanding = rows.filter((r) => ['received','partial','overdue'].includes(r.status))
@@ -88,20 +98,20 @@ export default function Accounts() {
           eyebrow="Finance" title="Payments" table="payments"
           newLabel="New payment" emptyTitle="No payments recorded"
           emptyHint="Log all incoming and outgoing payments against invoices and bills."
-          searchKeys={['reference', at('notes')]}
+          searchKeys={['reference', 'notes']}
           columns={[
-            { key: 'paid_on',   label: at('Date'),      render: (v) => date(v) },
-            { key: 'amount',    label: at('Amount'),    render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
-            { key: 'method',    label: at('Method'),    render: (v) => v ? <Badge>{v.replace('_', ' ')}</Badge> : '—' },
-            { key: 'reference', label: at('Reference'), render: (v) => <span className="font-mono text-xs">{v || '—'}</span> },
-            { key: 'notes',     label: at('Notes') },
+            { key: 'paid_on',   label: 'Date',      render: (v) => date(v) },
+            { key: 'amount',    label: 'Amount',    render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
+            { key: 'method',    label: 'Method',    render: (v) => v ? <Badge>{v.replace('_', ' ')}</Badge> : '—' },
+            { key: 'reference', label: 'Reference', render: (v) => <span className="font-mono text-xs">{v || '—'}</span> },
+            { key: 'notes',     label: 'Notes' },
           ]}
           fields={[
-            { key: 'amount',    label: at('Amount'),              type: 'number', required: true, default: 0 },
-            { key: 'paid_on',   label: at('Payment date'),        type: 'date' },
-            { key: 'method',    label: at('Method'),              type: 'select', options: PAY_METHOD.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'bank_transfer' },
-            { key: 'reference', label: at('Reference / cheque no.') },
-            { key: 'notes',     label: at('Notes'),               type: 'textarea', span: true },
+            { key: 'amount',    label: 'Amount',              type: 'number', required: true, default: 0 },
+            { key: 'paid_on',   label: 'Payment date',        type: 'date' },
+            { key: 'method',    label: 'Method',              type: 'select', options: PAY_METHOD.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'bank_transfer' },
+            { key: 'reference', label: 'Reference / cheque no.' },
+            { key: 'notes',     label: 'Notes',               type: 'textarea', span: true },
           ]}
           kpis={(rows) => {
             const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0)
@@ -118,6 +128,76 @@ export default function Accounts() {
       )}
 
       {tab === 'payroll' && <Payroll ccy={ccy} />}
+
+      {payBill && (
+        <PayBillDialog
+          bill={payBill} ccy={ccy} orgId={activeOrgId}
+          onClose={() => setPayBill(null)}
+          onPaid={() => { setPayBill(null); setBillsKey((k) => k + 1) }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── Pay a bill: records an outbound payment linked to the bill. The DB trigger
+// (0029) recomputes the bill's status → partial/paid from the payment total, so
+// there's no manual status flip and no double-entry re-keying. ──────────────
+function PayBillDialog({ bill, ccy, orgId, onClose, onPaid }) {
+  const toast = useToast()
+  const outstanding = Number(bill.total || bill.amount || 0)
+  const [amount, setAmount] = useState(outstanding)
+  const [method, setMethod] = useState('bank')
+  const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
+  const [reference, setReference] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async () => {
+    const amt = Number(amount)
+    if (!amt || amt <= 0) { toast.error(at('Enter a payment amount')); return }
+    setBusy(true)
+    try {
+      const { error } = await supabase.from('payments').insert({
+        org_id: orgId, direction: 'out', method,
+        amount: amt, paid_on: paidOn, reference: reference || null,
+        bill_id: bill.id,
+        notes: `Payment for bill ${bill.bill_no || ''}`,
+      })
+      if (error) throw error
+      toast.success(at('Payment recorded — bill updated'))
+      onPaid()
+    } catch (e) {
+      toast.error(e.message || 'Could not record payment')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label={at('Pay bill')}>
+      <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-sm rounded-xl border border-white/10 bg-navy-800 p-6 shadow-pop">
+        <h3 className="font-display text-lg font-bold text-ice">{at('Pay bill')} {bill.bill_no}</h3>
+        <p className="mt-1 text-sm text-ice-faint">{bill.supplier || bill.supplier_name || ''} · {at('Outstanding')} {money(outstanding, ccy)}</p>
+        <div className="mt-4 space-y-3">
+          <Field label={at('Amount')}>
+            <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </Field>
+          <Field label={at('Method')}>
+            <Select value={method} onChange={(e) => setMethod(e.target.value)}
+              options={[['bank','Bank'],['cash','Cash'],['momo','Mobile money'],['cheque','Cheque']].map(([v,l]) => ({ value: v, label: l }))} translateOptions />
+          </Field>
+          <Field label={at('Payment date')}>
+            <input className="input" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+          </Field>
+          <Field label={at('Reference / cheque no.')}>
+            <input className="input" value={reference} onChange={(e) => setReference(e.target.value)} />
+          </Field>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="btn-ghost">{at('Cancel')}</button>
+          <button onClick={submit} disabled={busy} className="btn-primary">{busy ? at('Saving…') : at('Record payment')}</button>
+        </div>
+      </div>
     </div>
   )
 }
