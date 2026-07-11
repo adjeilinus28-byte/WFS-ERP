@@ -890,6 +890,7 @@
     "entry_must_balance_and_have_value": "L'écriture doit être équilibrée et avoir une valeur",
     "journal_posted": "Écriture comptabilisée",
     "code_and_name_required": "Code et nom requis",
-    "account_added": "Compte ajouté"
+    "account_added": "Compte ajouté",
+    "switch_capabilities_on_or_off_for_this_workspace_dashboard_and_settings_are_always_available": "Activez ou désactivez les fonctionnalités de cet espace. Le Poste de commande et les Paramètres sont toujours disponibles."
   }
 }
