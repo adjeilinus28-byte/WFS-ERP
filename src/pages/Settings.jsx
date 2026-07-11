@@ -3,22 +3,24 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, Field, Select, useToast, Badge } from '../components/ui'
 import { MODULES, ALWAYS_ON } from '../lib/modules'
-import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { at } from '../lib/tr'
+import { Check } from 'lucide-react'
 
 const INDUSTRIES = [
-  { value: 'mining', label: at('Mining') },
-  { value: 'oil_gas', label: at('Oil & Gas') },
-  { value: 'manufacturing', label: at('Manufacturing') },
-  { value: 'logistics', label: at('Logistics') },
-  { value: 'general', label: at('General') },
+  { value: 'mining', label: 'Mining' },
+  { value: 'oil_gas', label: 'Oil & Gas' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'logistics', label: 'Logistics' },
+  { value: 'general', label: 'General' },
 ]
 const SWATCHES = ['#F59E0B', '#38BDF8', '#34D399', '#F472B6', '#A78BFA', '#FB7185', '#FACC15']
 
 export default function Settings() {
+  const { t } = useTranslation()
   const { activeOrg, activeOrgId, role, reloadMemberships } = useAuth()
   const toast = useToast()
-  const canAdmin = ['owner', at('admin')].includes(role)
+  const canAdmin = ['owner', 'admin'].includes(role)
 
   const [form, setForm] = useState({})
   const [modules, setModules] = useState([])
@@ -31,11 +33,6 @@ export default function Settings() {
       name: activeOrg.org_name, accent_color: activeOrg.accent_color,
       currency: activeOrg.currency, industry: activeOrg.industry,
       contact_email: activeOrg.contact_email || '',
-      hse_head_email: activeOrg.hse_head_email || '',
-      ops_head_email: activeOrg.ops_head_email || '',
-      iro_email: activeOrg.iro_email || '',
-      counsellor_email: activeOrg.counsellor_email || '',
-      wellbeing_note: activeOrg.wellbeing_note || '',
     })
     setModules(activeOrg.enabled_modules || [])
   }, [activeOrgId])
@@ -75,7 +72,7 @@ export default function Settings() {
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Branding */}
         <div className="panel p-5">
-          <div className="eyebrow mb-4">{at('White-label branding')}</div>
+          <div className="eyebrow mb-4">White-label branding</div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Organization name" span>
               <input className="input" value={form.name || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -89,24 +86,9 @@ export default function Settings() {
             <Field label="Contact email" span>
               <input className="input" value={form.contact_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
             </Field>
-            <Field label="Head of HSE email (incident alerts)" span>
-              <input className="input" value={form.hse_head_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, hse_head_email: e.target.value })} placeholder="hse.head@company.com" />
-            </Field>
-            <Field label="Head of Operations email (incident alerts)" span>
-              <input className="input" value={form.ops_head_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, ops_head_email: e.target.value })} placeholder="ops.head@company.com" />
-            </Field>
-            <Field label="Industrial Relations officer email" span>
-              <input className="input" value={form.iro_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, iro_email: e.target.value })} placeholder="iro@company.com" />
-            </Field>
-            <Field label="Counsellor email" span>
-              <input className="input" value={form.counsellor_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, counsellor_email: e.target.value })} placeholder="counsellor@company.com" />
-            </Field>
-            <Field label="Wellbeing / support note (shown to workers)" span>
-              <textarea className="input min-h-[60px]" value={form.wellbeing_note || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, wellbeing_note: e.target.value })} placeholder="e.g. Our Employee Assistance Programme is available 24/7 on ..." />
-            </Field>
           </div>
           <div className="mt-4">
-            <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at('Accent colour')}</span>
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Accent colour</span>
             <div className="flex flex-wrap items-center gap-2">
               {SWATCHES.map((c) => (
                 <button key={c} disabled={!canAdmin} onClick={() => setForm({ ...form, accent_color: c })}
@@ -123,7 +105,7 @@ export default function Settings() {
         {/* Modules */}
         <div className="panel p-5">
           <div className="eyebrow mb-1">{at('Enabled modules')}</div>
-          <p className="mb-4 text-xs text-ice-faint">Switch capabilities on or off for this workspace. Dashboard and Settings are always available.</p>
+          <p className="mb-4 text-xs text-ice-faint">{at('Switch capabilities on or off for this workspace. Dashboard and Settings are always available.')}</p>
           <div className="space-y-1.5">
             {MODULES.map((m) => {
               const on = modules.includes(m.key) || ALWAYS_ON.has(m.key)
@@ -133,7 +115,7 @@ export default function Settings() {
                 <button key={m.key} disabled={!canAdmin || locked} onClick={() => toggle(m.key)}
                   className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition ${on ? 'border-accent-line bg-accent-soft' : 'border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]'}`}>
                   <Icon size={16} className={on ? 'text-accent' : 'text-ice-faint'} />
-                  <span className="flex-1 text-sm text-ice">{m.label}</span>
+                  <span className="flex-1 text-sm text-ice">{t(`nav.${m.key}`, m.label)}</span>
                   {locked && <span className="font-mono text-[10px] uppercase text-ice-faint">{at('always on')}</span>}
                   <span className={`grid h-5 w-5 place-items-center rounded ${on ? 'bg-accent text-navy' : 'border border-white/15'}`}>
                     {on && <Check size={13} />}
@@ -146,11 +128,11 @@ export default function Settings() {
 
         {/* Members */}
         <div className="panel p-5 lg:col-span-2">
-          <div className="eyebrow mb-4">{at('Workspace members')}</div>
+          <div className="eyebrow mb-4">Workspace members</div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead><tr>
-                <th className="th">{at('Name')}</th><th className="th">{at('Email')}</th><th className="th">{at('Department')}</th><th className="th">{at('Role')}</th>
+                <th className="th">Name</th><th className="th">Email</th><th className="th">Department</th><th className="th">Role</th>
               </tr></thead>
               <tbody>
                 {members.map((m) => (
@@ -161,7 +143,7 @@ export default function Settings() {
                     <td className="td"><Badge tone="accent">{m.role}</Badge></td>
                   </tr>
                 ))}
-                {members.length === 0 && <tr><td className="td text-ice-faint" colSpan={4}>{at('No other members visible.')}</td></tr>}
+                {members.length === 0 && <tr><td className="td text-ice-faint" colSpan={4}>No other members visible.</td></tr>}
               </tbody>
             </table>
           </div>
