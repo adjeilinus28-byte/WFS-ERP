@@ -923,6 +923,17 @@
     "no_access": "Aucun accès",
     "you_do_not_have_permission_to_approve_requests": "Vous n'avez pas la permission d'approuver les demandes.",
     "action_failed": "L'action a échoué",
-    "could_not_load_approvals": "Impossible de charger les approbations"
+    "could_not_load_approvals": "Impossible de charger les approbations",
+    "create_your_organization": "Créez votre organisation",
+    "set_up_your_workspace_to_start_your_30_day_free_trial_no_card_required": "Configurez votre espace pour démarrer votre essai gratuit de 30 jours — sans carte.",
+    "your_full_name": "Votre nom complet",
+    "e_g_pamicor_ltd": "ex. Pamicor Ltd",
+    "optional": "Facultatif",
+    "create_workspace": "Créer l'espace",
+    "creating": "Création…",
+    "signed_in_as": "Connecté en tant que",
+    "sign_out": "Se déconnecter",
+    "organization_name_is_required": "Le nom de l'organisation est requis",
+    "could_not_create_organization": "Impossible de créer l'organisation"
   }
 }

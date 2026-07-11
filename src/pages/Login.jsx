@@ -87,13 +87,26 @@ export default function Login() {
   const [pwd, setPwd] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [msg, setMsg] = useState('')
+  const [mode, setMode] = useState('signin')   // 'signin' | 'signup'
 
-  const signIn = async (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    setBusy(true); setErr('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pwd })
-    if (error) { setErr(error.message); setBusy(false) }
-    // on success, AuthProvider picks up the session and routes onward
+    setBusy(true); setErr(''); setMsg('')
+    if (mode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password: pwd })
+      if (error) { setErr(error.message); setBusy(false) }
+      // on success, AuthProvider picks up the session → CreateOrg or dashboard
+    } else {
+      const { data, error } = await supabase.auth.signUp({ email, password: pwd })
+      if (error) { setErr(error.message); setBusy(false); return }
+      // If email confirmation is OFF, a session is returned and AuthProvider
+      // routes to CreateOrg. If ON, tell the user to confirm first.
+      if (!data.session) {
+        setMsg('Check your email to confirm your account, then sign in.')
+        setBusy(false)
+      }
+    }
   }
 
   return (
@@ -150,28 +163,36 @@ export default function Login() {
             </div>
 
             <div className="mb-6 hidden lg:block">
-              <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">Sign in</h1>
-              <p className="mt-1 text-sm text-ice-faint">Welcome back. Enter your credentials to continue.</p>
+              <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">{mode === 'signin' ? 'Sign in' : 'Create your account'}</h1>
+              <p className="mt-1 text-sm text-ice-faint">{mode === 'signin' ? 'Welcome back. Enter your credentials to continue.' : 'Start a 30-day free trial — no card required.'}</p>
             </div>
 
-            <form onSubmit={signIn} className="space-y-4 rounded-xl border border-white/10 bg-[#0E1424] p-6 shadow-pop">
+            <form onSubmit={submit} className="space-y-4 rounded-xl border border-white/10 bg-[#0E1424] p-6 shadow-pop">
               <div>
                 <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Work email</label>
                 <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
               </div>
               <div>
                 <label className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Password</label>
-                <input className="input" type="password" autoComplete="current-password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" />
+                <input className="input" type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" />
               </div>
               {err && <p className="rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-xs text-bad">{err}</p>}
+              {msg && <p className="rounded-lg border border-ok/30 bg-ok/10 px-3 py-2 text-xs text-ok">{msg}</p>}
               <button className="btn-primary w-full" disabled={busy}>
-                {busy ? 'Signing in…' : <>Sign in <ArrowRight size={16} /></>}
+                {busy ? (mode === 'signin' ? 'Signing in…' : 'Creating…') : <>{mode === 'signin' ? 'Sign in' : 'Start free trial'} <ArrowRight size={16} /></>}
               </button>
             </form>
 
             <p className="mt-5 text-center text-xs text-ice-faint">
-              Access is provisioned by WorkFlow Solutions. Contact{' '}
-              <a className="text-accent hover:underline" href="mailto:admin@workflow-app.net">admin@workflow-app.net</a>.
+              {mode === 'signin' ? (
+                <>New to WFS Enterprise?{' '}
+                  <button type="button" onClick={() => { setMode('signup'); setErr(''); setMsg('') }} className="text-accent hover:underline">Create an account</button>
+                </>
+              ) : (
+                <>Already have an account?{' '}
+                  <button type="button" onClick={() => { setMode('signin'); setErr(''); setMsg('') }} className="text-accent hover:underline">Sign in</button>
+                </>
+              )}
             </p>
           </div>
         </div>

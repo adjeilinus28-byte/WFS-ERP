@@ -6,7 +6,7 @@ import { ToastProvider } from './components/ui'
 import AppShell from './components/AppShell'
 import { WFSMark } from './components/Brand'
 import Login from './pages/Login'
-import NoAccess from './pages/NoAccess'
+import CreateOrg from './pages/CreateOrg'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const NewsFlashAdmin = lazy(() => import('./pages/NewsFlashAdmin'))
 const Assets = lazy(() => import('./pages/Assets'))
@@ -74,7 +74,7 @@ function Gate() {
   if (loading) return <Splash label="Starting WFS Enterprise" />
   if (!session) return <Login />
   if (!membLoaded) return <Splash label="Loading workspace" />
-  if (memberships.length === 0 || !activeOrgId) return <NoAccess />
+  if (memberships.length === 0 || !activeOrgId) return <CreateOrg />
 
   return (
     <AppShell>
