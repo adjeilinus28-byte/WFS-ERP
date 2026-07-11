@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { useAuth } from '../context/AuthContext'
@@ -24,6 +25,19 @@ export default function ModuleScaffold({
   const { rows, loading, insert, update, remove } = useTable(table)
   const [drawer, setDrawer] = useState({ open: false, row: null })
   const [saving, setSaving] = useState(false)
+  const [params, setParams] = useSearchParams()
+
+  // Deep-link: /path?focus=<id> opens that record's drawer once rows load.
+  // Consumes the param so a manual close doesn't re-open on the next render.
+  useEffect(() => {
+    const id = params.get('focus')
+    if (!id || loading) return
+    const row = rows.find((r) => String(r.id) === String(id))
+    if (row) setDrawer({ open: true, row })
+    params.delete('focus')
+    setParams(params, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, rows])
 
   const canWrite = role && role !== 'viewer'
 

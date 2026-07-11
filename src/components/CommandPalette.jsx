@@ -123,7 +123,12 @@ export default function CommandPalette() {
 
   const run = (item) => {
     if (!item) return
-    navigate(item.kind === 'nav' ? item.mod.path : item.source.path)
+    if (item.kind === 'nav') {
+      navigate(item.mod.path)
+    } else {
+      // Deep-link straight to the record — ModuleScaffold reads ?focus and opens it.
+      navigate(`${item.source.path}?focus=${encodeURIComponent(item.row.id)}`)
+    }
     setOpen(false)
   }
 

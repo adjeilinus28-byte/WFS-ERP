@@ -124,7 +124,8 @@ export function ToastProvider({ children }) {
   const [items, setItems] = useState([])
   const push = useCallback((msg, tone = 'ok') => {
     const id = Math.random().toString(36).slice(2)
-    setItems((x) => [...x, { id, msg, tone }])
+    // Toast messages are UI strings; translate through the same slug dictionary.
+    setItems((x) => [...x, { id, msg: at(msg), tone }])
     setTimeout(() => setItems((x) => x.filter((i) => i.id !== id)), 3800)
   }, [])
   const api = {
