@@ -28,6 +28,7 @@ const Reports = lazy(() => import('./pages/Reports'))
 const HR = lazy(() => import('./pages/HR'))
 const Accounts = lazy(() => import('./pages/Accounts'))
 const Approvals = lazy(() => import('./pages/Approvals'))
+const AdminConsole = lazy(() => import('./pages/AdminConsole'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function Splash({ label = 'Loading…' }) {
