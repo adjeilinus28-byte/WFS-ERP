@@ -1,8 +1,7 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock, GraduationCap, Scale,
-} from 'lucide-react'
+  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock, GraduationCap, Scale, ClipboardCheck } from 'lucide-react'
 
 export const MODULES = [
   { key: 'dashboard',   label: 'Command Deck', icon: LayoutDashboard, path: '/',            section: 'Overview' },
@@ -20,6 +19,7 @@ export const MODULES = [
   { key: 'ir',          label: 'Relations',     icon: HeartHandshake,  path: '/relations',   section: 'People' },
   { key: 'financials',  label: 'Financials',    icon: Scale,           path: '/financials',  section: 'Finance' },
   { key: 'accounts',    label: 'Accounts',      icon: Landmark,        path: '/accounts',    section: 'Finance' },
+  { key: 'approvals',   label: 'Approvals',     icon: ClipboardCheck,  path: '/approvals',   section: 'Finance' },
   { key: 'training',    label: 'Training',      icon: GraduationCap,   path: '/training',    section: 'Compliance' },
   { key: 'hse',         label: 'HSE & Safety',  icon: ShieldAlert,     path: '/hse',         section: 'Compliance' },
   { key: 'reports',     label: 'Reports',       icon: BarChart3,       path: '/reports',     section: 'Insight' },

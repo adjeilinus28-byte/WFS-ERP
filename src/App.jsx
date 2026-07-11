@@ -25,6 +25,7 @@ const HSE = lazy(() => import('./pages/HSE'))
 const Reports = lazy(() => import('./pages/Reports'))
 const HR = lazy(() => import('./pages/HR'))
 const Accounts = lazy(() => import('./pages/Accounts'))
+const Approvals = lazy(() => import('./pages/Approvals'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function Splash({ label = 'Loading…' }) {
@@ -97,6 +98,7 @@ function Gate() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/hr" element={<HR />} />
         <Route path="/accounts" element={<Accounts />} />
+        <Route path="/approvals" element={<Approvals />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

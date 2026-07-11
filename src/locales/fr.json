@@ -28,7 +28,8 @@
     "hse": "SST & Sécurité",
     "training": "Formation",
     "reports": "Rapports",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "approvals": "Approbations"
   },
   "common": {
     "save": "Enregistrer",
@@ -909,6 +910,19 @@
     "notifications": "Notifications",
     "mark_all_read": "Tout marquer comme lu",
     "all_caught_up": "Tout est à jour",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "approvals": "Approbations",
+    "workflow": "Flux de travail",
+    "pending_total": "Total en attente",
+    "journals": "Écritures",
+    "purchase_request": "Demande d'achat",
+    "manual_entry": "Écriture manuelle",
+    "reject": "Rejeter",
+    "rejected": "Rejeté",
+    "nothing_is_awaiting_your_decision": "Rien n'attend votre décision.",
+    "no_access": "Aucun accès",
+    "you_do_not_have_permission_to_approve_requests": "Vous n'avez pas la permission d'approuver les demandes.",
+    "action_failed": "L'action a échoué",
+    "could_not_load_approvals": "Impossible de charger les approbations"
   }
 }
