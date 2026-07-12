@@ -131,6 +131,8 @@ export default function Team() {
         <p className="mt-2 text-[11px] text-ice-faint">{at('The invitee signs in with this email to join. Links expire in 7 days.')}</p>
       </div>
 
+      <RoleMatrix orgId={activeOrgId} />
+
       {loading ? <div className="panel p-8 text-center text-sm text-ice-faint">{at('Loading…')}</div>
       : members.length === 0 ? <EmptyState title={at('No members yet')} />
       : (
@@ -178,6 +180,102 @@ export default function Team() {
               </div>
             )
           })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Org-configurable permission matrix: redefine what each access tier gets by
+// default in each domain, for THIS org. Empty cells = built-in default. A
+// per-person override (set on a member above) still beats these org defaults.
+const RM_ROLES = ['admin', 'manager', 'supervisor', 'operator', 'viewer']
+const RM_DOMAINS = ['operations', 'people', 'finance', 'safety', 'admin']
+const RM_LEVELS = ['none', 'view', 'edit', 'manage']
+
+function RoleMatrix({ orgId }) {
+  const toast = useToast()
+  const [open, setOpen] = useState(false)
+  const [cells, setCells] = useState({})    // { 'role:domain': { level, is_custom } }
+  const [loading, setLoading] = useState(false)
+
+  const load = async () => {
+    if (!orgId) return
+    setLoading(true)
+    try {
+      const { data } = await supabase.rpc('org_role_matrix', { p_org: orgId })
+      const map = {}
+      for (const r of data || []) map[`${r.role}:${r.domain}`] = { level: r.level, is_custom: r.is_custom }
+      setCells(map)
+    } catch (e) { toast.error(e.message || 'Load failed') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => { if (open) load() }, [open, orgId])
+
+  const setCell = async (role, domain, level) => {
+    // level '' clears the override (revert to built-in default)
+    try {
+      const { error } = await supabase.rpc('set_role_default', {
+        p_org: orgId, p_role: role, p_domain: domain, p_level: level || null,
+      })
+      if (error) throw error
+      await load()
+      toast.success(at('Role defaults updated'))
+    } catch (e) { toast.error(e.message || 'Update failed') }
+  }
+
+  return (
+    <div className="panel mb-6 overflow-hidden">
+      <button onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left">
+        <span className="flex items-center gap-2 text-sm font-semibold text-ice">
+          <Shield size={16} className="text-accent" /> {at('Role permission defaults')}
+        </span>
+        <ChevronDown size={16} className={`text-ice-faint transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-white/[0.06] p-5">
+          <p className="mb-4 text-[11px] text-ice-faint">
+            {at('Set what each role can do by default in this organization. Blank inherits the built-in default. Per-person overrides still win.')}
+          </p>
+          {loading ? <div className="py-6 text-center text-sm text-ice-faint">{at('Loading…')}</div> : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead>
+                  <tr className="text-left">
+                    <th className="pb-2 pr-3 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at('Role')}</th>
+                    {RM_DOMAINS.map((d) => (
+                      <th key={d} className="pb-2 px-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at(d)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {RM_ROLES.map((r) => (
+                    <tr key={r} className="border-t border-white/[0.05]">
+                      <td className="py-2 pr-3 text-ice-dim capitalize">{at(r)}</td>
+                      {RM_DOMAINS.map((d) => {
+                        const cell = cells[`${r}:${d}`] || {}
+                        return (
+                          <td key={d} className="px-2 py-2">
+                            <select
+                              value={cell.is_custom ? cell.level : ''}
+                              onChange={(e) => setCell(r, d, e.target.value)}
+                              className={`w-full rounded-md border px-2 py-1 text-xs ${cell.is_custom ? 'border-accent/40 bg-accent/10 text-ice' : 'border-white/10 bg-white/[0.03] text-ice-dim'}`}>
+                              <option value="" className="bg-navy-700">{at('Default')} ({at(cell.level || 'none')})</option>
+                              {RM_LEVELS.map((l) => <option key={l} value={l} className="bg-navy-700">{at(l)}</option>)}
+                            </select>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-3 text-[11px] text-warn">{at('Note: changing the Admin row affects all admins, including you. Owners are always full-access.')}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
