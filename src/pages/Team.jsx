@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, StatCard, Badge, EmptyState, useToast, Select } from '../components/ui'
 import { at } from '../lib/tr'
-import { Users, Shield, ChevronDown, Check } from 'lucide-react'
+import { Users, Shield, ChevronDown, Check, UserPlus, Copy, Mail } from 'lucide-react'
 
 // Team & access management. Admins set each member's base role and, when needed,
 // per-domain overrides (e.g. finance:manage for a supervisor). Writes go through
@@ -21,6 +21,35 @@ export default function Team() {
   const [perms, setPerms] = useState({})     // { user_id: { domain: level } }
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('viewer')
+  const [inviteLink, setInviteLink] = useState('')
+  const [inviting, setInviting] = useState(false)
+
+  const sendInvite = async () => {
+    if (!inviteEmail.trim()) { toast.error(at('Email is required')); return }
+    setInviting(true); setInviteLink('')
+    try {
+      const { data: token, error } = await supabase.rpc('create_invite', {
+        p_org: activeOrgId, p_email: inviteEmail.trim(), p_role: inviteRole,
+      })
+      if (error) throw error
+      const link = `${window.location.origin}/invite/${token}`
+      setInviteLink(link)
+      // Fire the Brevo email (best-effort; link is shown regardless).
+      try {
+        await fetch('/.netlify/functions/send-invite', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: inviteEmail.trim(), link, org: activeOrg?.org_name, role: inviteRole }),
+        })
+        toast.success(at('Invitation sent'))
+      } catch { toast.success(at('Invite link created — copy it below')) }
+      setInviteEmail('')
+    } catch (e) { toast.error(e.message || 'Invite failed') }
+    finally { setInviting(false) }
+  }
+
+  const copyLink = () => { navigator.clipboard?.writeText(inviteLink); toast.success(at('Link copied')) }
 
   const load = useCallback(async () => {
     if (!activeOrgId) return
@@ -80,6 +109,26 @@ export default function Team() {
         <StatCard label={at('Members')} value={members.length} icon={Users} />
         <StatCard label={at('Admins')} value={members.filter((m) => ['owner', 'admin'].includes(m.role)).length} icon={Shield} tone="accent" />
         <StatCard label={at('With custom access')} value={Object.keys(perms).filter((u) => Object.keys(perms[u] || {}).length).length} icon={Check} />
+      </div>
+
+      {/* Invite a new member by email */}
+      <div className="panel mb-6 p-5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-ice"><UserPlus size={16} className="text-accent" /> {at('Invite a member')}</div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input className="input flex-1" type="email" placeholder={at('name@company.com')} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+          <div className="w-full sm:w-40">
+            <Select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}
+              options={['admin','manager','supervisor','operator','viewer'].map((r) => ({ value: r, label: r }))} />
+          </div>
+          <button onClick={sendInvite} disabled={inviting} className="btn-primary shrink-0"><Mail size={15} /> {inviting ? at('Sending…') : at('Send invite')}</button>
+        </div>
+        {inviteLink && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+            <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-ice-dim">{inviteLink}</span>
+            <button onClick={copyLink} className="shrink-0 rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25"><Copy size={12} className="inline" /> {at('Copy')}</button>
+          </div>
+        )}
+        <p className="mt-2 text-[11px] text-ice-faint">{at('The invitee signs in with this email to join. Links expire in 7 days.')}</p>
       </div>
 
       {loading ? <div className="panel p-8 text-center text-sm text-ice-faint">{at('Loading…')}</div>

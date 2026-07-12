@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeApplier } from './context/ThemeContext'
 import { ToastProvider } from './components/ui'
@@ -30,6 +30,7 @@ const Accounts = lazy(() => import('./pages/Accounts'))
 const Approvals = lazy(() => import('./pages/Approvals'))
 const AdminConsole = lazy(() => import('./pages/AdminConsole'))
 const Team = lazy(() => import('./pages/Team'))
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function Splash({ label = 'Loading…' }) {
@@ -74,8 +75,18 @@ function PageSkeleton() {
 
 function Gate() {
   const { session, loading, membLoaded, memberships, activeOrgId } = useAuth()
+  const path = typeof window !== 'undefined' ? window.location.pathname : ''
+  const inviteMatch = path.match(/^\/invite\/([A-Za-z0-9]+)$/)
 
   if (loading) return <Splash label="Starting WFS Enterprise" />
+
+  // Invitation claim page is reachable before org gating. If not signed in, the
+  // page routes to Login and returns here afterward.
+  if (inviteMatch) {
+    if (!session) return <Login />
+    return <Suspense fallback={<Splash label="Loading invitation" />}><Routes><Route path="/invite/:token" element={<AcceptInvite />} /></Routes></Suspense>
+  }
+
   if (!session) return <Login />
   if (!membLoaded) return <Splash label="Loading workspace" />
   if (memberships.length === 0 || !activeOrgId) return <CreateOrg />
