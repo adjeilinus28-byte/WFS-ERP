@@ -3,12 +3,12 @@ import { Plus, Pencil, Trash2, Search, Filter, X } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, statusTone, useToast, Select, EmptyState } from '../components/ui'
 import Drawer from '../components/Drawer'
 import { date, daysUntil } from '../lib/format'
 import { ClipboardList, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { at } from '../lib/tr'
 
 const TYPE     = ['preventive', 'corrective', 'inspection']
 const PRIORITY = ['low', 'medium', 'high', 'urgent']
@@ -46,7 +46,8 @@ export default function WorkOrders() {
   const { rows, loading, insert, update, remove, refresh } = useTable('work_orders')
   const [drawer, setDrawer] = useState({ open: false, row: null })
   const [saving, setSaving] = useState(false)
-  const canWrite = role && role !== 'viewer'
+  const { can: _can_operations } = usePermissions()
+  const canWrite = _can_operations('operations', 'edit')
 
   // ── Filters ──
   const [q, setQ] = useState('')
@@ -73,9 +74,9 @@ export default function WorkOrders() {
       if (fPriority && r.priority !== fPriority) return false
       if (fStatus && r.status !== fStatus) return false
       const d = daysUntil(r.due_date)
-      if (fView === 'uncompleted' && ['done', at('cancelled')].includes(r.status)) return false
-      if (fView === 'overdue' && !(d != null && d < 0 && !['done', at('cancelled')].includes(r.status))) return false
-      if (fView === 'due_soon' && !(d != null && d >= 0 && d <= 3 && !['done', at('cancelled')].includes(r.status))) return false
+      if (fView === 'uncompleted' && ['done','cancelled'].includes(r.status)) return false
+      if (fView === 'overdue' && !(d != null && d < 0 && !['done','cancelled'].includes(r.status))) return false
+      if (fView === 'due_soon' && !(d != null && d >= 0 && d <= 3 && !['done','cancelled'].includes(r.status))) return false
       if (fView === 'unassigned' && r.assigned_to) return false
       return true
     })
@@ -114,20 +115,20 @@ export default function WorkOrders() {
   }
 
   const fields = [
-    { key: 'wo_number', label: at('WO number'), required: true },
-    { key: 'title', label: at('Title'), required: true, span: true },
-    { key: 'wo_type', label: at('Type'), type: 'select', options: TYPE.map((s) => ({ value: s, label: s })), default: 'corrective' },
-    { key: 'priority', label: at('Priority'), type: 'select', options: PRIORITY.map((s) => ({ value: s, label: s })), default: 'medium' },
-    { key: 'status', label: at('Status'), type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'open' },
-    { key: 'progress', label: at('Progress %'), type: 'number', default: 0 },
-    { key: 'assigned_to', label: at('Assigned to') },
-    { key: 'department', label: at('Department'), type: 'select', options: deptOptions },
-    { key: 'due_date', label: at('Due date'), type: 'date' },
-    { key: 'description', label: at('Description'), type: 'textarea', span: true },
+    { key: 'wo_number', label: 'WO number', required: true },
+    { key: 'title', label: 'Title', required: true, span: true },
+    { key: 'wo_type', label: 'Type', type: 'select', options: TYPE.map((s) => ({ value: s, label: s })), default: 'corrective' },
+    { key: 'priority', label: 'Priority', type: 'select', options: PRIORITY.map((s) => ({ value: s, label: s })), default: 'medium' },
+    { key: 'status', label: 'Status', type: 'select', options: STATUS.map((s) => ({ value: s, label: s })), default: 'open' },
+    { key: 'progress', label: 'Progress %', type: 'number', default: 0 },
+    { key: 'assigned_to', label: 'Assigned to' },
+    { key: 'department', label: 'Department', type: 'select', options: deptOptions },
+    { key: 'due_date', label: 'Due date', type: 'date' },
+    { key: 'description', label: 'Description', type: 'textarea', span: true },
   ]
 
   const open    = effectiveRows.filter((r) => ['open','in_progress','on_hold'].includes(r.status)).length
-  const overdue = effectiveRows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && !['done', at('cancelled')].includes(r.status) }).length
+  const overdue = effectiveRows.filter((r) => { const d = daysUntil(r.due_date); return d != null && d < 0 && !['done','cancelled'].includes(r.status) }).length
   const urgent  = effectiveRows.filter((r) => r.priority === 'urgent' && r.status !== 'done').length
   const done    = effectiveRows.filter((r) => r.status === 'done').length
 
@@ -153,18 +154,18 @@ export default function WorkOrders() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
             <Search size={15} className="text-ice-faint" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={at('Search…')}
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…"
               className="w-40 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
           </div>
           <div className="flex items-center gap-1.5 text-ice-faint"><Filter size={14} /></div>
           <div className="w-40"><Select value={fView} onChange={(e) => setFView(e.target.value)}
-            options={[{value:'',label: at('All work orders')},{value:'uncompleted',label: at('Uncompleted')},{value:'overdue',label: at('Overdue')},{value:'due_soon',label: at('Due within 3 days')},{value:'unassigned',label: at('Unassigned')}]} /></div>
+            options={[{value:'',label:'All work orders'},{value:'uncompleted',label:'Uncompleted'},{value:'overdue',label:'Overdue'},{value:'due_soon',label:'Due within 3 days'},{value:'unassigned',label:'Unassigned'}]} /></div>
           <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)}
-            options={[{value:'',label: at('All depts')}, ...deptOptions]} /></div>
+            options={[{value:'',label:'All depts'}, ...deptOptions]} /></div>
           <div className="w-32"><Select value={fPriority} onChange={(e) => setFPriority(e.target.value)}
-            options={[{value:'',label: at('Any priority')}, ...PRIORITY.map((s) => ({ value: s, label: s }))]} /></div>
+            options={[{value:'',label:'Any priority'}, ...PRIORITY.map((s) => ({ value: s, label: s }))]} /></div>
           <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)}
-            options={[{value:'',label: at('Any status')}, ...STATUS.map((s) => ({ value: s, label: s.replace('_',' ') }))]} /></div>
+            options={[{value:'',label:'Any status'}, ...STATUS.map((s) => ({ value: s, label: s.replace('_',' ') }))]} /></div>
           {activeFilters > 0 && (
             <button onClick={clearFilters} className="btn-ghost btn-sm ml-auto">
               <X size={13} /> Clear ({activeFilters})
@@ -181,22 +182,22 @@ export default function WorkOrders() {
         ) : filtered.length === 0 ? (
           <EmptyState title={rows.length ? 'No work orders match these filters' : 'No work orders yet'}
             hint={rows.length ? 'Try clearing or adjusting the filters above.' : 'Raise preventive, corrective, and inspection jobs against your assets.'}
-            action={activeFilters > 0 ? <button className="btn-ghost btn-sm" onClick={clearFilters}>{at('Clear filters')}</button> : null} />
+            action={activeFilters > 0 ? <button className="btn-ghost btn-sm" onClick={clearFilters}>Clear filters</button> : null} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]">
                 <tr>
-                  <th className="th">{at('WO #')}</th><th className="th">{at('Title')}</th><th className="th">{at('Type')}</th>
-                  <th className="th">{at('Priority')}</th><th className="th">{at('Assigned')}</th><th className="th">{at('Due')}</th>
-                  <th className="th">{at('Progress')}</th><th className="th">{at('Status')}</th>
-                  {canWrite && <th className="th text-right">{at('Actions')}</th>}
+                  <th className="th">WO #</th><th className="th">Title</th><th className="th">Type</th>
+                  <th className="th">Priority</th><th className="th">Assigned</th><th className="th">Due</th>
+                  <th className="th">Progress</th><th className="th">Status</th>
+                  {canWrite && <th className="th text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => {
                   const d = daysUntil(r.due_date)
-                  const overdueRow = d != null && d < 0 && !['done', at('cancelled')].includes(r.status)
+                  const overdueRow = d != null && d < 0 && !['done','cancelled'].includes(r.status)
                   return (
                     <tr key={r.id} className="transition hover:bg-white/[0.025]">
                       <td className="td font-mono text-accent whitespace-nowrap">{r.wo_number}</td>

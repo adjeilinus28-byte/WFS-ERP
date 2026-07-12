@@ -4,17 +4,17 @@ import { Badge, statusTone, StatCard, PageHeader, Select, EmptyState, useToast }
 import { date } from '../lib/format'
 import { useTable } from '../hooks/useTable'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useDepartments } from '../hooks/useDepartments'
 import EmployeeEditor from '../components/EmployeeEditor'
 import EmployeeProfile from '../components/EmployeeProfile'
 import { Users, UserCheck, UserMinus, Hammer, Building2, Network, Plus, Search, Pencil, Trash2, X, Filter } from 'lucide-react'
-import { at } from '../lib/tr'
 
 const STATUS = ['active', 'leave', 'suspended', 'exited']
 const WORKER = ['surface', 'underground', 'office', 'field']
 
 function Tabs({ tab, setTab }) {
-  const items = [['staff', at('Employees')], ['departments', at('Departments')]]
+  const items = [['staff', 'Employees'], ['departments', 'Departments']]
   return (
     <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -35,7 +35,8 @@ function Employees() {
   const [editor, setEditor] = useState({ open: false, row: null })
   const [profile, setProfile] = useState(null)
   const [saving, setSaving] = useState(false)
-  const canWrite = role && role !== 'viewer'
+  const { can: _can_people } = usePermissions()
+  const canWrite = _can_people('people', 'edit')
 
   // Filters
   const [q, setQ] = useState('')
@@ -81,7 +82,7 @@ function Employees() {
   return (
     <>
       <PageHeader eyebrow="People" title="Workforce">
-        {canWrite && <button className="btn-primary" onClick={() => setEditor({ open: true, row: null })}><Plus size={16} /> {at('New employee')}</button>}
+        {canWrite && <button className="btn-primary" onClick={() => setEditor({ open: true, row: null })}><Plus size={16} /> New employee</button>}
       </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -100,10 +101,10 @@ function Employees() {
               className="w-48 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
           </div>
           <Filter size={14} className="text-ice-faint" />
-          <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: at('All depts') }, ...deptOptions]} /></div>
-          <div className="w-32"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: at('Any status') }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
-          <div className="w-36"><Select value={fWorker} onChange={(e) => setFWorker(e.target.value)} options={[{ value: '', label: at('Any type') }, ...WORKER.map((s) => ({ value: s, label: s }))]} /></div>
-          <div className="w-36"><Select value={fMarital} onChange={(e) => setFMarital(e.target.value)} options={[{ value: '', label: at('Any marital') }, ...['single','married','divorced','widowed'].map((s) => ({ value: s, label: s }))]} /></div>
+          <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: 'All depts' }, ...deptOptions]} /></div>
+          <div className="w-32"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'Any status' }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
+          <div className="w-36"><Select value={fWorker} onChange={(e) => setFWorker(e.target.value)} options={[{ value: '', label: 'Any type' }, ...WORKER.map((s) => ({ value: s, label: s }))]} /></div>
+          <div className="w-36"><Select value={fMarital} onChange={(e) => setFMarital(e.target.value)} options={[{ value: '', label: 'Any marital' }, ...['single','married','divorced','widowed'].map((s) => ({ value: s, label: s }))]} /></div>
           {activeF > 0 && <button onClick={clear} className="btn-ghost btn-sm"><X size={13} /> Clear ({activeF})</button>}
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
         </div>
@@ -114,14 +115,14 @@ function Employees() {
           <div className="space-y-px p-3">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-11 animate-pulse rounded bg-white/[0.03]" />)}</div>
         ) : filtered.length === 0 ? (
           <EmptyState title={rows.length ? 'No employees match these filters' : 'No employees'} hint={rows.length ? 'Adjust or clear the filters.' : 'Add your staff directory with full HR profiles.'}
-            action={activeF ? <button className="btn-ghost btn-sm" onClick={clear}>{at('Clear filters')}</button> : null} />
+            action={activeF ? <button className="btn-ghost btn-sm" onClick={clear}>Clear filters</button> : null} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-white/[0.02]"><tr>
-                <th className="th">{at('No.')}</th><th className="th">{at('Name')}</th><th className="th">{at('Department')}</th>
-                <th className="th">{at('Position')}</th><th className="th">{at('Type')}</th><th className="th">{at('Status')}</th><th className="th">{at('Hired')}</th>
-                {canWrite && <th className="th text-right">{at('Actions')}</th>}
+                <th className="th">No.</th><th className="th">Name</th><th className="th">Department</th>
+                <th className="th">Position</th><th className="th">Type</th><th className="th">Status</th><th className="th">Hired</th>
+                {canWrite && <th className="th text-right">Actions</th>}
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
@@ -173,18 +174,18 @@ export default function Workforce() {
           emptyHint="Define your org structure — these become the dropdown options across the platform."
           searchKeys={['name', 'code', 'head', 'cost_center']}
           columns={[
-            { key: 'name', label: at('Department') },
-            { key: 'code', label: at('Code'), render: (v) => v ? <span className="font-mono text-accent">{v}</span> : '—' },
-            { key: 'head', label: at('Head') },
-            { key: 'cost_center', label: at('Cost centre'), render: (v) => v ? <span className="font-mono">{v}</span> : '—' },
+            { key: 'name', label: 'Department' },
+            { key: 'code', label: 'Code', render: (v) => v ? <span className="font-mono text-accent">{v}</span> : '—' },
+            { key: 'head', label: 'Head' },
+            { key: 'cost_center', label: 'Cost centre', render: (v) => v ? <span className="font-mono">{v}</span> : '—' },
           ]}
           fields={[
-            { key: 'name', label: at('Department name'), required: true, span: true },
-            { key: 'code', label: at('Code') },
-            { key: 'head', label: at('Department head') },
-            { key: 'head_email', label: at('Head email (incident + announcements)'), type: 'email' },
-            { key: 'supervisor_email', label: at('Supervisor email (announcements)'), type: 'email' },
-            { key: 'cost_center', label: at('Cost centre') },
+            { key: 'name', label: 'Department name', required: true, span: true },
+            { key: 'code', label: 'Code' },
+            { key: 'head', label: 'Department head' },
+            { key: 'head_email', label: 'Head email (incident + announcements)', type: 'email' },
+            { key: 'supervisor_email', label: 'Supervisor email (announcements)', type: 'email' },
+            { key: 'cost_center', label: 'Cost centre' },
           ]}
           kpis={(rows) => {
             const withHead = rows.filter((r) => r.head).length

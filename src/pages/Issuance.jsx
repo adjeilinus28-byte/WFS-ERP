@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react'
 import { Plus, X, Search, Filter, Trash2, PackageMinus, Wallet, TrendingDown, Layers } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useDepartments } from '../hooks/useDepartments'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, num, date } from '../lib/format'
 import { businessMonthKey, businessMonthKeyOffset } from '../lib/period'
-import { at } from '../lib/tr'
 
 const ISSUE_TO = ['work_order', 'department', 'asset', 'employee', 'other']
 
@@ -33,7 +33,8 @@ export default function Issuance() {
   const { rows: workOrders } = useTable('work_orders')
   const [drawer, setDrawer] = useState(false)
   const [saving, setSaving] = useState(false)
-  const canWrite = role && role !== 'viewer'
+  const { can: _can_operations } = usePermissions()
+  const canWrite = _can_operations('operations', 'edit')
 
   // Filters
   const [q, setQ] = useState('')
@@ -94,7 +95,7 @@ export default function Issuance() {
   return (
     <>
       <PageHeader eyebrow="Supply Chain" title="Material Issuance">
-        {canWrite && <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> {at('Issue item')}</button>}
+        {canWrite && <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> Issue item</button>}
       </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -114,11 +115,11 @@ export default function Issuance() {
           </div>
           <Filter size={14} className="text-ice-faint" />
           <div className="w-40"><Select value={fPeriod} onChange={(e) => setFPeriod(e.target.value)}
-            options={[{value:'all',label: at('All time')},{value:'this_month',label: at('This month')},{value:'last_month',label: at('Last month')},{value:'last_30',label: at('Last 30 days')},{value:'last_90',label: at('Last 90 days')},{value:'this_year',label: at('This year')}]} /></div>
+            options={[{value:'all',label:'All time'},{value:'this_month',label:'This month'},{value:'last_month',label:'Last month'},{value:'last_30',label:'Last 30 days'},{value:'last_90',label:'Last 90 days'},{value:'this_year',label:'This year'}]} /></div>
           <div className="w-36"><Select value={fType} onChange={(e) => setFType(e.target.value)}
-            options={[{value:'',label: at('All targets')}, ...ISSUE_TO.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></div>
+            options={[{value:'',label:'All targets'}, ...ISSUE_TO.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></div>
           <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)}
-            options={[{value:'',label: at('All depts')}, ...deptOptions]} /></div>
+            options={[{value:'',label:'All depts'}, ...deptOptions]} /></div>
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
         </div>
       </div>
@@ -126,14 +127,14 @@ export default function Issuance() {
       <div className="grid gap-4 lg:grid-cols-5">
         {/* Table */}
         <div className="panel overflow-hidden lg:col-span-3">
-          {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
+          {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
           : filtered.length === 0 ? <EmptyState title="No issuances in this period" hint="Issue an item to deploy stock and track spend." />
           : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-white/[0.02]"><tr>
-                  <th className="th">{at('Ref')}</th><th className="th">{at('Item')}</th><th className="th">{at('Qty')}</th>
-                  <th className="th">{at('Cost')}</th><th className="th">{at('Issued to')}</th><th className="th">{at('Date')}</th>
+                  <th className="th">Ref</th><th className="th">Item</th><th className="th">Qty</th>
+                  <th className="th">Cost</th><th className="th">Issued to</th><th className="th">Date</th>
                   {canWrite && <th className="th text-right">·</th>}
                 </tr></thead>
                 <tbody>
@@ -156,8 +157,8 @@ export default function Issuance() {
 
         {/* Top consumers */}
         <div className="panel p-5 lg:col-span-2">
-          <div className="eyebrow mb-4">{at('Top consumers (by spend)')}</div>
-          {byItem.length === 0 ? <div className="grid h-40 place-items-center text-sm text-ice-faint">{at('No data')}</div>
+          <div className="eyebrow mb-4">Top consumers (by spend)</div>
+          {byItem.length === 0 ? <div className="grid h-40 place-items-center text-sm text-ice-faint">No data</div>
           : <div className="space-y-3">
               {byItem.map(([name, v], i) => {
                 const pct = totalSpend ? (v.cost / totalSpend) * 100 : 0
@@ -184,17 +185,17 @@ export default function Issuance() {
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
           <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
-              <h2 className="font-display text-lg font-bold text-ice">{at('Issue Item')}</h2>
+              <h2 className="font-display text-lg font-bold text-ice">Issue Item</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
             </div>
             <div className="space-y-4 p-5">
               <Field label="Item *"><Select value={form.item_id} onChange={(e) => setForm({ ...form, item_id: e.target.value })}
-                options={[{ value: '', label: at('Select item…') }, ...items.map((i) => ({ value: i.id, label: `${i.name} (${num(i.qty_on_hand)} ${i.uom} on hand)` }))]} /></Field>
+                options={[{ value: '', label: 'Select item…' }, ...items.map((i) => ({ value: i.id, label: `${i.name} (${num(i.qty_on_hand)} ${i.uom} on hand)` }))]} /></Field>
 
               {selItem && (
                 <div className="rounded-lg border border-white/10 bg-navy/50 px-3 py-2 text-sm">
-                  <div className="flex justify-between"><span className="text-ice-faint">{at('Unit cost')}</span><span className="font-mono text-ice">{money(selItem.unit_cost, ccy)}</span></div>
-                  <div className="flex justify-between"><span className="text-ice-faint">{at('On hand')}</span><span className={`font-mono ${overStock ? 'text-bad' : 'text-ice'}`}>{num(selItem.qty_on_hand)} {selItem.uom}</span></div>
+                  <div className="flex justify-between"><span className="text-ice-faint">Unit cost</span><span className="font-mono text-ice">{money(selItem.unit_cost, ccy)}</span></div>
+                  <div className="flex justify-between"><span className="text-ice-faint">On hand</span><span className={`font-mono ${overStock ? 'text-bad' : 'text-ice'}`}>{num(selItem.qty_on_hand)} {selItem.uom}</span></div>
                 </div>
               )}
 
@@ -202,7 +203,7 @@ export default function Issuance() {
                 <Field label="Quantity *"><input className="input" type="number" min="0" value={form.qty} onChange={(e) => setForm({ ...form, qty: e.target.value })} /></Field>
                 <Field label="Line cost"><input className="input font-mono" value={money(lineCost, ccy)} disabled /></Field>
               </div>
-              {overStock && <p className="rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">{at('Exceeds stock on hand — stock will go negative.')}</p>}
+              {overStock && <p className="rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">Exceeds stock on hand — stock will go negative.</p>}
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Issued to (type)"><Select value={form.issued_to_type} onChange={(e) => setForm({ ...form, issued_to_type: e.target.value })} options={ISSUE_TO.map((s) => ({ value: s, label: s.replace('_', ' ') }))} /></Field>
@@ -216,7 +217,7 @@ export default function Issuance() {
               <Field label="Notes"><textarea className="input min-h-[60px]" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[0.06] px-5 py-4">
-              <button onClick={() => setDrawer(false)} className="btn-ghost">{at('Cancel')}</button>
+              <button onClick={() => setDrawer(false)} className="btn-ghost">Cancel</button>
               <button onClick={submit} disabled={saving} className="btn-primary">{saving ? 'Issuing…' : 'Issue & deduct stock'}</button>
             </div>
           </div>

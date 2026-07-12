@@ -5,6 +5,7 @@ import { at } from '../lib/tr'
 import { money, date } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
 import {
@@ -220,7 +221,8 @@ function PurchaseOrders({ suppliers }) {
   const { rows, loading, insert, update, remove } = useTable('purchase_orders')
   const [edit, setEdit] = useState(null)
   const [saving, setSaving] = useState(false)
-  const canWrite = role && role !== 'viewer'
+  const { can: _can_operations } = usePermissions()
+  const canWrite = _can_operations('operations', 'edit')
   const supplierName = (id) => suppliers.find((s) => s.id === id)?.name || '—'
 
   // Raise a payable from a PO accepted in person/phone. Idempotent server-side:
