@@ -29,6 +29,7 @@ const HR = lazy(() => import('./pages/HR'))
 const Accounts = lazy(() => import('./pages/Accounts'))
 const Approvals = lazy(() => import('./pages/Approvals'))
 const AdminConsole = lazy(() => import('./pages/AdminConsole'))
+const Team = lazy(() => import('./pages/Team'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function Splash({ label = 'Loading…' }) {
@@ -112,6 +113,7 @@ function SubscribedApp() {
         <Route path="/accounts" element={<Accounts />} />
         <Route path="/subscribe" element={<Subscribe />} />
         <Route path="/admin" element={<AdminConsole />} />
+        <Route path="/team" element={<Team />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />

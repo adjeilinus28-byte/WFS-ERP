@@ -4,6 +4,7 @@ import {
 } from 'recharts'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { useTable } from '../hooks/useTable'
 import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, date, num } from '../lib/format'
@@ -43,10 +44,11 @@ const Row = ({ label, value, ccy, bold, indent, tone }) => (
 )
 
 export default function Financials() {
-  const { activeOrgId, activeOrg, role } = useAuth()
+  const { activeOrgId, activeOrg } = useAuth()
+  const { can } = usePermissions()
   const toast = useToast()
   const ccy = activeOrg?.currency || 'GHS'
-  const canPost = ['owner', 'admin', 'manager'].includes(role)
+  const canPost = can('finance', 'edit')
   const [tab, setTab] = useState('overview')
 
   const [tb, setTb] = useState([])          // trial_balance rows (per account per period)

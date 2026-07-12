@@ -31,7 +31,8 @@
     "reports": "Rapports",
     "settings": "Paramètres",
     "approvals": "Approbations",
-    "admin": "Console admin"
+    "admin": "Console admin",
+    "team": "Équipe et accès"
   },
   "common": {
     "save": "Enregistrer",
@@ -986,6 +987,19 @@
     "price_changes_apply_to_new_subscriptions_and_renewals_existing_paid_periods_are_unchanged": "Les changements de prix s'appliquent aux nouveaux abonnements et renouvellements. Les périodes déjà payées restent inchangées.",
     "this_area_is_for_platform_administrators_only": "Cette zone est réservée aux administrateurs de la plateforme.",
     "save_failed": "Échec de l'enregistrement",
-    "load_failed": "Échec du chargement"
+    "load_failed": "Échec du chargement",
+    "team_access": "Équipe et accès",
+    "admins": "Administrateurs",
+    "with_custom_access": "Avec accès personnalisé",
+    "custom": "personnalisé",
+    "no_members_yet": "Aucun membre pour le moment",
+    "role_updated": "Rôle mis à jour",
+    "access_updated": "Accès mis à jour",
+    "only_owners_and_admins_can_manage_the_team": "Seuls les propriétaires et administrateurs peuvent gérer l'équipe.",
+    "per_module_access_leave_as_default_to_inherit_the_base_role": "Accès par module — laissez par défaut pour hériter du rôle de base.",
+    "default": "Par défaut",
+    "safety": "Sécurité",
+    "view": "consulter",
+    "per_module_access": "Accès par module"
   }
 }
