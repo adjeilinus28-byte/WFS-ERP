@@ -197,16 +197,23 @@ function RoleMatrix({ orgId }) {
   const toast = useToast()
   const [open, setOpen] = useState(false)
   const [cells, setCells] = useState({})    // { 'role:domain': { level, is_custom } }
+  const [scopes, setScopes] = useState({})  // { role: 'all'|'own_edit'|'own_only' }
   const [loading, setLoading] = useState(false)
 
   const load = async () => {
     if (!orgId) return
     setLoading(true)
     try {
-      const { data } = await supabase.rpc('org_role_matrix', { p_org: orgId })
+      const [{ data }, { data: sc }] = await Promise.all([
+        supabase.rpc('org_role_matrix', { p_org: orgId }),
+        supabase.rpc('org_dept_scopes', { p_org: orgId }),
+      ])
       const map = {}
       for (const r of data || []) map[`${r.role}:${r.domain}`] = { level: r.level, is_custom: r.is_custom }
       setCells(map)
+      const sm = {}
+      for (const r of sc || []) sm[r.role] = r.scope
+      setScopes(sm)
     } catch (e) { toast.error(e.message || 'Load failed') }
     finally { setLoading(false) }
   }
@@ -222,6 +229,15 @@ function RoleMatrix({ orgId }) {
       if (error) throw error
       await load()
       toast.success(at('Role defaults updated'))
+    } catch (e) { toast.error(e.message || 'Update failed') }
+  }
+
+  const setScope = async (role, scope) => {
+    try {
+      const { error } = await supabase.rpc('set_dept_scope', { p_org: orgId, p_role: role, p_scope: scope })
+      if (error) throw error
+      setScopes((x) => ({ ...x, [role]: scope }))
+      toast.success(at('Department scope updated'))
     } catch (e) { toast.error(e.message || 'Update failed') }
   }
 
@@ -249,6 +265,7 @@ function RoleMatrix({ orgId }) {
                     {RM_DOMAINS.map((d) => (
                       <th key={d} className="pb-2 px-2 font-mono text-[10px] uppercase tracking-wider text-ice-faint">{at(d)}</th>
                     ))}
+                    <th className="pb-2 px-2 font-mono text-[10px] uppercase tracking-wider text-accent">{at('Department')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,6 +286,14 @@ function RoleMatrix({ orgId }) {
                           </td>
                         )
                       })}
+                      <td className="px-2 py-2">
+                        <select value={scopes[r] || 'all'} onChange={(e) => setScope(r, e.target.value)}
+                          className={`w-full rounded-md border px-2 py-1 text-xs ${(scopes[r] && scopes[r] !== 'all') ? 'border-accent/40 bg-accent/10 text-ice' : 'border-white/10 bg-white/[0.03] text-ice-dim'}`}>
+                          <option value="all" className="bg-navy-700">{at('All departments')}</option>
+                          <option value="own_edit" className="bg-navy-700">{at('See all, edit own')}</option>
+                          <option value="own_only" className="bg-navy-700">{at('Own department only')}</option>
+                        </select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

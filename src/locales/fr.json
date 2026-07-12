@@ -1029,6 +1029,9 @@
     "role_permission_defaults": "Autorisations par défaut des rôles",
     "set_what_each_role_can_do_by_default_in_this_organization_blank_inherits_the_built_in_default_per_person_overrides_still_win": "Définissez ce que chaque rôle peut faire par défaut dans cette organisation. Vide = valeur intégrée. Les remplacements individuels priment.",
     "role_defaults_updated": "Autorisations par défaut mises à jour",
-    "note_changing_the_admin_row_affects_all_admins_including_you_owners_are_always_full_access": "Remarque : modifier la ligne Admin affecte tous les administrateurs, y compris vous. Les propriétaires ont toujours un accès complet."
+    "note_changing_the_admin_row_affects_all_admins_including_you_owners_are_always_full_access": "Remarque : modifier la ligne Admin affecte tous les administrateurs, y compris vous. Les propriétaires ont toujours un accès complet.",
+    "department_scope_updated": "Portée du département mise à jour",
+    "see_all_edit_own": "Voir tout, modifier le sien",
+    "own_department_only": "Son département uniquement"
   }
 }

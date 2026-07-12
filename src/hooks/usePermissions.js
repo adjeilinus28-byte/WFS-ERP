@@ -28,14 +28,19 @@ export function usePermissions() {
   const { activeOrgId, isOwner } = useAuth()
   const [levels, setLevels] = useState({})   // { domain: level }
   const [loading, setLoading] = useState(true)
+  const [deptScope, setDeptScope] = useState({ scope: 'all', homeDept: null })
 
   const load = useCallback(async () => {
     if (!activeOrgId) { setLevels({}); setLoading(false); return }
     try {
-      const { data } = await supabase.rpc('my_permissions', { p_org: activeOrgId })
+      const [{ data }, { data: ds }] = await Promise.all([
+        supabase.rpc('my_permissions', { p_org: activeOrgId }),
+        supabase.rpc('my_dept_scope', { p_org: activeOrgId }),
+      ])
       const map = {}
       for (const r of data || []) map[r.domain] = r.level
       setLevels(map)
+      if (ds && ds[0]) setDeptScope({ scope: ds[0].scope, homeDept: ds[0].home_dept })
     } catch { setLevels({}) } finally { setLoading(false) }
   }, [activeOrgId])
 
@@ -53,5 +58,7 @@ export function usePermissions() {
     return d ? can(d, 'edit') : true
   }, [can])
 
-  return { can, canWriteModule, levels, loading, reload: load }
+  // deptScope.scope: 'all'|'own_edit'|'own_only'; homeDept: the user's department.
+  // Forms for scoped users should default new records' department to homeDept.
+  return { can, canWriteModule, levels, deptScope, loading, reload: load }
 }
