@@ -7,6 +7,7 @@ import { useDepartments } from '../hooks/useDepartments'
 import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, date, num } from '../lib/format'
 import { businessMonthKey, currentBusinessMonthLabel } from '../lib/period'
+import { periodFilterList } from '../lib/accounting'
 import { computePayslip } from '../lib/payroll'
 import { applyBands, DEFAULT_GH_BANDS } from '../lib/tax'
 import { at } from '../lib/tr'
@@ -219,7 +220,12 @@ export default function Payroll({ ccy }) {
   const [fPeriod, setFPeriod] = useState(thisPeriod())
   const [fDept, setFDept] = useState('')
 
-  const periods = useMemo(() => [...new Set(rows.map((r) => r.period))].sort().reverse(), [rows])
+  // Full fiscal-year range (calendar year) unioned with periods that have payroll
+  // data, so empty months are selectable on a new org. Newest first.
+  const periods = useMemo(() => {
+    const data = rows.map((r) => r.period).filter(Boolean)
+    return periodFilterList([...data, thisPeriod()], thisPeriod(), 1).sort().reverse()
+  }, [rows])
 
   const filtered = useMemo(() => rows.filter((r) => {
     if (fPeriod && r.period !== fPeriod) return false
@@ -352,7 +358,7 @@ export default function Payroll({ ccy }) {
               </div>
               <Filter size={14} className="text-ice-faint" />
               <div className="w-36"><Select value={fPeriod} onChange={(e) => setFPeriod(e.target.value)}
-                options={[{ value: '', label: at('All periods') }, ...(periods.includes(thisPeriod()) ? periods : [thisPeriod(), ...periods]).map((p) => ({ value: p, label: p }))]} /></div>
+                options={[{ value: '', label: at('All periods') }, ...periods.map((p) => ({ value: p, label: p }))]} /></div>
               <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
               <span className="font-mono text-[11px] text-ice-faint">{filtered.length}</span>
               <div className="ml-auto flex gap-2">

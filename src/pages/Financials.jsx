@@ -11,8 +11,7 @@ import { money, date, num } from '../lib/format'
 import { businessMonthKey, businessMonthLabel, businessMonthKeyOffset } from '../lib/period'
 import {
   aggregateTrialBalance, trialBalanceTotals, incomeStatement, balanceSheet, cashFlow,
-  ratios, ratioTone, fiscalYearOf, periodsInFiscalYear,
-} from '../lib/accounting'
+  ratios, ratioTone, fiscalYearOf, periodsInFiscalYear, periodFilterList } from '../lib/accounting'
 import {
   Scale, BookOpen, TrendingUp, Landmark, RefreshCw, Plus, X, Check, AlertTriangle,
   FileSpreadsheet, Activity, Download, Lock,
@@ -80,10 +79,11 @@ export default function Financials() {
   const fyStart = fiscal?.fiscal_year_start_month || 1
   // All periods that carry activity, plus the current one
   const allPeriods = useMemo(() => {
-    const s = new Set(tb.map((r) => r.period).filter(Boolean))
-    s.add(businessMonthKey(new Date()))
-    return [...s].sort()
-  }, [tb])
+    const dataPeriods = tb.map((r) => r.period).filter(Boolean)
+    // Full fiscal-year range (so empty months are selectable), unioned with any
+    // periods that already carry data, plus the current business month.
+    return periodFilterList([...dataPeriods, businessMonthKey(new Date())], period, fyStart)
+  }, [tb, period, fyStart])
 
   // Selected period set: single business month, or the whole fiscal year
   const selectedPeriods = useMemo(() => {
@@ -263,11 +263,12 @@ export default function Financials() {
 function Analysis({ bs, is, isPrior, ratioList, ccy, tb, allPeriods }) {
   const groups = [...new Set(ratioList.map((r) => r.group))]
 
-  const trend = useMemo(() => allPeriods.slice(-6).map((p) => {
+  const nowKey = businessMonthKey(new Date())
+  const trend = useMemo(() => allPeriods.filter((p) => p <= nowKey).slice(-6).map((p) => {
     const acc = aggregateTrialBalance(tb, [p])
     const s = incomeStatement(acc)
     return { name: businessMonthLabel(p).split(' ')[0], revenue: s.revenue, net: s.netIncome }
-  }), [tb, allPeriods])
+  }), [tb, allPeriods, nowKey])
 
   return (
     <div>

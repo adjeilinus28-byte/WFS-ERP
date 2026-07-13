@@ -33,6 +33,7 @@ export default function Settings() {
       name: activeOrg.org_name, accent_color: activeOrg.accent_color,
       currency: activeOrg.currency, industry: activeOrg.industry,
       contact_email: activeOrg.contact_email || '',
+      logo_url: activeOrg.logo_url || '',
     })
     setModules(activeOrg.enabled_modules || [])
   }, [activeOrgId])
@@ -55,6 +56,17 @@ export default function Settings() {
     if (error) toast.error(error.message)
     else { toast.success('Settings saved'); await reloadMemberships() }
     setSaving(false)
+  }
+
+  const onLogoPick = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please choose an image file'); return }
+    if (file.size > 300 * 1024) { toast.error('Logo must be under 300 KB'); return }
+    const reader = new FileReader()
+    reader.onload = () => setForm((f) => ({ ...f, logo_url: reader.result }))
+    reader.onerror = () => toast.error('Could not read that file')
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -99,6 +111,30 @@ export default function Settings() {
                 onChange={(e) => setForm({ ...form, accent_color: e.target.value })}
                 className="h-9 w-12 cursor-pointer rounded-lg border border-white/10 bg-transparent" />
             </div>
+          </div>
+
+          <div className="mt-4">
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Company logo</span>
+            <div className="flex items-center gap-3">
+              <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
+                {form.logo_url
+                  ? <img src={form.logo_url} alt="Logo" className="h-full w-full object-contain" />
+                  : <span className="text-[10px] text-ice-faint">None</span>}
+              </span>
+              {canAdmin && (
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer rounded-lg bg-white/[0.05] px-3 py-1.5 text-xs text-ice-dim hover:text-ice">
+                    {form.logo_url ? 'Change' : 'Upload'}
+                    <input type="file" accept="image/*" className="hidden" onChange={onLogoPick} />
+                  </label>
+                  {form.logo_url && (
+                    <button onClick={() => setForm({ ...form, logo_url: '' })}
+                      className="rounded-lg bg-bad/15 px-3 py-1.5 text-xs text-bad hover:bg-bad/25">Remove</button>
+                  )}
+                </div>
+              )}
+            </div>
+            <p className="mt-1.5 text-[11px] text-ice-faint">Shown beside your organization name. PNG or SVG, under 300 KB.</p>
           </div>
         </div>
 

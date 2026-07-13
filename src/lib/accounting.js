@@ -221,3 +221,14 @@ export function ratioTone(r) {
   if (r.warn(r.value)) return 'warn'
   return 'bad'
 }
+
+// Full period list for a filter: every month of the anchor's fiscal year, unioned
+// with any periods that already carry data (so historical periods outside the
+// current FY still appear). Gives a complete, navigable range even on a new org.
+export function periodFilterList(dataPeriods, anchorPeriod, startMonth = 1) {
+  const fy = fiscalYearOf(anchorPeriod, startMonth)
+  const set = new Set(periodsInFiscalYear(fy, startMonth))
+  for (const p of (dataPeriods || [])) if (p) set.add(p)
+  if (anchorPeriod) set.add(anchorPeriod)
+  return [...set].sort()
+}

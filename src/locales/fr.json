@@ -1057,6 +1057,13 @@
     "send_a_password_reset_to": "Envoyer une réinitialisation à",
     "reset_email_sent": "E-mail de réinitialisation envoyé",
     "reset_link_copied_to_clipboard": "Lien de réinitialisation copié",
-    "reset_link_generated": "Lien de réinitialisation généré"
+    "reset_link_generated": "Lien de réinitialisation généré",
+    "company_logo": "Logo de l'entreprise",
+    "change": "Changer",
+    "upload": "Téléverser",
+    "shown_beside_your_organization_name_png_or_svg_under_300_kb": "Affiché à côté du nom de votre organisation. PNG ou SVG, moins de 300 Ko.",
+    "please_choose_an_image_file": "Veuillez choisir un fichier image",
+    "logo_must_be_under_300_kb": "Le logo doit faire moins de 300 Ko",
+    "could_not_read_that_file": "Impossible de lire ce fichier"
   }
 }
