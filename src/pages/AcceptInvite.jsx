@@ -9,8 +9,9 @@ import { Building2, Check, AlertCircle, ArrowRight } from 'lucide-react'
 // Where an invited person lands (/invite/:token). Shows the org they're invited
 // to. If not signed in, routes them to Login (they sign in/up with the invited
 // email), then returns here to claim. accept_invite verifies the email matches.
-export default function AcceptInvite() {
-  const { token } = useParams()
+export default function AcceptInvite({ token: tokenProp }) {
+  const params = useParams()
+  const token = tokenProp || params.token
   const { user, reloadMemberships } = useAuth()
   const navigate = useNavigate()
   const [info, setInfo] = useState(null)
@@ -32,6 +33,8 @@ export default function AcceptInvite() {
     try {
       const { data, error } = await supabase.rpc('accept_invite', { p_token: token })
       if (error) throw error
+      // Clear the stored invite now that it's accepted, so it doesn't re-trigger.
+      try { sessionStorage.removeItem('wfs_pending_invite') } catch {}
       await reloadMemberships()
       // Land in the new org.
       navigate('/')
@@ -64,7 +67,7 @@ export default function AcceptInvite() {
                 : info.expired ? at('This invitation has expired.')
                 : at('This invitation has already been used.')}
             </p>
-            <button onClick={() => navigate('/')} className="btn-ghost mt-5">{at('Go to sign in')}</button>
+            <button onClick={() => { try { sessionStorage.removeItem('wfs_pending_invite') } catch {} ; navigate('/') }} className="btn-ghost mt-5">{at('Go to sign in')}</button>
           </>
         ) : (
           <>
@@ -89,6 +92,8 @@ export default function AcceptInvite() {
                 <div className="mt-5 text-sm">
                   <p className="text-warn">{at('This invitation was sent to')} {info.email}.</p>
                   <p className="mt-1 text-ice-faint">{at('You are signed in as')} {user.email}. {at('Sign in with the invited email to accept.')}</p>
+                  <button onClick={() => { try { sessionStorage.removeItem('wfs_pending_invite') } catch {} ; navigate('/') }}
+                    className="btn-ghost mx-auto mt-4">{at('Continue to my workspace')}</button>
                 </div>
               )
             ) : (
