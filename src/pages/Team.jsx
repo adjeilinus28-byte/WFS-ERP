@@ -225,8 +225,13 @@ export default function Team() {
                       ))}
                     </div>
 
-                    <div className="mb-2 mt-4 text-[11px] text-ice-faint">{at('Pages — Auto shows a page when their access allows it. Force show or hide to override.')}</div>
-                    <div className="grid gap-1.5 sm:grid-cols-2">
+                    <div className="mb-2 mt-4 text-[11px] text-ice-faint">
+                      {at('Pages — Auto shows a page when their access allows it. Force show or hide to override.')}
+                      {m.role === 'owner' && (
+                        <span className="ml-1 text-warn">{at('Owners always see all pages — these settings have no effect.')}</span>
+                      )}
+                    </div>
+                    <div className={`grid gap-1.5 sm:grid-cols-2 ${m.role === 'owner' ? 'opacity-50' : ''}`}>
                       {PAGE_LIST.map(([key, dom]) => {
                         const mode = pageOv[m.user_id]?.[key] || ''
                         const auto = autoVisible(m.user_id, key, dom)
