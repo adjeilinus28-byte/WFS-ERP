@@ -1041,6 +1041,7 @@
     "page_access_updated": "Accès aux pages mis à jour",
     "shown_but_they_may_not_have_data_access": "Affiché mais peut ne pas avoir accès aux données",
     "ppe_planning": "Planification EPI",
-    "relations": "Relations"
+    "relations": "Relations",
+    "owners_always_see_all_pages_these_settings_have_no_effect": "Les propriétaires voient toujours toutes les pages — ces réglages n'ont aucun effet."
   }
 }
