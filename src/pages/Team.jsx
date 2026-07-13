@@ -136,6 +136,37 @@ export default function Team() {
     } catch (e) { toast.error(e.message || 'Update failed') }
   }
 
+  const removeMember = async (uid, name, purge) => {
+    const msg = purge
+      ? `${at('Remove and purge')} ${name}? ${at('This revokes access and de-attributes their records. This cannot be undone.')}`
+      : `${at('Remove')} ${name} ${at('from this organization? They lose access but their data is kept.')}`
+    if (!window.confirm(msg)) return
+    try {
+      const { error } = await supabase.rpc('remove_member', { p_org: activeOrgId, p_user: uid, p_purge: purge })
+      if (error) throw error
+      setMembers((x) => x.filter((m) => m.user_id !== uid))
+      setExpanded(null)
+      toast.success(purge ? at('Member removed and purged') : at('Member removed'))
+    } catch (e) { toast.error(e.message || 'Remove failed') }
+  }
+
+  const resetPassword = async (uid, email) => {
+    if (!window.confirm(`${at('Send a password reset to')} ${email}?`)) return
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/.netlify/functions/reset-member-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+        body: JSON.stringify({ org_id: activeOrgId, target_user_id: uid, redirect_to: window.location.origin }),
+      })
+      if (!res.ok) throw new Error(await res.text())
+      const out = await res.json()
+      if (out.emailed) toast.success(at('Reset email sent'))
+      else if (out.link) { await navigator.clipboard?.writeText(out.link); toast.success(at('Reset link copied to clipboard')) }
+      else toast.success(at('Reset link generated'))
+    } catch (e) { toast.error(e.message || 'Reset failed') }
+  }
+
   // Derived auto-visibility for a member+page (mirrors the DB/hook resolver) so
   // the UI can show what 'Auto' resolves to and warn on contradictions.
   const autoVisible = (uid, moduleKey, domain) => {
@@ -254,6 +285,24 @@ export default function Team() {
                         )
                       })}
                     </div>
+
+                    {m.role !== 'owner' && !isSelf && (
+                      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
+                        <span className="text-[11px] text-ice-faint">{at('Member actions')}:</span>
+                        <button onClick={() => resetPassword(m.user_id, m.email)}
+                          className="rounded-lg bg-white/[0.05] px-3 py-1.5 text-xs text-ice-dim hover:text-ice">
+                          {at('Send password reset')}
+                        </button>
+                        <button onClick={() => removeMember(m.user_id, m.full_name || m.email, false)}
+                          className="rounded-lg bg-warn/15 px-3 py-1.5 text-xs text-warn hover:bg-warn/25">
+                          {at('Remove from org')}
+                        </button>
+                        <button onClick={() => removeMember(m.user_id, m.full_name || m.email, true)}
+                          className="rounded-lg bg-bad/15 px-3 py-1.5 text-xs text-bad hover:bg-bad/25">
+                          {at('Remove & purge')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

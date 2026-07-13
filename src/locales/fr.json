@@ -1043,6 +1043,20 @@
     "ppe_planning": "Planification EPI",
     "relations": "Relations",
     "owners_always_see_all_pages_these_settings_have_no_effect": "Les propriétaires voient toujours toutes les pages — ces réglages n'ont aucun effet.",
-    "continue_to_my_workspace": "Continuer vers mon espace"
+    "continue_to_my_workspace": "Continuer vers mon espace",
+    "member_actions": "Actions du membre",
+    "send_password_reset": "Envoyer réinit. mot de passe",
+    "remove_from_org": "Retirer de l'organisation",
+    "remove_purge": "Retirer et purger",
+    "remove": "Retirer",
+    "remove_and_purge": "Retirer et purger",
+    "from_this_organization_they_lose_access_but_their_data_is_kept": "de cette organisation ? Ils perdent l'accès mais leurs données sont conservées.",
+    "this_revokes_access_and_de_attributes_their_records_this_cannot_be_undone": "Cela révoque l'accès et dissocie leurs enregistrements. Irréversible.",
+    "member_removed": "Membre retiré",
+    "member_removed_and_purged": "Membre retiré et purgé",
+    "send_a_password_reset_to": "Envoyer une réinitialisation à",
+    "reset_email_sent": "E-mail de réinitialisation envoyé",
+    "reset_link_copied_to_clipboard": "Lien de réinitialisation copié",
+    "reset_link_generated": "Lien de réinitialisation généré"
   }
 }
