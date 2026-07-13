@@ -1033,6 +1033,14 @@
     "department_scope_updated": "Portée du département mise à jour",
     "see_all_edit_own": "Voir tout, modifier le sien",
     "own_department_only": "Son département uniquement",
-    "you_do_not_have_access_to_reports": "Vous n'avez pas accès aux rapports."
+    "you_do_not_have_access_to_reports": "Vous n'avez pas accès aux rapports.",
+    "pages_auto_shows_a_page_when_their_access_allows_it_force_show_or_hide_to_override": "Pages — Auto affiche une page si leur accès le permet. Forcez l'affichage ou le masquage pour remplacer.",
+    "auto": "Auto",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "page_access_updated": "Accès aux pages mis à jour",
+    "shown_but_they_may_not_have_data_access": "Affiché mais peut ne pas avoir accès aux données",
+    "ppe_planning": "Planification EPI",
+    "relations": "Relations"
   }
 }

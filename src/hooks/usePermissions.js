@@ -31,18 +31,23 @@ export function usePermissions() {
   const [levels, setLevels] = useState({})   // { domain: level }
   const [loading, setLoading] = useState(true)
   const [deptScope, setDeptScope] = useState({ scope: 'all', homeDept: null })
+  const [pageOverrides, setPageOverrides] = useState({})
 
   const load = useCallback(async () => {
     if (!activeOrgId) { setLevels({}); setLoading(false); return }
     try {
-      const [{ data }, { data: ds }] = await Promise.all([
+      const [{ data }, { data: ds }, { data: po }] = await Promise.all([
         supabase.rpc('my_permissions', { p_org: activeOrgId }),
         supabase.rpc('my_dept_scope', { p_org: activeOrgId }),
+        supabase.rpc('my_page_overrides', { p_org: activeOrgId }),
       ])
       const map = {}
       for (const r of data || []) map[r.domain] = r.level
       setLevels(map)
       if (ds && ds[0]) setDeptScope({ scope: ds[0].scope, homeDept: ds[0].home_dept })
+      const pm = {}
+      for (const r of po || []) pm[r.module_key] = r.mode
+      setPageOverrides(pm)
     } catch { setLevels({}) } finally { setLoading(false) }
   }, [activeOrgId])
 
@@ -60,7 +65,21 @@ export function usePermissions() {
     return d ? can(d, 'edit') : true
   }, [can])
 
+  // Is a module visible to this user? Core pages always; explicit override wins;
+  // else 'auto' = visible when they have >= view in the page's domain. Platform
+  // owners see everything.
+  const CORE = new Set(['dashboard', 'news', 'settings'])
+  const pageVisible = useCallback((moduleKey) => {
+    if (isOwner) return true
+    if (CORE.has(moduleKey)) return true
+    const ov = pageOverrides[moduleKey]
+    if (ov === 'hide') return false
+    if (ov === 'show') return true
+    const d = MODULE_DOMAIN[moduleKey]
+    return d ? can(d, 'view') : true    // no domain → visible by default
+  }, [pageOverrides, isOwner, can])
+
   // deptScope.scope: 'all'|'own_edit'|'own_only'; homeDept: the user's department.
   // Forms for scoped users should default new records' department to homeDept.
-  return { can, canWriteModule, levels, deptScope, loading, reload: load }
+  return { can, canWriteModule, pageVisible, levels, deptScope, loading, reload: load }
 }

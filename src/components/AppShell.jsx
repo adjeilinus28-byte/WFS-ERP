@@ -9,6 +9,7 @@ import NotificationBell from './NotificationBell'
 import SubChip from './SubChip'
 import { WFSMark } from './Brand'
 import { visibleModules } from '../lib/modules'
+import { usePermissions } from '../hooks/usePermissions'
 import { initials } from '../lib/format'
 import { Badge } from './ui'
 
@@ -62,7 +63,8 @@ export default function AppShell({ children }) {
   const [orgMenu, setOrgMenu] = useState(false)
   const loc = useLocation()
 
-  const mods = visibleModules(activeOrg?.enabled_modules || [])
+  const { pageVisible } = usePermissions()
+  const mods = visibleModules(activeOrg?.enabled_modules || []).filter((m) => pageVisible(m.key))
   const sections = [...new Set(mods.map((m) => m.section))]
 
   const secKey = (sec) => 'section.' + sec.toLowerCase().replace(/\s+/g, '_')

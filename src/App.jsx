@@ -9,6 +9,7 @@ import Login from './pages/Login'
 import CreateOrg from './pages/CreateOrg'
 import Subscribe from './pages/Subscribe'
 import { useSubscription } from './hooks/useSubscription'
+import { usePermissions } from './hooks/usePermissions'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const NewsFlashAdmin = lazy(() => import('./pages/NewsFlashAdmin'))
 const Assets = lazy(() => import('./pages/Assets'))
@@ -96,9 +97,27 @@ function Gate() {
 
 // Gates the app behind an active subscription. Expired orgs see Subscribe;
 // platform owners (super-admins) and trial/active orgs pass through.
+// Maps a route path to its module key so the guard can check page visibility.
+const PATH_MODULE = {
+  '/news': 'news', '/': 'dashboard', '/assets': 'assets', '/work-orders': 'work_orders',
+  '/inventory': 'inventory', '/procurement': 'procurement', '/issuance': 'issuance',
+  '/ppe': 'ppe', '/catering': 'catering', '/relations': 'ir', '/shifts': 'shifts',
+  '/training': 'training', '/financials': 'financials', '/workforce': 'workforce',
+  '/hse': 'hse', '/reports': 'reports', '/hr': 'hr', '/accounts': 'accounts',
+  '/admin': 'admin', '/team': 'team', '/approvals': 'approvals', '/settings': 'settings',
+}
+
 function SubscribedApp() {
   const { gated } = useSubscription()
+  const { pageVisible } = usePermissions()
+  const loc = useLocation()
   if (gated) return <Subscribe />
+
+  // Route guard: a force-hidden (or unpermitted) page redirects to dashboard, so
+  // hiding is real even on direct URL entry. Data is already RLS-gated; this is
+  // defense-in-depth for the navigation layer. /subscribe is never guarded.
+  const modKey = PATH_MODULE[loc.pathname]
+  if (modKey && !pageVisible(modKey)) return <Navigate to="/" replace />
 
   return (
     <AppShell>

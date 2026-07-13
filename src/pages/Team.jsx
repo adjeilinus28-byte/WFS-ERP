@@ -10,7 +10,25 @@ import { Users, Shield, ChevronDown, Check, UserPlus, Copy, Mail } from 'lucide-
 // the org_members / member_permissions RLS (owner/admin only), so this is gated
 // both here and at the database.
 const ROLES = ['owner', 'admin', 'manager', 'supervisor', 'operator', 'viewer']
-const DOMAINS = ['operations', 'people', 'finance', 'safety', 'admin']
+const DOMAINS = ['operations', 'supply_chain', 'people', 'finance', 'compliance', 'approvals', 'insight', 'admin']
+
+// Gateable pages (dashboard/news/settings are core → always visible, not listed).
+// Each maps to the domain that auto-derives its visibility.
+const PAGE_LIST = [
+  ['approvals', 'approvals'], ['assets', 'operations'], ['work_orders', 'operations'],
+  ['inventory', 'supply_chain'], ['procurement', 'supply_chain'], ['issuance', 'supply_chain'], ['ppe', 'supply_chain'],
+  ['workforce', 'people'], ['shifts', 'people'], ['hr', 'people'], ['catering', 'people'], ['ir', 'people'],
+  ['financials', 'finance'], ['accounts', 'finance'],
+  ['hse', 'compliance'], ['training', 'compliance'],
+  ['reports', 'insight'], ['team', 'admin'],
+]
+const PAGE_LABEL = {
+  approvals: 'Approvals', assets: 'Assets', work_orders: 'Work Orders', inventory: 'Inventory',
+  procurement: 'Procurement', issuance: 'Issuance', ppe: 'PPE Planning', workforce: 'Workforce',
+  shifts: 'Shifts', hr: 'Leave', catering: 'Catering', ir: 'Relations', financials: 'Financials',
+  accounts: 'Accounts', hse: 'HSE & Safety', training: 'Training', reports: 'Reports', team: 'Team & access',
+}
+const RANK = { none: 0, view: 1, edit: 2, manage: 3 }
 const LEVELS = ['none', 'view', 'edit', 'manage']
 
 export default function Team() {
@@ -19,6 +37,7 @@ export default function Team() {
   const canAdmin = ['owner', 'admin'].includes(role)
   const [members, setMembers] = useState([])
   const [perms, setPerms] = useState({})     // { user_id: { domain: level } }
+  const [pageOv, setPageOv] = useState({})   // { user_id: { module_key: 'show'|'hide' } }
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
   const [inviteEmail, setInviteEmail] = useState('')
@@ -55,14 +74,18 @@ export default function Team() {
     if (!activeOrgId) return
     setLoading(true)
     try {
-      const [{ data: m }, { data: p }] = await Promise.all([
+      const [{ data: m }, { data: p }, { data: pov }] = await Promise.all([
         supabase.from('org_members').select('user_id, full_name, email, role, department').eq('org_id', activeOrgId),
         supabase.from('member_permissions').select('user_id, domain, level').eq('org_id', activeOrgId),
+        supabase.from('member_page_overrides').select('user_id, module_key, mode').eq('org_id', activeOrgId),
       ])
       setMembers(m || [])
       const pm = {}
       for (const row of p || []) { (pm[row.user_id] ||= {})[row.domain] = row.level }
       setPerms(pm)
+      const om = {}
+      for (const row of pov || []) { (om[row.user_id] ||= {})[row.module_key] = row.mode }
+      setPageOv(om)
     } catch (e) { toast.error(e.message || 'Load failed') }
     finally { setLoading(false) }
   }, [activeOrgId, toast])
@@ -95,6 +118,32 @@ export default function Team() {
       }
       toast.success(at('Access updated'))
     } catch (e) { toast.error(e.message || 'Update failed') }
+  }
+
+  // Page visibility override: mode '' = auto (clear), 'show' or 'hide'.
+  const setPageMode = async (uid, moduleKey, mode) => {
+    try {
+      const { error } = await supabase.rpc('set_page_override', {
+        p_org: activeOrgId, p_user: uid, p_module: moduleKey, p_mode: mode || null,
+      })
+      if (error) throw error
+      setPageOv((x) => {
+        const c = { ...(x[uid] || {}) }
+        if (!mode) delete c[moduleKey]; else c[moduleKey] = mode
+        return { ...x, [uid]: c }
+      })
+      toast.success(at('Page access updated'))
+    } catch (e) { toast.error(e.message || 'Update failed') }
+  }
+
+  // Derived auto-visibility for a member+page (mirrors the DB/hook resolver) so
+  // the UI can show what 'Auto' resolves to and warn on contradictions.
+  const autoVisible = (uid, moduleKey, domain) => {
+    const m = members.find((x) => x.user_id === uid)
+    if (m && ['owner', 'admin'].includes(m.role)) return true
+    const lvl = perms[uid]?.[domain] // per-person override if any
+    if (lvl) return RANK[lvl] >= 1
+    return true // base-role default is >= view for most; treated as visible hint
   }
 
   if (!canAdmin) {
@@ -174,6 +223,29 @@ export default function Team() {
                             options={[{ value: '', label: at('Default') }, ...LEVELS.map((l) => ({ value: l, label: at(l) }))]} />
                         </div>
                       ))}
+                    </div>
+
+                    <div className="mb-2 mt-4 text-[11px] text-ice-faint">{at('Pages — Auto shows a page when their access allows it. Force show or hide to override.')}</div>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {PAGE_LIST.map(([key, dom]) => {
+                        const mode = pageOv[m.user_id]?.[key] || ''
+                        const auto = autoVisible(m.user_id, key, dom)
+                        const contradiction = mode === 'show' && !auto
+                        return (
+                          <div key={key} className="flex items-center gap-2">
+                            <span className="flex-1 truncate text-xs text-ice-dim">
+                              {at(PAGE_LABEL[key])}
+                              {contradiction && <span className="ml-1 text-warn" title={at('Shown but they may not have data access')}>⚠</span>}
+                            </span>
+                            <Select value={mode} onChange={(e) => setPageMode(m.user_id, key, e.target.value)}
+                              options={[
+                                { value: '', label: `${at('Auto')} (${auto ? at('shown') : at('hidden')})` },
+                                { value: 'show', label: at('Show') },
+                                { value: 'hide', label: at('Hide') },
+                              ]} />
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
