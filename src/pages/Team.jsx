@@ -233,16 +233,18 @@ export default function Team() {
                         const contradiction = mode === 'show' && !auto
                         return (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="flex-1 truncate text-xs text-ice-dim">
+                            <span className="w-28 shrink-0 text-xs text-ice-dim">
                               {at(PAGE_LABEL[key])}
                               {contradiction && <span className="ml-1 text-warn" title={at('Shown but they may not have data access')}>⚠</span>}
                             </span>
-                            <Select value={mode} onChange={(e) => setPageMode(m.user_id, key, e.target.value)}
-                              options={[
-                                { value: '', label: `${at('Auto')} (${auto ? at('shown') : at('hidden')})` },
-                                { value: 'show', label: at('Show') },
-                                { value: 'hide', label: at('Hide') },
-                              ]} />
+                            <div className="flex-1">
+                              <Select value={mode} onChange={(e) => setPageMode(m.user_id, key, e.target.value)}
+                                options={[
+                                  { value: '', label: `${at('Auto')} (${auto ? at('shown') : at('hidden')})` },
+                                  { value: 'show', label: at('Show') },
+                                  { value: 'hide', label: at('Hide') },
+                                ]} />
+                            </div>
                           </div>
                         )
                       })}
