@@ -1064,6 +1064,20 @@
     "shown_beside_your_organization_name_png_or_svg_under_300_kb": "Affiché à côté du nom de votre organisation. PNG ou SVG, moins de 300 Ko.",
     "please_choose_an_image_file": "Veuillez choisir un fichier image",
     "logo_must_be_under_300_kb": "Le logo doit faire moins de 300 Ko",
-    "could_not_read_that_file": "Impossible de lire ce fichier"
+    "could_not_read_that_file": "Impossible de lire ce fichier",
+    "generate_basic_from_attendance": "Générer le salaire de base depuis la présence",
+    "computing": "Calcul…",
+    "basic_computed_from_attendance": "Base calculée depuis la présence",
+    "pick_an_employee_first": "Choisissez d'abord un employé",
+    "set_the_period_first": "Définissez d'abord la période",
+    "pay_setup": "Configuration de la paie",
+    "pay_type": "Type de rémunération",
+    "monthly_salary": "Salaire mensuel",
+    "daily_rate": "Taux journalier",
+    "hourly_rate": "Taux horaire",
+    "hours_per_day": "Heures par jour",
+    "standard_working_days_month": "Jours ouvrés standard / mois",
+    "leave_allowance_paid_if_set": "Indemnité de congé (payée si définie)",
+    "pay_rates_are_managed_by_finance_and_hidden_here": "Les taux de rémunération sont gérés par la finance et masqués ici."
   }
 }

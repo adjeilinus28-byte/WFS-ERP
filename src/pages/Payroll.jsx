@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet, CheckCircle2 } from 'lucide-react'
+import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet, CheckCircle2, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
@@ -267,6 +267,39 @@ export default function Payroll({ ccy }) {
       monthly_basic: f.monthly_basic, basic_pay: f.basic_pay }))
   }
 
+  // Auto-fill basic + attendance from the compute engine (roster − absences −
+  // unpaid leave, applied per pay type + org policy). Draft stays editable.
+  const [generating, setGenerating] = useState(false)
+  const generateFromAttendance = async () => {
+    if (!form.employee_id) { toast.error(at('Pick an employee first')); return }
+    if (!form.period) { toast.error(at('Set the period first')); return }
+    setGenerating(true)
+    try {
+      const { data, error } = await supabase.rpc('compute_payroll_basis', {
+        p_org: activeOrgId, p_period: form.period, p_employee: form.employee_id,
+      })
+      if (error) throw error
+      const b = data || {}
+      setForm((f) => ({
+        ...f,
+        no_of_shifts: b.days_present ?? f.no_of_shifts,
+        leave_days: (Number(b.paid_leave_days || 0) + Number(b.unpaid_leave_days || 0)) || f.leave_days,
+        off_days: b.absent_days ?? f.off_days,
+        attendance_pct: b.standard_days ? Math.round((Number(b.days_present) / Number(b.standard_days)) * 100) : f.attendance_pct,
+        monthly_basic: b.pay_type === 'monthly' ? b.pay_rate : f.monthly_basic,
+        daily_basic: b.pay_type === 'daily' ? b.pay_rate : f.daily_basic,
+        basic_pay: b.basic ?? f.basic_pay,
+        canteen_allowance: f.canteen_allowance,
+      }))
+      // leave allowance → put into an allowance field if present
+      if (Number(b.leave_allowance) > 0) {
+        setForm((f) => ({ ...f, transport_allowance: f.transport_allowance || b.leave_allowance }))
+      }
+      toast.success(`${at('Basic computed from attendance')}: ${b.days_present}/${b.standard_days} ${at('days')}`)
+    } catch (e) { toast.error(e.message || 'Compute failed') }
+    finally { setGenerating(false) }
+  }
+
   const save = async () => {
     if (!form.period || !form.employee_name) { toast.error('Period and employee are required'); return }
     setSaving(true)
@@ -454,6 +487,12 @@ export default function Payroll({ ccy }) {
               </div>
               <Field label="Employee *"><Select value={form.employee_id} onChange={(e) => pickEmployee(e.target.value)}
                 options={[{ value: '', label: at('Select employee…') }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} /></Field>
+              {canWrite && form.employee_id && (
+                <button onClick={generateFromAttendance} disabled={generating}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent/15 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/25">
+                  <RefreshCw size={13} className={generating ? 'animate-spin' : ''} /> {generating ? at('Computing…') : at('Generate basic from attendance')}
+                </button>
+              )}
               {!form.employee_id && <Field label="…or type a name"><input className="input" value={form.employee_name} onChange={(e) => setForm({ ...form, employee_name: e.target.value })} /></Field>}
 
               {/* Header / shift info */}

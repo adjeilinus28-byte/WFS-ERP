@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { usePermissions } from '../hooks/usePermissions'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { Field, Select } from './ui'
 import FileUpload from './FileUpload'
@@ -16,6 +17,8 @@ const TABS = [['employment', 'Employment'], ['contact', 'Contact'], ['personal',
 export default function EmployeeEditor({ open, initial, deptOptions, onClose, onSubmit, submitting }) {
   const [f, setF] = useState({})
   const [tab, setTab] = useState('employment')
+  const { can } = usePermissions()
+  const canSeePay = can('finance', 'view')  // pay rates are finance-sensitive
 
   useEffect(() => {
     if (open) {
@@ -144,6 +147,23 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
               <Field label="Account number"><input className="input" value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></Field>
               <Field label="Account type"><Select value={f.account_type || ''} onChange={(e) => set('account_type', e.target.value)} options={[{ value: '', label: '—' }, ...ACCTYPE.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></Field>
               <Field label="Mobile money no."><input className="input" value={f.mobile_money_no || ''} onChange={(e) => set('mobile_money_no', e.target.value)} placeholder="e.g. 024 xxx xxxx" /></Field>
+
+              {canSeePay ? (
+                <>
+                  <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3 text-[11px] font-semibold uppercase tracking-wider text-accent">Pay setup</div>
+                  <Field label="Pay type"><Select value={f.pay_type || 'monthly'} onChange={(e) => set('pay_type', e.target.value)}
+                    options={[{ value: 'monthly', label: 'Monthly salary' }, { value: 'daily', label: 'Daily rate' }, { value: 'hourly', label: 'Hourly rate' }]} /></Field>
+                  <Field label={f.pay_type === 'daily' ? 'Daily rate' : f.pay_type === 'hourly' ? 'Hourly rate' : 'Monthly salary'}>
+                    <input className="input" type="number" step="0.01" value={f.pay_rate ?? ''} onChange={(e) => set('pay_rate', e.target.value)} /></Field>
+                  {f.pay_type === 'hourly' && (
+                    <Field label="Hours per day"><input className="input" type="number" step="0.5" value={f.hours_per_day ?? 8} onChange={(e) => set('hours_per_day', e.target.value)} /></Field>
+                  )}
+                  <Field label="Standard working days / month"><input className="input" type="number" value={f.standard_working_days ?? 26} onChange={(e) => set('standard_working_days', e.target.value)} /></Field>
+                  <Field label="Leave allowance (paid if set)"><input className="input" type="number" step="0.01" value={f.leave_allowance ?? ''} onChange={(e) => set('leave_allowance', e.target.value)} /></Field>
+                </>
+              ) : (
+                <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3 text-[11px] text-ice-faint">Pay rates are managed by finance and hidden here.</div>
+              )}
             </div>
           )}
 
