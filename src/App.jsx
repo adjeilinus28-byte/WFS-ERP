@@ -9,7 +9,6 @@ import Login from './pages/Login'
 import CreateOrg from './pages/CreateOrg'
 import Subscribe from './pages/Subscribe'
 import { useSubscription } from './hooks/useSubscription'
-import { usePermissions } from './hooks/usePermissions'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const NewsFlashAdmin = lazy(() => import('./pages/NewsFlashAdmin'))
 const Assets = lazy(() => import('./pages/Assets'))
@@ -77,15 +76,28 @@ function PageSkeleton() {
 function Gate() {
   const { session, loading, membLoaded, memberships, activeOrgId } = useAuth()
   const path = typeof window !== 'undefined' ? window.location.pathname : ''
-  const inviteMatch = path.match(/^\/invite\/([A-Za-z0-9]+)$/)
+  const urlMatch = path.match(/^\/invite\/([A-Za-z0-9]+)$/)
+  // Persist the token the moment we see an invite URL, so it survives the signup
+  // round-trip (during which the browser can reset the path to '/#').
+  if (urlMatch && typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem('wfs_pending_invite', urlMatch[1])
+  }
+  const pendingToken = typeof sessionStorage !== 'undefined'
+    ? sessionStorage.getItem('wfs_pending_invite') : null
+  const inviteToken = urlMatch ? urlMatch[1] : pendingToken
 
   if (loading) return <Splash label="Starting WFS Enterprise" />
 
-  // Invitation claim page is reachable before org gating. If not signed in, the
-  // page routes to Login and returns here afterward.
-  if (inviteMatch) {
+  // Invitation claim is reachable before org gating. If not signed in, show Login
+  // (the token is safely stored); once signed in, show the accept screen for the
+  // pending token even if the URL was reset during signup.
+  if (inviteToken) {
     if (!session) return <Login />
-    return <Suspense fallback={<Splash label="Loading invitation" />}><Routes><Route path="/invite/:token" element={<AcceptInvite />} /></Routes></Suspense>
+    return (
+      <Suspense fallback={<Splash label="Loading invitation" />}>
+        <AcceptInvite token={inviteToken} />
+      </Suspense>
+    )
   }
 
   if (!session) return <Login />
@@ -97,27 +109,9 @@ function Gate() {
 
 // Gates the app behind an active subscription. Expired orgs see Subscribe;
 // platform owners (super-admins) and trial/active orgs pass through.
-// Maps a route path to its module key so the guard can check page visibility.
-const PATH_MODULE = {
-  '/news': 'news', '/': 'dashboard', '/assets': 'assets', '/work-orders': 'work_orders',
-  '/inventory': 'inventory', '/procurement': 'procurement', '/issuance': 'issuance',
-  '/ppe': 'ppe', '/catering': 'catering', '/relations': 'ir', '/shifts': 'shifts',
-  '/training': 'training', '/financials': 'financials', '/workforce': 'workforce',
-  '/hse': 'hse', '/reports': 'reports', '/hr': 'hr', '/accounts': 'accounts',
-  '/admin': 'admin', '/team': 'team', '/approvals': 'approvals', '/settings': 'settings',
-}
-
 function SubscribedApp() {
   const { gated } = useSubscription()
-  const { pageVisible } = usePermissions()
-  const loc = useLocation()
   if (gated) return <Subscribe />
-
-  // Route guard: a force-hidden (or unpermitted) page redirects to dashboard, so
-  // hiding is real even on direct URL entry. Data is already RLS-gated; this is
-  // defense-in-depth for the navigation layer. /subscribe is never guarded.
-  const modKey = PATH_MODULE[loc.pathname]
-  if (modKey && !pageVisible(modKey)) return <Navigate to="/" replace />
 
   return (
     <AppShell>
