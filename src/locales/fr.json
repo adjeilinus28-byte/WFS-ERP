@@ -1032,6 +1032,7 @@
     "note_changing_the_admin_row_affects_all_admins_including_you_owners_are_always_full_access": "Remarque : modifier la ligne Admin affecte tous les administrateurs, y compris vous. Les propriétaires ont toujours un accès complet.",
     "department_scope_updated": "Portée du département mise à jour",
     "see_all_edit_own": "Voir tout, modifier le sien",
-    "own_department_only": "Son département uniquement"
+    "own_department_only": "Son département uniquement",
+    "you_do_not_have_access_to_reports": "Vous n'avez pas accès aux rapports."
   }
 }

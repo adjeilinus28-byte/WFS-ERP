@@ -190,7 +190,7 @@ export default function Team() {
 // default in each domain, for THIS org. Empty cells = built-in default. A
 // per-person override (set on a member above) still beats these org defaults.
 const RM_ROLES = ['admin', 'manager', 'supervisor', 'operator', 'viewer']
-const RM_DOMAINS = ['operations', 'people', 'finance', 'safety', 'admin']
+const RM_DOMAINS = ['operations', 'supply_chain', 'people', 'finance', 'compliance', 'approvals', 'insight', 'admin']
 const RM_LEVELS = ['none', 'view', 'edit', 'manage']
 
 function RoleMatrix({ orgId }) {

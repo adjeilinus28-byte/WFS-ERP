@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
 import { PageHeader, StatCard, EmptyState, Badge, useToast } from '../components/ui'
 import { money, date } from '../lib/format'
 import { at } from '../lib/tr'
@@ -30,10 +31,11 @@ const SOURCES = {
 }
 
 export default function Approvals() {
-  const { activeOrgId, activeOrg, role, user } = useAuth()
+  const { activeOrgId, activeOrg, user } = useAuth()
+  const { can } = usePermissions()
   const toast = useToast()
   const ccy = activeOrg?.currency || 'GHS'
-  const canApprove = APPROVER_ROLES.includes(role)
+  const canApprove = can('approvals', 'manage')
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)      // ref being acted on

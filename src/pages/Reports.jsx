@@ -5,11 +5,12 @@ import {
 } from 'recharts'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { usePermissions } from '../hooks/usePermissions'
+import { at } from '../lib/tr'
 import { PageHeader, StatCard, useToast } from '../components/ui'
 import { money } from '../lib/format'
 import { businessMonthKey, businessMonthLabel } from '../lib/period'
 import { Sparkles, Printer, FileBarChart, Download, Wrench, ShieldAlert, Wallet, PackageMinus } from 'lucide-react'
-import { at } from '../lib/tr'
 
 const PALETTE = ['rgb(var(--accent))', '#38BDF8', '#34D399', '#F472B6', '#A78BFA', '#FBBF24']
 const CARD = { background: '#0E1424', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#F1F5F9' }
@@ -18,6 +19,7 @@ const monthLabel = (k) => businessMonthLabel(k)
 
 export default function Reports() {
   const { activeOrgId, activeOrg } = useAuth()
+  const { can } = usePermissions()
   const toast = useToast()
   const mods = activeOrg?.enabled_modules || []
   const has = (m) => mods.includes(m)
@@ -76,7 +78,7 @@ export default function Reports() {
   const outstandingAR = useMemo(() => (snap?.invoices || []).filter((r) => ['sent', 'approved', 'partial', 'overdue'].includes(r.status)).reduce((s, r) => s + Number(r.total || 0), 0), [snap])
   const payableAP = useMemo(() => (snap?.bills || []).filter((r) => r.status !== 'paid').reduce((s, r) => s + Number(r.total || r.amount || 0), 0), [snap])
 
-  if (!snap) return <div className="grid h-64 place-items-center text-ice-faint">{at('Loading…')}</div>
+  if (!snap) return <div className="grid h-64 place-items-center text-ice-faint">Loading…</div>
 
   // ── Chart datasets ──
   const woPie = ['open', 'in_progress', 'on_hold', 'done', 'cancelled'].map((s) => ({ name: s.replace('_', ' '), value: snap.wos.filter((r) => r.status === s).length })).filter((x) => x.value)
@@ -124,19 +126,23 @@ export default function Reports() {
     </ResponsiveContainer>
   )
 
+  if (!can('insight', 'view')) {
+    return <div className="pt-10 text-center text-sm text-ice-faint">{at('You do not have access to Reports.')}</div>
+  }
+
   return (
     <div>
       <PageHeader eyebrow="Insight" title="Reports">
-        <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> {at('Export CSV')}</button>
-        <button className="btn-ghost" onClick={() => window.print()}><Printer size={15} /> {at('Print')}</button>
+        <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> Export CSV</button>
+        <button className="btn-ghost" onClick={() => window.print()}><Printer size={15} /> Print</button>
         <button className="btn-primary" onClick={generate} disabled={busy}><Sparkles size={15} /> {busy ? 'Generating…' : 'Generate AI report'}</button>
       </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">{cards.slice(0, 8)}</div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {has('work_orders') && <Panel title="Work order distribution">{woPie.length ? donut(woPie) : <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No data')}</div>}</Panel>}
-        {has('hse') && <Panel title="HSE incidents by type">{hsePie.length ? donut(hsePie) : <div className="grid h-56 place-items-center text-sm text-ice-faint">{at('No incidents — good news')}</div>}</Panel>}
+        {has('work_orders') && <Panel title="Work order distribution">{woPie.length ? donut(woPie) : <div className="grid h-56 place-items-center text-sm text-ice-faint">No data</div>}</Panel>}
+        {has('hse') && <Panel title="HSE incidents by type">{hsePie.length ? donut(hsePie) : <div className="grid h-56 place-items-center text-sm text-ice-faint">No incidents — good news</div>}</Panel>}
 
         {has('issuance') && issuanceTrend.length > 0 && (
           <Panel title="Material issuance spend (6 mo)">
@@ -184,7 +190,7 @@ export default function Reports() {
 
       {report && (
         <div className="panel mt-4 p-6 animate-rise">
-          <div className="eyebrow mb-3">{at('AI operations summary')}</div>
+          <div className="eyebrow mb-3">AI operations summary</div>
           <div className="whitespace-pre-wrap text-sm leading-relaxed text-ice/90">{report}</div>
         </div>
       )}

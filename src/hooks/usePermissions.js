@@ -11,16 +11,18 @@ const RANK = { none: 0, view: 1, edit: 2, manage: 3 }
 
 // Which domain each module/page belongs to (client mirror of the SQL mapping).
 export const MODULE_DOMAIN = {
-  // operations
-  assets: 'operations', work_orders: 'operations', inventory: 'operations',
-  procurement: 'operations', issuance: 'operations', ppe: 'operations',
+  // operations (maintenance)
+  assets: 'operations', work_orders: 'operations',
+  // supply chain
+  inventory: 'supply_chain', procurement: 'supply_chain', issuance: 'supply_chain', ppe: 'supply_chain',
   // people
   workforce: 'people', shifts: 'people', hr: 'people', catering: 'people', ir: 'people',
   // finance
-  financials: 'finance', accounts: 'finance', approvals: 'finance',
-  // safety
-  hse: 'safety', training: 'safety',
-  // admin
+  financials: 'finance', accounts: 'finance',
+  // compliance
+  hse: 'compliance', training: 'compliance',
+  // approvals / insight / admin
+  approvals: 'approvals', reports: 'insight',
   settings: 'admin', team: 'admin',
 }
 
