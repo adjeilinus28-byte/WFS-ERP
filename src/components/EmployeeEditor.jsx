@@ -217,7 +217,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                               </>
                             )}
                             {a.basis === 'per_leave_day' && (
-                              <span className="text-ice-faint">× {at('approved leave days')}</span>
+                              <span className="text-ice-faint">× approved leave days</span>
                             )}
                             <label className="text-ice-faint">Taxable %</label>
                             <input className="input h-8 w-16 py-0 text-xs" type="number" step="1" placeholder="0"
