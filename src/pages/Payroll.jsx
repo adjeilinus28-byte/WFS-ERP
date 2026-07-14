@@ -694,14 +694,10 @@ export default function Payroll({ ccy }) {
                 <div className="eyebrow mb-2">{at('Earnings')}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Basic salary"><input className="input" type="number" value={form.basic_pay} onChange={(e) => setForm({ ...form, basic_pay: e.target.value })} /></Field>
-                  <Field label="Salary difference"><input className="input" type="number" value={form.salary_difference} onChange={(e) => setForm({ ...form, salary_difference: e.target.value })} /></Field>
-                  <Field label="Mobile phone credit"><input className="input" type="number" value={form.mobile_credit} onChange={(e) => setForm({ ...form, mobile_credit: e.target.value })} /></Field>
-                  <Field label="Transport allowance"><input className="input" type="number" value={form.transport_allowance} onChange={(e) => setForm({ ...form, transport_allowance: e.target.value })} /></Field>
-                  <Field label="Canteen allowance"><input className="input" type="number" value={form.canteen_allowance} onChange={(e) => setForm({ ...form, canteen_allowance: e.target.value })} /></Field>
-                  <Field label="Extra duty / acting"><input className="input" type="number" value={form.extra_duty_allowance} onChange={(e) => setForm({ ...form, extra_duty_allowance: e.target.value })} /></Field>
-                  <Field label="Medical allowance"><input className="input" type="number" value={form.medical_allowance} onChange={(e) => setForm({ ...form, medical_allowance: e.target.value })} /></Field>
-                  <Field label="Fuel allowance"><input className="input" type="number" value={form.fuel_allowance} onChange={(e) => setForm({ ...form, fuel_allowance: e.target.value })} /></Field>
-                  <Field label="Other allowances"><input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} /></Field>
+                  <Field label={at('Allowances (from pay setup)')}>
+                    <input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} />
+                    <span className="mt-1 block text-[11px] text-ice-faint">{at('Auto-filled from the employee\'s recurring allowances. Edit their pay setup to change what recurs.')}</span>
+                  </Field>
                   {Array.isArray(form.allowance_breakdown) && form.allowance_breakdown.length > 0 && (
                     <div className="sm:col-span-2 rounded-lg bg-white/[0.03] p-2 text-[11px] text-ice-dim">
                       <span className="text-ice-faint">{at('From pay setup')}: </span>
