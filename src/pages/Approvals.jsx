@@ -28,6 +28,11 @@ const SOURCES = {
     title: (r) => r.memo || `Entry ${r.entry_no || ''}`,
     detail: (r, ccy) => `${at('Manual entry')} · ${date(r.entry_date)}`,
   },
+  overtime: {
+    label: 'Overtime', icon: Clock, link: '/payroll',
+    title: (r) => `${r.employee_name || 'Employee'} — ${r.hours || '?'} ${at('hrs')}`,
+    detail: (r, ccy) => [r.department, date(r.work_date), r.reason].filter(Boolean).join(' · '),
+  },
 }
 
 export default function Approvals() {
@@ -45,16 +50,18 @@ export default function Approvals() {
     if (!activeOrgId) { setItems([]); setLoading(false); return }
     setLoading(true)
     try {
-      const [leave, preq, jrnl] = await Promise.all([
+      const [leave, preq, jrnl, ot] = await Promise.all([
         supabase.from('leave_requests').select('*').eq('org_id', activeOrgId).eq('status', 'pending'),
         supabase.from('purchase_requests').select('*').eq('org_id', activeOrgId).eq('status', 'pending'),
         // Manual, unposted journal entries await posting (their form of approval).
         supabase.from('journal_entries').select('*').eq('org_id', activeOrgId).eq('posted', false).eq('source_type', 'manual'),
+        supabase.from('overtime_entries').select('*').eq('org_id', activeOrgId).eq('status', 'pending'),
       ])
       const rows = [
         ...(leave.data || []).map((r) => ({ kind: 'leave', row: r, when: r.created_at })),
         ...(preq.data || []).map((r) => ({ kind: 'preq', row: r, when: r.created_at })),
         ...(jrnl.data || []).map((r) => ({ kind: 'journal', row: r, when: r.created_at })),
+        ...(ot.data || []).map((r) => ({ kind: 'overtime', row: r, when: r.created_at })),
       ].sort((a, b) => new Date(a.when) - new Date(b.when))   // oldest first (FIFO queue)
       setItems(rows)
     } catch (e) {
@@ -76,6 +83,12 @@ export default function Approvals() {
         const { error } = await supabase.from(table).update({
           status: approve ? 'approved' : 'declined',
           decided_by: user?.email, decided_at: new Date().toISOString(),
+        }).eq('id', item.row.id)
+        if (error) throw error
+      } else if (item.kind === 'overtime') {
+        const { error } = await supabase.from('overtime_entries').update({
+          status: approve ? 'approved' : 'declined',
+          decided_by: user?.id, decided_at: new Date().toISOString(),
         }).eq('id', item.row.id)
         if (error) throw error
       } else if (item.kind === 'journal') {

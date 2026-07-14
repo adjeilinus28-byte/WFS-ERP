@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet, CheckCircle2, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -16,7 +16,7 @@ const PAY_STATUS = ['draft', 'approved', 'paid']
 const thisPeriod = () => businessMonthKey(new Date())
 
 function SubTabs({ tab, setTab }) {
-  const items = [['slips', at('Payslips')], ['status', at('Status')], ['tax', at('Tax & Deductions')]]
+  const items = [['slips', at('Payslips')], ['status', at('Status')], ['overtime', at('Overtime')], ['tax', at('Tax & Deductions')]]
   return (
     <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, label]) => (
@@ -38,9 +38,21 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
   const toast = useToast()
   const canAdmin = ['owner', at('admin')].includes(role)
   const [s, setS] = useState(null)
+  const [monthlyMode, setMonthlyMode] = useState('full')  // payroll_settings.monthly_mode
+  const [otPolicy, setOtPolicy] = useState({ ot_method: 'multiplier', ot_multiplier: 1.5, ot_fixed_rate: 0 })
   const [bands, setBands] = useState([])
   const [saving, setSaving] = useState(false)
   const [preview, setPreview] = useState(3000)
+
+  useEffect(() => {
+    let alive = true
+    supabase.from('payroll_settings').select('monthly_mode, ot_method, ot_multiplier, ot_fixed_rate').eq('org_id', activeOrgId).maybeSingle()
+      .then(({ data }) => { if (alive && data) {
+        if (data.monthly_mode) setMonthlyMode(data.monthly_mode)
+        setOtPolicy({ ot_method: data.ot_method || 'multiplier', ot_multiplier: data.ot_multiplier ?? 1.5, ot_fixed_rate: data.ot_fixed_rate ?? 0 })
+      } })
+    return () => { alive = false }
+  }, [activeOrgId])
 
   useEffect(() => {
     if (!taxConfig) return
@@ -66,7 +78,12 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
       const rows = bands.map((b, i) => ({ org_id: activeOrgId, country: s.country, band_order: i + 1, band_amount: b.band_amount, rate: Number(b.rate || 0) }))
       const { error: e2 } = await supabase.from('tax_bands').insert(rows)
       if (e2) throw e2
-      toast.success('Tax settings saved'); onSaved?.()
+      const { error: e3 } = await supabase.from('payroll_settings').upsert(
+        { org_id: activeOrgId, monthly_mode: monthlyMode,
+          ot_method: otPolicy.ot_method, ot_multiplier: Number(otPolicy.ot_multiplier || 0), ot_fixed_rate: Number(otPolicy.ot_fixed_rate || 0),
+          updated_at: new Date().toISOString() }, { onConflict: 'org_id' })
+      if (e3) throw e3
+      toast.success('Payroll settings saved'); onSaved?.()
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
   }
 
@@ -101,6 +118,34 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
             <Field label="Employer contribution (% of basic)"><input className="input" type="number" step="0.1" value={s.ssnit_employer_rate ?? 13} disabled={!canAdmin} onChange={(e) => setS({ ...s, ssnit_employer_rate: e.target.value })} /></Field>
           </div>
           <p className="mt-2 text-[11px] text-ice-faint">Ghana default: employee 5.5%, employer 13% (18.5% total). Employee SSNIT is deducted before PAYE is computed.</p>
+        </div>
+
+        <div className="panel p-5">
+          <div className="eyebrow mb-3">{at('Attendance & monthly proration')}</div>
+          <Field label={at('For monthly-salaried staff, how should attendance affect basic pay?')}>
+            <Select value={monthlyMode} disabled={!canAdmin} onChange={(e) => setMonthlyMode(e.target.value)}
+              options={[
+                { value: 'full', label: at('Always full salary (attendance ignored for monthly staff)') },
+                { value: 'prorate_unpaid', label: at('Prorate only for unpaid leave') },
+                { value: 'prorate_all', label: at('Prorate for all absences and unpaid leave') },
+              ]} />
+          </Field>
+          <p className="mt-2 text-[11px] text-ice-faint">{at('Daily and hourly staff are always paid by days present. This setting only governs monthly-salaried staff when you use “Generate basic from attendance”.')}</p>
+        </div>
+
+        <div className="panel p-5">
+          <div className="eyebrow mb-3">{at('Overtime pay')}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={at('How is overtime paid?')}>
+              <Select value={otPolicy.ot_method} disabled={!canAdmin} onChange={(e) => setOtPolicy({ ...otPolicy, ot_method: e.target.value })}
+                options={[{ value: 'multiplier', label: at('Multiplier of normal rate') }, { value: 'fixed', label: at('Fixed rate per hour') }]} /></Field>
+            {otPolicy.ot_method === 'multiplier' ? (
+              <Field label={at('Multiplier (e.g. 1.5×)')}><input className="input" type="number" step="0.1" value={otPolicy.ot_multiplier ?? 1.5} disabled={!canAdmin} onChange={(e) => setOtPolicy({ ...otPolicy, ot_multiplier: e.target.value })} /></Field>
+            ) : (
+              <Field label={at('Fixed rate per hour')}><input className="input" type="number" step="0.01" value={otPolicy.ot_fixed_rate ?? 0} disabled={!canAdmin} onChange={(e) => setOtPolicy({ ...otPolicy, ot_fixed_rate: e.target.value })} /></Field>
+            )}
+          </div>
+          <p className="mt-2 text-[11px] text-ice-faint">{at('Only approved overtime is paid. Multiplier applies to the employee’s normal hourly-equivalent rate derived from their pay setup.')}</p>
         </div>
 
         <div className="panel p-5">
@@ -187,6 +232,109 @@ function TaxSettings({ ccy, taxConfig, onSaved }) {
         </div>
 
         {canAdmin && <button onClick={save} disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Save tax settings'}</button>}
+      </div>
+    </div>
+  )
+}
+
+function OvertimeLog({ ccy, employees, deptOptions, canWrite }) {
+  const { activeOrgId } = useAuth()
+  const toast = useToast()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ employee_id: '', work_date: '', hours: '', reason: '' })
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!activeOrgId) return
+    setLoading(true)
+    const { data, error } = await supabase.from('overtime_entries').select('*')
+      .eq('org_id', activeOrgId).order('work_date', { ascending: false }).limit(200)
+    if (error) toast.error(error.message); else setRows(data || [])
+    setLoading(false)
+  }, [activeOrgId, toast])
+  useEffect(() => { load() }, [load])
+
+  const bmonth = (d) => {
+    // business-month key for a work date (21st→20th): if day>=21 → next month
+    const dt = new Date(d + 'T00:00:00'); if (isNaN(dt)) return null
+    let y = dt.getFullYear(), m = dt.getMonth() + 1
+    if (dt.getDate() >= 21) { m += 1; if (m > 12) { m = 1; y += 1 } }
+    return `${y}-${String(m).padStart(2, '0')}`
+  }
+
+  const add = async () => {
+    if (!form.employee_id || !form.work_date || !form.hours) { toast.error(at('Employee, date and hours are required')); return }
+    const emp = employees.find((e) => e.id === form.employee_id)
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('overtime_entries').insert({
+        org_id: activeOrgId, employee_id: form.employee_id, employee_name: emp?.full_name || null,
+        department: emp?.department || null, work_date: form.work_date, hours: Number(form.hours),
+        reason: form.reason || null, period: bmonth(form.work_date), status: 'pending',
+      })
+      if (error) throw error
+      toast.success(at('Overtime logged — awaiting approval'))
+      setForm({ employee_id: '', work_date: '', hours: '', reason: '' })
+      load()
+    } catch (e) { toast.error(e.message || 'Failed') } finally { setSaving(false) }
+  }
+
+  const del = async (id) => {
+    if (!window.confirm(at('Delete this overtime entry?'))) return
+    const { error } = await supabase.from('overtime_entries').delete().eq('id', id)
+    if (error) toast.error(error.message); else { toast.success(at('Deleted')); load() }
+  }
+
+  const badge = (st) => st === 'approved' ? 'text-ok' : st === 'declined' ? 'text-bad' : 'text-warn'
+
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <div className="panel p-4">
+          <div className="eyebrow mb-3">{at('Log overtime')}</div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <Select value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+              options={[{ value: '', label: at('Select employee…') }, ...employees.map((e) => ({ value: e.id, label: e.full_name }))]} />
+            <input className="input" type="date" value={form.work_date} onChange={(e) => setForm({ ...form, work_date: e.target.value })} />
+            <input className="input" type="number" step="0.5" placeholder={at('Hours')} value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} />
+            <button onClick={add} disabled={saving} className="btn-primary btn-sm"><Plus size={14} /> {saving ? at('Logging…') : at('Log overtime')}</button>
+          </div>
+          <input className="input mt-3" placeholder={at('Reason (optional)')} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+          <p className="mt-2 text-[11px] text-ice-faint">{at('Logged overtime goes to Approvals. Only approved hours are paid, based on your overtime policy in Tax & Deductions.')}</p>
+        </div>
+      )}
+      <div className="panel overflow-hidden">
+        {loading ? <div className="p-6 text-center text-ice-faint">{at('Loading…')}</div>
+        : rows.length === 0 ? <EmptyState title={at('No overtime logged')} hint={at('Log overtime above; it will route to Approvals.')} />
+        : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/[0.02]"><tr>
+                <th className="th">{at('Date')}</th><th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th>
+                <th className="th">{at('Hours')}</th><th className="th">{at('Period')}</th><th className="th">{at('Status')}</th>
+                <th className="th text-right">{at('Actions')}</th>
+              </tr></thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t border-white/[0.04]">
+                    <td className="td whitespace-nowrap">{date(r.work_date)}</td>
+                    <td className="td">{r.employee_name || '—'}</td>
+                    <td className="td">{r.department || '—'}</td>
+                    <td className="td">{r.hours}</td>
+                    <td className="td font-mono text-xs">{r.period || '—'}</td>
+                    <td className={`td font-semibold ${badge(r.status)}`}>{at(r.status)}</td>
+                    <td className="td text-right">
+                      {canWrite && r.status === 'pending' && (
+                        <button onClick={() => del(r.id)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad"><Trash2 size={14} /></button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -295,6 +443,17 @@ export default function Payroll({ ccy }) {
       if (Number(b.leave_allowance) > 0) {
         setForm((f) => ({ ...f, transport_allowance: f.transport_allowance || b.leave_allowance }))
       }
+      // Also pull approved overtime pay for the period and fill the overtime field.
+      try {
+        const { data: otd } = await supabase.rpc('compute_overtime_pay', {
+          p_org: activeOrgId, p_period: form.period, p_employee: form.employee_id,
+        })
+        if (otd && Number(otd.overtime_pay) > 0) {
+          setForm((f) => ({ ...f, weekday_overtime: otd.overtime_pay }))
+          toast.success(`${at('Basic computed from attendance')}: ${b.days_present}/${b.standard_days} ${at('days')} · ${at('overtime')} ${otd.approved_hours}${at('h')}`)
+          return
+        }
+      } catch { /* overtime optional */ }
       toast.success(`${at('Basic computed from attendance')}: ${b.days_present}/${b.standard_days} ${at('days')}`)
     } catch (e) { toast.error(e.message || 'Compute failed') }
     finally { setGenerating(false) }
@@ -440,6 +599,7 @@ export default function Payroll({ ccy }) {
         </>
       )}
 
+      {sub === 'overtime' && <OvertimeLog ccy={ccy} employees={employees} deptOptions={deptOptions} canWrite={canWrite} />}
       {sub === 'tax' && <TaxSettings ccy={ccy} taxConfig={taxConfig} onSaved={loadTax} />}
 
       {sub === 'status' && (
