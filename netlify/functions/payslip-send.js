@@ -44,22 +44,30 @@ exports.handler = async (event) => {
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr><td colspan="2" style="border-bottom:2px solid #eee;padding-bottom:6px;font-weight:bold">Earnings</td></tr>
           ${line('Basic salary', s.basic_pay)}
-          ${line('Salary difference', s.salary_difference)}
-          ${line('Mobile phone credit', s.mobile_credit)}
-          ${line('Transport allowance', s.transport_allowance)}
-          ${line('Canteen allowance', s.canteen_allowance)}
-          ${line('Extra duty / acting', s.extra_duty_allowance)}
-          ${line('Medical allowance', s.medical_allowance)}
-          ${line('Fuel allowance', s.fuel_allowance)}
           ${(() => {
+            // Legacy fixed fields (only present on older payslips)
+            const legacy = [
+              ['Salary difference', s.salary_difference], ['Mobile phone credit', s.mobile_credit],
+              ['Transport allowance', s.transport_allowance], ['Canteen allowance', s.canteen_allowance],
+              ['Extra duty / acting', s.extra_duty_allowance], ['Medical allowance', s.medical_allowance],
+              ['Fuel allowance', s.fuel_allowance],
+            ].map(([lbl, v]) => line(lbl, v)).join('')
+
             const detail = Array.isArray(s.pay_allowances_detail) ? s.pay_allowances_detail : []
-            if (detail.length > 0) {
-              return detail.map((a) => line(
-                `${a.label || 'Allowance'}${a.basis === 'daily' ? ' (daily)' : a.basis === 'per_leave_day' ? ' (per leave day)' : a.basis === 'annual' ? ' (annual)' : ''}`,
-                a.pay
-              )).join('')
+            if (detail.length === 0) {
+              // no itemized detail (old slip) → single line fallback
+              return legacy + line('Other allowances', s.allowances)
             }
-            return line('Other allowances', s.allowances)
+            // Grouped Allowances section: subheading, each item (with taxable note), subtotal
+            const rows = detail.map((a) => {
+              const tag = a.basis === 'daily' ? ' (daily)' : a.basis === 'per_leave_day' ? ' (per leave day)' : a.basis === 'annual' ? ' (annual)' : ''
+              const taxNote = Number(a.taxable) > 0 ? ` <span style="color:#9ca3af;font-size:11px">(taxable ${money(a.taxable, ccy)})</span>` : ''
+              return `<tr><td style="padding:4px 0 4px 14px;color:#374151">${(a.label || 'Allowance')}${tag}${taxNote}</td><td style="padding:4px 0;text-align:right;color:#111827">${money(a.pay, ccy)}</td></tr>`
+            }).join('')
+            const subtotal = detail.reduce((t, a) => t + Number(a.pay || 0), 0)
+            const heading = `<tr><td colspan="2" style="padding:8px 0 2px;font-weight:600;color:#374151">Allowances</td></tr>`
+            const sub = `<tr><td style="padding:4px 0 6px 14px;color:#6b7280;font-style:italic">Allowances subtotal</td><td style="padding:4px 0 6px;text-align:right;color:#374151;font-weight:600">${money(subtotal, ccy)}</td></tr>`
+            return legacy + heading + rows + sub
           })()}
           ${line('Bonus', s.bonus)}
           ${line('12-hr shift overtime', s.shift_overtime)}
