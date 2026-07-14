@@ -98,7 +98,7 @@ export function computeTaxes(f, settings, bands) {
   const regularPay = basic
     + n(f.salary_difference) + n(f.mobile_credit) + n(f.transport_allowance)
     + n(f.canteen_allowance) + n(f.extra_duty_allowance) + n(f.medical_allowance)
-    + n(f.fuel_allowance) + n(f.allowances)
+    + n(f.fuel_allowance) + (f.taxable_allowances != null ? n(f.taxable_allowances) : n(f.allowances))
 
   const chargeable = chargeableIncome({ taxablePay: regularPay + bt.excess, ssnitEmployee })
   const { tax: paye, breakdown } = applyBands(chargeable, bands)

@@ -1111,6 +1111,11 @@
     "from_pay_setup": "Depuis la configuration de paie",
     "allowance": "Indemnité",
     "site_allowance": "Indemnité de site",
-    "clothing_allowance": "Indemnité d'habillement"
+    "clothing_allowance": "Indemnité d'habillement",
+    "daily": "journalier",
+    "taxable": "imposable",
+    "taxable_portion_added_to_chargeable_income": "Part imposable ajoutée au revenu imposable",
+    "monthly_flat": "Mensuel (fixe)",
+    "daily_attendance": "Journalier (× présence)"
   }
 }

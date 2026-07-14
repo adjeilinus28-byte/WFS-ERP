@@ -43,7 +43,14 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
     if (p.number_of_kids !== '' && p.number_of_kids != null) p.number_of_kids = Number(p.number_of_kids)
     Object.keys(p).forEach((k) => { if (p[k] === '') p[k] = null })
     p.dependants = f.dependants || []
-    p.pay_allowances = (f.pay_allowances || []).filter((a) => (a.label || '').trim() !== '' || Number(a.amount) > 0)
+    p.pay_allowances = (f.pay_allowances || [])
+      .filter((a) => (a.label || '').trim() !== '' || Number(a.amount) > 0)
+      .map((a) => ({
+        label: a.label || '', amount: Number(a.amount || 0),
+        basis: a.basis || 'monthly',
+        rr_percent: Number(a.rr_percent || 0),
+        taxable_percent: Number(a.taxable_percent || 0),
+      }))
     onSubmit(p)
   }
 
@@ -175,12 +182,31 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                     )}
                     <div className="space-y-2">
                       {(f.pay_allowances || []).map((a, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <input className="input flex-1" list="allowance-suggestions" placeholder="Allowance (e.g. Site, Clothing)"
-                            value={a.label || ''} onChange={(e) => setAllow(i, 'label', e.target.value)} />
-                          <input className="input w-32" type="number" step="0.01" placeholder="Amount"
-                            value={a.amount ?? ''} onChange={(e) => setAllow(i, 'amount', e.target.value)} />
-                          <button type="button" onClick={() => delAllow(i)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad">✕</button>
+                        <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+                          <div className="flex items-center gap-2">
+                            <input className="input flex-1" list="allowance-suggestions" placeholder="Allowance (e.g. Site, Clothing)"
+                              value={a.label || ''} onChange={(e) => setAllow(i, 'label', e.target.value)} />
+                            <input className="input w-28" type="number" step="0.01" placeholder="Amount"
+                              value={a.amount ?? ''} onChange={(e) => setAllow(i, 'amount', e.target.value)} />
+                            <button type="button" onClick={() => delAllow(i)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad">✕</button>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                            <label className="text-ice-faint">Basis</label>
+                            <select className="input h-8 w-auto py-0 text-xs" value={a.basis || 'monthly'} onChange={(e) => setAllow(i, 'basis', e.target.value)}>
+                              <option value="monthly">Monthly (flat)</option>
+                              <option value="daily">Daily (× attendance)</option>
+                            </select>
+                            {a.basis === 'daily' && (
+                              <>
+                                <label className="text-ice-faint">R&amp;R %</label>
+                                <input className="input h-8 w-16 py-0 text-xs" type="number" step="1" placeholder="0"
+                                  value={a.rr_percent ?? ''} onChange={(e) => setAllow(i, 'rr_percent', e.target.value)} title="% paid on scheduled off (R&R) days" />
+                              </>
+                            )}
+                            <label className="text-ice-faint">Taxable %</label>
+                            <input className="input h-8 w-16 py-0 text-xs" type="number" step="1" placeholder="0"
+                              value={a.taxable_percent ?? ''} onChange={(e) => setAllow(i, 'taxable_percent', e.target.value)} title="% of this allowance that is taxable" />
+                          </div>
                         </div>
                       ))}
                     </div>

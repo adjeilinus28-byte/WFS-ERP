@@ -446,6 +446,21 @@ export default function Payroll({ ccy }) {
       if (Number(b.leave_allowance) > 0) {
         setForm((f) => ({ ...f, transport_allowance: f.transport_allowance || b.leave_allowance }))
       }
+      // Compute rule-based allowances (daily/attendance-tied, R&R %, taxable %).
+      try {
+        const { data: al } = await supabase.rpc('compute_allowances', {
+          p_org: activeOrgId, p_period: form.period, p_employee: form.employee_id,
+        })
+        if (al) {
+          setForm((f) => ({
+            ...f,
+            allowances: al.total_allowances ?? f.allowances,
+            taxable_allowances: al.taxable_allowances ?? 0,
+            allowance_breakdown: al.breakdown || f.allowance_breakdown,
+          }))
+        }
+      } catch { /* allowances optional */ }
+
       // Also pull approved overtime pay for the period and fill the overtime field.
       try {
         const { data: otd } = await supabase.rpc('compute_overtime_pay', {
@@ -479,7 +494,7 @@ export default function Payroll({ ccy }) {
         mobile_credit: num(form.mobile_credit), transport_allowance: num(form.transport_allowance),
         canteen_allowance: num(form.canteen_allowance), extra_duty_allowance: num(form.extra_duty_allowance),
         medical_allowance: num(form.medical_allowance), fuel_allowance: num(form.fuel_allowance),
-        bonus: num(form.bonus), allowances: num(form.allowances),
+        bonus: num(form.bonus), allowances: num(form.allowances), taxable_allowances: num(form.taxable_allowances),
         shift_overtime: num(form.shift_overtime), weekday_overtime: num(form.weekday_overtime),
         holiday_overtime: num(form.holiday_overtime), arrears_overtime: num(form.arrears_overtime),
         // deductions
@@ -692,8 +707,14 @@ export default function Payroll({ ccy }) {
                     <div className="sm:col-span-2 rounded-lg bg-white/[0.03] p-2 text-[11px] text-ice-dim">
                       <span className="text-ice-faint">{at('From pay setup')}: </span>
                       {form.allowance_breakdown.map((a, i) => (
-                        <span key={i}>{i > 0 ? ' · ' : ''}{a.label || at('Allowance')} {money(Number(a.amount || 0), ccy)}</span>
+                        <span key={i}>{i > 0 ? ' · ' : ''}{a.label || at('Allowance')} {money(Number(a.pay ?? a.amount || 0), ccy)}
+                          {a.basis === 'daily' ? ` (${at('daily')})` : ''}
+                          {Number(a.taxable) > 0 ? ` · ${at('taxable')} ${money(Number(a.taxable), ccy)}` : ''}
+                        </span>
                       ))}
+                      {Number(form.taxable_allowances) > 0 && (
+                        <div className="mt-1 text-ice-faint">{at('Taxable portion added to chargeable income')}: {money(Number(form.taxable_allowances), ccy)}</div>
+                      )}
                     </div>
                   )}
                   <Field label="Bonus"><input className="input" type="number" value={form.bonus} onChange={(e) => setForm({ ...form, bonus: e.target.value })} /></Field>
