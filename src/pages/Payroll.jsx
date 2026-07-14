@@ -707,7 +707,7 @@ export default function Payroll({ ccy }) {
                     <div className="sm:col-span-2 rounded-lg bg-white/[0.03] p-2 text-[11px] text-ice-dim">
                       <span className="text-ice-faint">{at('From pay setup')}: </span>
                       {form.allowance_breakdown.map((a, i) => (
-                        <span key={i}>{i > 0 ? ' · ' : ''}{a.label || at('Allowance')} {money(Number(a.pay ?? a.amount || 0), ccy)}
+                        <span key={i}>{i > 0 ? ' · ' : ''}{a.label || at('Allowance')} {money(Number((a.pay ?? a.amount) || 0), ccy)}
                           {a.basis === 'daily' ? ` (${at('daily')})` : ''}
                           {Number(a.taxable) > 0 ? ` · ${at('taxable')} ${money(Number(a.taxable), ccy)}` : ''}
                         </span>
