@@ -1116,6 +1116,10 @@
     "taxable": "imposable",
     "taxable_portion_added_to_chargeable_income": "Part imposable ajoutée au revenu imposable",
     "monthly_flat": "Mensuel (fixe)",
-    "daily_attendance": "Journalier (× présence)"
+    "daily_attendance": "Journalier (× présence)",
+    "per_leave_day": "Par jour de congé",
+    "annual_once_a_year": "Annuel (une fois par an)",
+    "pay_month": "Mois de paiement",
+    "approved_leave_days": "jours de congé approuvés"
   }
 }

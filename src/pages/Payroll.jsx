@@ -442,10 +442,6 @@ export default function Payroll({ ccy }) {
         basic_pay: b.basic ?? f.basic_pay,
         canteen_allowance: f.canteen_allowance,
       }))
-      // leave allowance → put into an allowance field if present
-      if (Number(b.leave_allowance) > 0) {
-        setForm((f) => ({ ...f, transport_allowance: f.transport_allowance || b.leave_allowance }))
-      }
       // Compute rule-based allowances (daily/attendance-tied, R&R %, taxable %).
       try {
         const { data: al } = await supabase.rpc('compute_allowances', {

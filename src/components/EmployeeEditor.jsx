@@ -50,6 +50,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
         basis: a.basis || 'monthly',
         rr_percent: Number(a.rr_percent || 0),
         taxable_percent: Number(a.taxable_percent || 0),
+        pay_month: a.pay_month ? Number(a.pay_month) : null,
       }))
     onSubmit(p)
   }
@@ -170,7 +171,6 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                     <Field label="Hours per day"><input className="input" type="number" step="0.5" value={f.hours_per_day ?? 8} onChange={(e) => set('hours_per_day', e.target.value)} /></Field>
                   )}
                   <Field label="Standard working days / month"><input className="input" type="number" value={f.standard_working_days ?? 26} onChange={(e) => set('standard_working_days', e.target.value)} /></Field>
-                  <Field label="Leave allowance (paid if set)"><input className="input" type="number" step="0.01" value={f.leave_allowance ?? ''} onChange={(e) => set('leave_allowance', e.target.value)} /></Field>
 
                   <div className="sm:col-span-2">
                     <div className="mb-1.5 flex items-center justify-between">
@@ -195,6 +195,8 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                             <select className="input h-8 w-auto py-0 text-xs" value={a.basis || 'monthly'} onChange={(e) => setAllow(i, 'basis', e.target.value)}>
                               <option value="monthly">Monthly (flat)</option>
                               <option value="daily">Daily (× attendance)</option>
+                              <option value="per_leave_day">Per leave day</option>
+                              <option value="annual">Annual (once a year)</option>
                             </select>
                             {a.basis === 'daily' && (
                               <>
@@ -202,6 +204,20 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                                 <input className="input h-8 w-16 py-0 text-xs" type="number" step="1" placeholder="0"
                                   value={a.rr_percent ?? ''} onChange={(e) => setAllow(i, 'rr_percent', e.target.value)} title="% paid on scheduled off (R&R) days" />
                               </>
+                            )}
+                            {a.basis === 'annual' && (
+                              <>
+                                <label className="text-ice-faint">Pay month</label>
+                                <select className="input h-8 w-auto py-0 text-xs" value={a.pay_month ?? ''} onChange={(e) => setAllow(i, 'pay_month', e.target.value)} title="Month this lump sum is paid">
+                                  <option value="">—</option>
+                                  {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((mn, idx) => (
+                                    <option key={idx} value={idx + 1}>{mn}</option>
+                                  ))}
+                                </select>
+                              </>
+                            )}
+                            {a.basis === 'per_leave_day' && (
+                              <span className="text-ice-faint">× {at('approved leave days')}</span>
                             )}
                             <label className="text-ice-faint">Taxable %</label>
                             <input className="input h-8 w-16 py-0 text-xs" type="number" step="1" placeholder="0"
