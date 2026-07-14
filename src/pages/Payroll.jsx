@@ -390,6 +390,7 @@ export default function Payroll({ ccy }) {
     // earnings
     basic_pay: '', salary_difference: '', mobile_credit: '', transport_allowance: '', canteen_allowance: '',
     extra_duty_allowance: '', medical_allowance: '', fuel_allowance: '', bonus: '', allowances: '',
+    adjustment: '', adjustment_taxable: true, adjustment_note: '',
     shift_overtime: '', weekday_overtime: '', holiday_overtime: '', arrears_overtime: '',
     // deductions (rates as %)
     ssnit_rate: 5.5, paye_amount: '', overtime_tax: '', bonus_tax: '', union_dues_rate: '', rent_deduction: '',
@@ -492,6 +493,7 @@ export default function Payroll({ ccy }) {
         canteen_allowance: num(form.canteen_allowance), extra_duty_allowance: num(form.extra_duty_allowance),
         medical_allowance: num(form.medical_allowance), fuel_allowance: num(form.fuel_allowance),
         bonus: num(form.bonus), allowances: num(form.allowances), taxable_allowances: num(form.taxable_allowances),
+        adjustment: num(form.adjustment), adjustment_taxable: form.adjustment_taxable !== false, adjustment_note: form.adjustment_note || null,
         pay_allowances_detail: Array.isArray(form.allowance_breakdown) ? form.allowance_breakdown : [],
         overtime_hours: num(form.overtime_hours), overtime_rate: num(form.overtime_rate),
         shift_overtime: num(form.shift_overtime), weekday_overtime: num(form.weekday_overtime),
@@ -697,6 +699,16 @@ export default function Payroll({ ccy }) {
                   <Field label={at('Allowances (from pay setup)')}>
                     <input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} />
                     <span className="mt-1 block text-[11px] text-ice-faint">{at('Auto-filled from the employee\'s recurring allowances. Edit their pay setup to change what recurs.')}</span>
+                  </Field>
+                  <Field label={at('Adjustment / back-pay (one-off)')}>
+                    <input className="input" type="number" value={form.adjustment} onChange={(e) => setForm({ ...form, adjustment: e.target.value })} placeholder={at('Positive to add, negative to claw back')} />
+                    <label className="mt-1.5 flex items-center gap-2 text-[11px] text-ice-dim">
+                      <input type="checkbox" checked={form.adjustment_taxable !== false} onChange={(e) => setForm({ ...form, adjustment_taxable: e.target.checked })} />
+                      {at('Taxable (feeds PAYE) — untick for a non-taxable reimbursement')}
+                    </label>
+                  </Field>
+                  <Field label={at('Adjustment note (optional)')}>
+                    <input className="input" value={form.adjustment_note || ''} onChange={(e) => setForm({ ...form, adjustment_note: e.target.value })} placeholder={at('e.g. March back-pay')} />
                   </Field>
                   {Array.isArray(form.allowance_breakdown) && form.allowance_breakdown.length > 0 && (
                     <div className="sm:col-span-2 rounded-lg bg-white/[0.03] p-2 text-[11px] text-ice-dim">

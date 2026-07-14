@@ -1120,6 +1120,13 @@
     "per_leave_day": "Par jour de congé",
     "annual_once_a_year": "Annuel (une fois par an)",
     "pay_month": "Mois de paiement",
-    "approved_leave_days": "jours de congé approuvés"
+    "approved_leave_days": "jours de congé approuvés",
+    "adjustment_back_pay_one_off": "Ajustement / rappel (ponctuel)",
+    "positive_to_add_negative_to_claw_back": "Positif pour ajouter, négatif pour récupérer",
+    "taxable_feeds_paye_untick_for_a_non_taxable_reimbursement": "Imposable (alimente le PAYE) — décochez pour un remboursement non imposable",
+    "adjustment_note_optional": "Note d'ajustement (facultatif)",
+    "e_g_march_back_pay": "p. ex. rappel de mars",
+    "allowances_from_pay_setup": "Indemnités (depuis la configuration)",
+    "auto_filled_from_the_employee_s_recurring_allowances_edit_their_pay_setup_to_change_what_recurs": "Rempli automatiquement depuis les indemnités récurrentes de l'employé."
   }
 }

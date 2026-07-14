@@ -27,6 +27,7 @@ export function computePayslip(f, taxConfig) {
     fuel_allowance: n(f.fuel_allowance),
     bonus: n(f.bonus),
     allowances: n(f.allowances),
+    adjustment: n(f.adjustment),
     shift_overtime: n(f.shift_overtime),
     weekday_overtime: n(f.weekday_overtime),
     holiday_overtime: n(f.holiday_overtime),

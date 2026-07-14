@@ -99,7 +99,9 @@ export function computeTaxes(f, settings, bands) {
   // identically); new payslips leave them 0 and use recurring allowances instead.
   const legacyFixed = n(f.salary_difference) + n(f.mobile_credit) + n(f.transport_allowance)
     + n(f.canteen_allowance) + n(f.extra_duty_allowance) + n(f.medical_allowance) + n(f.fuel_allowance)
-  const regularPay = basic + legacyFixed
+  // Ad-hoc adjustment feeds the taxable base only when flagged taxable per slip.
+  const taxableAdjustment = (f.adjustment_taxable === false) ? 0 : n(f.adjustment)
+  const regularPay = basic + legacyFixed + taxableAdjustment
     + (f.taxable_allowances != null ? n(f.taxable_allowances) : n(f.allowances))
 
   const chargeable = chargeableIncome({ taxablePay: regularPay + bt.excess, ssnitEmployee })
