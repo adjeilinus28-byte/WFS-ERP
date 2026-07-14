@@ -76,6 +76,7 @@ exports.handler = async (event) => {
             : line('Weekday overtime', s.weekday_overtime)}
           ${line('Public holiday overtime', s.holiday_overtime)}
           ${line('Arrears overtime', s.arrears_overtime)}
+          ${Number(s.adjustment) ? `<tr><td style="padding:5px 0;color:#374151">${s.adjustment_note || 'Adjustment / back-pay'}${s.adjustment_taxable === false ? ' <span style="color:#9ca3af;font-size:11px">(non-taxable)</span>' : ''}</td><td style="padding:5px 0;text-align:right;color:${Number(s.adjustment) < 0 ? '#b91c1c' : '#111827'}">${money(s.adjustment, ccy)}</td></tr>` : ''}
           <tr><td style="padding:6px 0;font-weight:bold;border-top:1px solid #eee">Gross pay</td><td style="padding:6px 0;text-align:right;font-weight:bold;border-top:1px solid #eee">${money(s.gross_pay, ccy)}</td></tr>
           <tr><td colspan="2" style="border-bottom:2px solid #eee;padding:10px 0 6px;font-weight:bold">Deductions</td></tr>
           ${line(`SSNIT / SSF (${s.ssnit_rate || 5.5}%)`, s.ssnit, true)}
