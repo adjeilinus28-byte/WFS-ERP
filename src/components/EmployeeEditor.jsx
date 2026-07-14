@@ -22,7 +22,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
 
   useEffect(() => {
     if (open) {
-      setF({ ...(initial || {}), dependants: Array.isArray(initial?.dependants) ? initial.dependants : [] })
+      setF({ ...(initial || {}), dependants: Array.isArray(initial?.dependants) ? initial.dependants : [], pay_allowances: Array.isArray(initial?.pay_allowances) ? initial.pay_allowances : [] })
       setTab('employment')
     }
   }, [open, initial])
@@ -34,12 +34,16 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
   const addKid = () => set('dependants', [...(f.dependants || []), { name: '', relation: 'child', dob: '' }])
   const setKid = (i, key, val) => set('dependants', f.dependants.map((k, idx) => idx === i ? { ...k, [key]: val } : k))
   const delKid = (i) => set('dependants', f.dependants.filter((_, idx) => idx !== i))
+  const addAllow = () => set('pay_allowances', [...(f.pay_allowances || []), { label: '', amount: '' }])
+  const setAllow = (i, key, val) => set('pay_allowances', (f.pay_allowances || []).map((a, idx) => idx === i ? { ...a, [key]: val } : a))
+  const delAllow = (i) => set('pay_allowances', (f.pay_allowances || []).filter((_, idx) => idx !== i))
 
   const submit = () => {
     const p = { ...f }
     if (p.number_of_kids !== '' && p.number_of_kids != null) p.number_of_kids = Number(p.number_of_kids)
     Object.keys(p).forEach((k) => { if (p[k] === '') p[k] = null })
     p.dependants = f.dependants || []
+    p.pay_allowances = (f.pay_allowances || []).filter((a) => (a.label || '').trim() !== '' || Number(a.amount) > 0)
     onSubmit(p)
   }
 
@@ -160,6 +164,32 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                   )}
                   <Field label="Standard working days / month"><input className="input" type="number" value={f.standard_working_days ?? 26} onChange={(e) => set('standard_working_days', e.target.value)} /></Field>
                   <Field label="Leave allowance (paid if set)"><input className="input" type="number" step="0.01" value={f.leave_allowance ?? ''} onChange={(e) => set('leave_allowance', e.target.value)} /></Field>
+
+                  <div className="sm:col-span-2">
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-ice-faint">Recurring allowances</span>
+                      <button type="button" onClick={addAllow} className="rounded-md bg-accent/15 px-2 py-1 text-[11px] text-accent hover:bg-accent/25">+ Add allowance</button>
+                    </div>
+                    {(f.pay_allowances || []).length === 0 && (
+                      <p className="text-[11px] text-ice-faint">No standing allowances. Add site, clothing, or any other recurring allowance.</p>
+                    )}
+                    <div className="space-y-2">
+                      {(f.pay_allowances || []).map((a, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input className="input flex-1" list="allowance-suggestions" placeholder="Allowance (e.g. Site, Clothing)"
+                            value={a.label || ''} onChange={(e) => setAllow(i, 'label', e.target.value)} />
+                          <input className="input w-32" type="number" step="0.01" placeholder="Amount"
+                            value={a.amount ?? ''} onChange={(e) => setAllow(i, 'amount', e.target.value)} />
+                          <button type="button" onClick={() => delAllow(i)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                    <datalist id="allowance-suggestions">
+                      <option value="Site allowance" /><option value="Clothing allowance" /><option value="Housing allowance" />
+                      <option value="Transport allowance" /><option value="Risk allowance" /><option value="Responsibility allowance" />
+                    </datalist>
+                    <p className="mt-1.5 text-[11px] text-ice-faint">These flow onto the payslip automatically each period. Type any label for custom allowances.</p>
+                  </div>
                 </>
               ) : (
                 <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3 text-[11px] text-ice-faint">Pay rates are managed by finance and hidden here.</div>

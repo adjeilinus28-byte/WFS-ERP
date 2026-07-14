@@ -1103,6 +1103,14 @@
     "log_overtime_above_it_will_route_to_approvals": "Enregistrez des heures sup. ci-dessus ; elles iront aux approbations.",
     "logged_overtime_goes_to_approvals_only_approved_hours_are_paid_based_on_your_overtime_policy_in_tax_deductions": "Les heures sup. enregistrées vont aux approbations. Seules les heures approuvées sont payées.",
     "hrs": "h",
-    "h": "h"
+    "h": "h",
+    "recurring_allowances": "Indemnités récurrentes",
+    "add_allowance": "Ajouter une indemnité",
+    "no_standing_allowances_add_site_clothing_or_any_other_recurring_allowance": "Aucune indemnité permanente. Ajoutez une indemnité de site, d'habillement ou autre.",
+    "these_flow_onto_the_payslip_automatically_each_period_type_any_label_for_custom_allowances": "Elles apparaissent automatiquement sur le bulletin chaque période. Saisissez tout libellé personnalisé.",
+    "from_pay_setup": "Depuis la configuration de paie",
+    "allowance": "Indemnité",
+    "site_allowance": "Indemnité de site",
+    "clothing_allowance": "Indemnité d'habillement"
   }
 }

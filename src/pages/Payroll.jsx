@@ -408,11 +408,14 @@ export default function Payroll({ ccy }) {
 
   const pickEmployee = (id) => {
     const e = employees.find((x) => x.id === id)
+    const allowList = Array.isArray(e?.pay_allowances) ? e.pay_allowances : []
+    const allowSum = allowList.reduce((s, a) => s + Number(a.amount || 0), 0)
     setForm((f) => ({ ...f, employee_id: id,
       employee_name: e?.full_name || f.employee_name, department: e?.department || f.department,
       email: e?.email || f.email, job_title: e?.position || f.job_title, badge_no: e?.employee_no || f.badge_no,
       bank_name: e?.bank_name || f.bank_name, social_security_no: e?.ssnit_number || f.social_security_no,
-      monthly_basic: f.monthly_basic, basic_pay: f.basic_pay }))
+      monthly_basic: f.monthly_basic, basic_pay: f.basic_pay,
+      allowances: allowSum || f.allowances, allowance_breakdown: allowList }))
   }
 
   // Auto-fill basic + attendance from the compute engine (roster − absences −
@@ -685,6 +688,14 @@ export default function Payroll({ ccy }) {
                   <Field label="Medical allowance"><input className="input" type="number" value={form.medical_allowance} onChange={(e) => setForm({ ...form, medical_allowance: e.target.value })} /></Field>
                   <Field label="Fuel allowance"><input className="input" type="number" value={form.fuel_allowance} onChange={(e) => setForm({ ...form, fuel_allowance: e.target.value })} /></Field>
                   <Field label="Other allowances"><input className="input" type="number" value={form.allowances} onChange={(e) => setForm({ ...form, allowances: e.target.value })} /></Field>
+                  {Array.isArray(form.allowance_breakdown) && form.allowance_breakdown.length > 0 && (
+                    <div className="sm:col-span-2 rounded-lg bg-white/[0.03] p-2 text-[11px] text-ice-dim">
+                      <span className="text-ice-faint">{at('From pay setup')}: </span>
+                      {form.allowance_breakdown.map((a, i) => (
+                        <span key={i}>{i > 0 ? ' · ' : ''}{a.label || at('Allowance')} {money(Number(a.amount || 0), ccy)}</span>
+                      ))}
+                    </div>
+                  )}
                   <Field label="Bonus"><input className="input" type="number" value={form.bonus} onChange={(e) => setForm({ ...form, bonus: e.target.value })} /></Field>
                   <Field label="12-hr shift overtime"><input className="input" type="number" value={form.shift_overtime} onChange={(e) => setForm({ ...form, shift_overtime: e.target.value })} /></Field>
                   <Field label="Weekday overtime"><input className="input" type="number" value={form.weekday_overtime} onChange={(e) => setForm({ ...form, weekday_overtime: e.target.value })} /></Field>
