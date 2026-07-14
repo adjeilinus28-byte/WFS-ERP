@@ -52,11 +52,17 @@ function ThemeToggle() {
   )
 }
 
-function Logo({ logoUrl, name }) {
-  if (logoUrl) {
-    return <img src={logoUrl} alt={name || 'Logo'} className="h-7 w-7 rounded-md object-contain" />
-  }
+function Logo() {
   return <WFSMark size={28} className="h-7 w-7" />
+}
+
+// The tenant's own logo, shown in the organization chip beside its name. Falls
+// back to the generic building icon when no logo has been uploaded.
+function OrgMark({ logoUrl, name }) {
+  if (logoUrl) {
+    return <img src={logoUrl} alt={name || 'Logo'} className="h-[18px] w-[18px] rounded object-contain" />
+  }
+  return <Building2 size={15} className="text-accent" />
 }
 
 export default function AppShell({ children }) {
@@ -128,7 +134,7 @@ export default function AppShell({ children }) {
       <CommandPalette />
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/[0.06] bg-navy-800/80 backdrop-blur-xl transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-4 py-4">
-          <Logo logoUrl={activeOrg?.logo_url} name={activeOrg?.org_name} />
+          <Logo />
           <div className="leading-tight">
             <div className="font-display text-sm font-extrabold tracking-tight text-ice">WFS Enterprise</div>
             <div className="font-mono text-[10px] uppercase tracking-wider text-ice-faint">Operations Platform</div>
@@ -155,7 +161,7 @@ export default function AppShell({ children }) {
           <div className="relative">
             <button onClick={() => setOrgMenu((v) => !v)}
               className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5 text-sm hover:bg-white/[0.04]">
-              <Building2 size={15} className="text-accent" />
+              <OrgMark logoUrl={activeOrg?.logo_url} name={activeOrg?.org_name} />
               <span className="font-semibold text-ice">{activeOrg?.org_name || 'No organization'}</span>
               {memberships.length > 1 && <ChevronDown size={14} className="text-ice-faint" />}
             </button>
