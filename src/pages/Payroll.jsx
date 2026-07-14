@@ -463,7 +463,8 @@ export default function Payroll({ ccy }) {
           p_org: activeOrgId, p_period: form.period, p_employee: form.employee_id,
         })
         if (otd && Number(otd.overtime_pay) > 0) {
-          setForm((f) => ({ ...f, weekday_overtime: otd.overtime_pay }))
+          setForm((f) => ({ ...f, weekday_overtime: otd.overtime_pay,
+            overtime_hours: otd.approved_hours ?? 0, overtime_rate: otd.rate_per_hour ?? 0 }))
           toast.success(`${at('Basic computed from attendance')}: ${b.days_present}/${b.standard_days} ${at('days')} · ${at('overtime')} ${otd.approved_hours}${at('h')}`)
           return
         }
@@ -491,6 +492,8 @@ export default function Payroll({ ccy }) {
         canteen_allowance: num(form.canteen_allowance), extra_duty_allowance: num(form.extra_duty_allowance),
         medical_allowance: num(form.medical_allowance), fuel_allowance: num(form.fuel_allowance),
         bonus: num(form.bonus), allowances: num(form.allowances), taxable_allowances: num(form.taxable_allowances),
+        pay_allowances_detail: Array.isArray(form.allowance_breakdown) ? form.allowance_breakdown : [],
+        overtime_hours: num(form.overtime_hours), overtime_rate: num(form.overtime_rate),
         shift_overtime: num(form.shift_overtime), weekday_overtime: num(form.weekday_overtime),
         holiday_overtime: num(form.holiday_overtime), arrears_overtime: num(form.arrears_overtime),
         // deductions

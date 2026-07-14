@@ -230,6 +230,9 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                       <option value="Site allowance" /><option value="Clothing allowance" /><option value="Housing allowance" />
                       <option value="Transport allowance" /><option value="Risk allowance" /><option value="Responsibility allowance" />
                     </datalist>
+                    {(f.pay_allowances || []).some((a) => a.basis === 'daily' || a.basis === 'per_leave_day') && (
+                      <p className="mt-1.5 text-[11px] text-warn">⚠ Daily and per-leave-day allowances need this employee assigned to a shift pattern (Shifts). Without a roster, those days can't be counted and the allowance computes to zero.</p>
+                    )}
                     <p className="mt-1.5 text-[11px] text-ice-faint">These flow onto the payslip automatically each period. Type any label for custom allowances.</p>
                   </div>
                 </>
