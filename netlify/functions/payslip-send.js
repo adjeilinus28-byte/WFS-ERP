@@ -51,10 +51,21 @@ exports.handler = async (event) => {
           ${line('Extra duty / acting', s.extra_duty_allowance)}
           ${line('Medical allowance', s.medical_allowance)}
           ${line('Fuel allowance', s.fuel_allowance)}
-          ${line('Other allowances', s.allowances)}
+          ${(() => {
+            const detail = Array.isArray(s.pay_allowances_detail) ? s.pay_allowances_detail : []
+            if (detail.length > 0) {
+              return detail.map((a) => line(
+                `${a.label || 'Allowance'}${a.basis === 'daily' ? ' (daily)' : a.basis === 'per_leave_day' ? ' (per leave day)' : a.basis === 'annual' ? ' (annual)' : ''}`,
+                a.pay
+              )).join('')
+            }
+            return line('Other allowances', s.allowances)
+          })()}
           ${line('Bonus', s.bonus)}
           ${line('12-hr shift overtime', s.shift_overtime)}
-          ${line('Weekday overtime', s.weekday_overtime)}
+          ${Number(s.overtime_hours) > 0
+            ? line(`Overtime (${s.overtime_hours} hrs × ${money(s.overtime_rate, ccy)})`, s.weekday_overtime)
+            : line('Weekday overtime', s.weekday_overtime)}
           ${line('Public holiday overtime', s.holiday_overtime)}
           ${line('Arrears overtime', s.arrears_overtime)}
           <tr><td style="padding:6px 0;font-weight:bold;border-top:1px solid #eee">Gross pay</td><td style="padding:6px 0;text-align:right;font-weight:bold;border-top:1px solid #eee">${money(s.gross_pay, ccy)}</td></tr>
