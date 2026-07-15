@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { usePermissions } from '../hooks/usePermissions'
@@ -179,6 +179,25 @@ function Assignments() {
   const empName = (id) => employees.find((e) => e.id === id)?.full_name || '—'
   const patName = (id) => patterns.find((p) => p.id === id)?.name || '—'
 
+  // Which assignment is actually in force today, per employee? Payroll resolves
+  // the pattern per DAY (newest assignment effective on/before that day), so this
+  // mirrors exactly what the payslip engine will use.
+  const today = iso(new Date())
+  const activeIdByEmp = useMemo(() => {
+    const best = {}
+    for (const r of rows) {
+      if (r.effective_from > today) continue          // not started yet
+      const cur = best[r.employee_id]
+      if (!cur || r.effective_from > cur.effective_from) best[r.employee_id] = r
+    }
+    return Object.fromEntries(Object.entries(best).map(([k, v]) => [k, v.id]))
+  }, [rows, today])
+
+  const statusOf = (r) => {
+    if (r.effective_from > today) return 'scheduled'
+    return activeIdByEmp[r.employee_id] === r.id ? 'active' : 'superseded'
+  }
+
   const save = async () => {
     if (!form.employee_id || !form.pattern_id) { toast.error('Pick an employee and a pattern'); return }
     try { await insert(form); toast.success('Assigned'); setForm({ employee_id: '', pattern_id: '', effective_from: iso(new Date()) }) }
@@ -197,7 +216,7 @@ function Assignments() {
             <Field label="Effective from"><input className="input" type="date" value={form.effective_from} onChange={(e) => setForm({ ...form, effective_from: e.target.value })} /></Field>
             <button onClick={save} className="btn-primary w-full">Assign pattern</button>
           </div>
-          <p className="mt-2 text-[11px] text-ice-faint">A newer assignment (later effective date) supersedes the previous one from that date onward.</p>
+          <p className="mt-2 text-[11px] text-ice-faint">A newer assignment (later effective date) supersedes the previous one from that date onward. Payroll resolves the pattern <strong>per day</strong> — so a mid-month switch is counted correctly on each side of the change.</p>
         </div>
       )}
 
@@ -207,18 +226,27 @@ function Assignments() {
         : rows.length === 0 ? <EmptyState title="No assignments" hint="Assign employees to a pattern; their off days flow into Leave and Catering." />
         : (
           <div className="max-h-[420px] overflow-y-auto">
-            {[...rows].sort((a, b) => empName(a.employee_id).localeCompare(empName(b.employee_id))).map((r) => (
-              <div key={r.id} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-2.5">
+            {[...rows]
+              .sort((a, b) => empName(a.employee_id).localeCompare(empName(b.employee_id))
+                || String(b.effective_from).localeCompare(String(a.effective_from)))
+              .map((r) => {
+              const st = statusOf(r)
+              return (
+              <div key={r.id} className={`flex items-center gap-3 border-b border-white/[0.04] px-4 py-2.5 ${st === 'superseded' ? 'opacity-45' : ''}`}>
                 <div className="min-w-0 flex-1">
                   <span className="text-sm text-ice">{empName(r.employee_id)}</span>
                   <span className="ml-2"><Badge>{patName(r.pattern_id)}</Badge></span>
+                  {st === 'active' && <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-ok/15 text-ok">Applied now</span>}
+                  {st === 'scheduled' && <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-accent/15 text-accent">Scheduled</span>}
+                  {st === 'superseded' && <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-white/[0.06] text-ice-faint">Superseded</span>}
                 </div>
                 <span className="font-mono text-[11px] text-ice-faint">from {r.effective_from}</span>
                 {canWrite && (
 <button onClick={() => del(r)} className="text-ice-faint hover:text-bad"><X size={14} /></button>
             )}
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
