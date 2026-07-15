@@ -8,7 +8,7 @@ import { PageHeader, StatCard, Badge, Field, Select, useToast, EmptyState } from
 import { buildShiftContext, shiftOn } from '../lib/shifts'
 import { businessMonthRange, currentBusinessMonth, businessMonthLabel } from '../lib/period'
 import { ghanaHolidays, HOLIDAY_TYPES } from '../lib/holidays'
-import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search, CalendarDays } from 'lucide-react'
+import { CalendarClock, Users, Repeat, Plus, X, ChevronLeft, ChevronRight, Sun, Moon, Ban, Search, CalendarDays, Pencil } from 'lucide-react'
 
 const SHIFTS = ['day', 'night', 'off']
 const SHIFT_META = {
@@ -34,7 +34,10 @@ function Patterns() {
   const { activeOrgId, role } = useAuth()
   const toast = useToast()
   const { rows, loading, refresh } = useTable('shift_patterns')
-  const [form, setForm] = useState({ name: '', anchor_date: iso(new Date()), cycle: ['day', 'day', 'day', 'day', 'day', 'off', 'off'] })
+  const BLANK = { name: '', anchor_date: iso(new Date()), cycle: ['day', 'day', 'day', 'day', 'day', 'off', 'off'] }
+  const [form, setForm] = useState(BLANK)
+  const [editing, setEditing] = useState(null)      // pattern row being edited
+  const [original, setOriginal] = useState(null)    // snapshot to detect cycle/anchor changes
   const [saving, setSaving] = useState(false)
   const { can: _can_people } = usePermissions()
   const canWrite = _can_people('people', 'edit')
@@ -43,22 +46,63 @@ function Patterns() {
   const addStep = () => setForm((f) => ({ ...f, cycle: [...f.cycle, 'day'] }))
   const removeStep = (i) => setForm((f) => ({ ...f, cycle: f.cycle.filter((_, idx) => idx !== i) }))
 
+  const startEdit = (r) => {
+    setEditing(r)
+    setOriginal({ anchor_date: r.anchor_date, cycle: JSON.stringify(r.cycle || []) })
+    setForm({ name: r.name || '', anchor_date: r.anchor_date || iso(new Date()), cycle: Array.isArray(r.cycle) ? [...r.cycle] : [] })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const cancelEdit = () => { setEditing(null); setOriginal(null); setForm(BLANK) }
+
   const save = async () => {
     if (!form.name || form.cycle.length === 0) { toast.error('Name and at least one cycle step required'); return }
     setSaving(true)
     try {
+      if (editing) {
+        // Changing the cycle or anchor changes how attendance, R&R days and any
+        // REGENERATED past payslips are computed. Warn before touching those.
+        const payAffecting = original && (original.anchor_date !== form.anchor_date || original.cycle !== JSON.stringify(form.cycle))
+        if (payAffecting && !window.confirm(
+          'You are changing the cycle or anchor date.\n\nThis changes how working days and R&R (off) days are counted for everyone on this pattern — including past periods if a payslip is regenerated. Already-issued payslips keep their saved figures.\n\nContinue?')) {
+          setSaving(false); return
+        }
+        const { error } = await supabase.from('shift_patterns')
+          .update({ name: form.name, anchor_date: form.anchor_date, cycle: form.cycle })
+          .eq('id', editing.id)
+        if (error) throw error
+        toast.success('Pattern updated'); cancelEdit(); refresh(); setSaving(false); return
+      }
       const { error } = await supabase.from('shift_patterns').insert({ org_id: activeOrgId, name: form.name, anchor_date: form.anchor_date, cycle: form.cycle })
       if (error) throw error
       toast.success('Pattern created'); setForm({ name: '', anchor_date: iso(new Date()), cycle: ['day', 'day', 'day', 'day', 'day', 'off', 'off'] }); refresh()
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
   }
-  const del = async (r) => { if (!window.confirm(`Delete pattern "${r.name}"? Assignments using it will stop resolving.`)) return; await supabase.from('shift_patterns').delete().eq('id', r.id); refresh() }
+  // Deleting a pattern that employees are assigned to would break their roster
+  // (and their attendance-driven pay), so block it and say how many are affected.
+  const del = async (r) => {
+    try {
+      const { count, error: cErr } = await supabase
+        .from('employee_shift_assignments')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', activeOrgId).eq('pattern_id', r.id)
+      if (cErr) throw cErr
+      if ((count || 0) > 0) {
+        toast.error(`"${r.name}" is assigned to ${count} employee${count === 1 ? '' : 's'}. Reassign them to another pattern first.`)
+        return
+      }
+      if (!window.confirm(`Delete pattern "${r.name}"? This cannot be undone.`)) return
+      const { error } = await supabase.from('shift_patterns').delete().eq('id', r.id)
+      if (error) throw error
+      if (editing?.id === r.id) cancelEdit()
+      toast.success('Pattern deleted'); refresh()
+    } catch (e) { toast.error(e.message || 'Delete failed') }
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {canWrite && (
         <div className="panel p-5">
-          <div className="eyebrow mb-3">New pattern</div>
+          <div className="eyebrow mb-3">{editing ? `Edit pattern — ${editing.name}` : 'New pattern'}</div>
           <div className="space-y-3">
             <Field label="Pattern name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. 4x4 Day/Night" /></Field>
             <Field label="Anchor date (cycle day 1)"><input className="input" type="date" value={form.anchor_date} onChange={(e) => setForm({ ...form, anchor_date: e.target.value })} /></Field>
@@ -79,7 +123,17 @@ function Patterns() {
               </div>
               <p className="mt-1.5 text-[11px] text-ice-faint">Click a tile to cycle Day → Night → Off. The sequence repeats from the anchor date.</p>
             </div>
-            <button onClick={save} disabled={saving} className="btn-primary w-full">{saving ? 'Saving…' : 'Create pattern'}</button>
+            <div className="flex gap-2">
+              <button onClick={save} disabled={saving} className="btn-primary flex-1">
+                {saving ? 'Saving…' : editing ? 'Save changes' : 'Create pattern'}
+              </button>
+              {editing && (
+                <button onClick={cancelEdit} disabled={saving} className="btn-ghost">Cancel</button>
+              )}
+            </div>
+            {editing && (
+              <p className="mt-2 text-[11px] text-warn">⚠ Changing the cycle or anchor date affects how working and R&R days are counted for everyone on this pattern.</p>
+            )}
           </div>
         </div>
       )}
@@ -89,7 +143,7 @@ function Patterns() {
         {loading ? <div className="p-6 text-center text-ice-faint">Loading…</div>
         : rows.length === 0 ? <EmptyState title="No patterns" hint="Create a shift cycle to assign to employees." />
         : rows.map((r) => (
-          <div key={r.id} className="flex items-center gap-3 border-b border-white/[0.04] px-4 py-3">
+          <div key={r.id} className={`flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 ${editing?.id === r.id ? 'bg-accent/[0.06]' : ''}`}>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-semibold text-ice">{r.name}</div>
               <div className="mt-1 flex flex-wrap gap-1">
@@ -98,7 +152,12 @@ function Patterns() {
                 ))}
               </div>
             </div>
-            {canWrite && <button onClick={() => del(r)} className="text-ice-faint hover:text-bad"><X size={14} /></button>}
+            {canWrite && (
+              <div className="flex shrink-0 items-center gap-1">
+                <button onClick={() => startEdit(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-white/[0.06] hover:text-ice" title="Edit pattern"><Pencil size={13} /></button>
+                <button onClick={() => del(r)} className="rounded-md p-1.5 text-ice-faint hover:bg-bad/10 hover:text-bad" title="Delete pattern"><X size={14} /></button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -155,7 +214,9 @@ function Assignments() {
                   <span className="ml-2"><Badge>{patName(r.pattern_id)}</Badge></span>
                 </div>
                 <span className="font-mono text-[11px] text-ice-faint">from {r.effective_from}</span>
-                {canWrite && <button onClick={() => del(r)} className="text-ice-faint hover:text-bad"><X size={14} /></button>}
+                {canWrite && (
+<button onClick={() => del(r)} className="text-ice-faint hover:text-bad"><X size={14} /></button>
+            )}
               </div>
             ))}
           </div>
