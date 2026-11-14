@@ -42,16 +42,19 @@ function DropBox() {
     setSaving(true)
     try {
       const case_id = genCase(), access_code = genCode()
+      // Workers can submit but not read concerns (confidentiality RLS), so the id
+      // is generated here and the insert does not ask for the row back.
+      const id = crypto.randomUUID()
       const payload = {
-        org_id: activeOrgId, case_id, access_code, anonymous: anon,
+        id, org_id: activeOrgId, case_id, access_code, anonymous: anon,
         employee_name: anon ? null : (form.employee_name || user?.email),
         contact_email: form.contact_email || (anon ? null : user?.email),
         department: form.department, subject: form.subject, details: form.details,
         severity: form.severity, status: 'new',
       }
-      const { data, error } = await supabase.from('ir_concerns').insert(payload).select().single()
+      const { error } = await supabase.from('ir_concerns').insert(payload)
       if (error) throw error
-      notify({ org_id: activeOrgId, concern_id: data.id, event: form.severity === 'urgent' || form.severity === 'high' ? 'urgent' : 'submitted' })
+      notify({ org_id: activeOrgId, concern_id: id, event: form.severity === 'urgent' || form.severity === 'high' ? 'urgent' : 'submitted' })
       setIssued({ case_id, access_code })
       setForm({ subject: '', details: '', department: '', severity: 'normal', contact_email: '', employee_name: '' })
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
