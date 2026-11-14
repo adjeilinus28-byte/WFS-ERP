@@ -17,7 +17,8 @@
 --      (updates keep the stored values; inserts get defaults) — stops blind
 --      overwrites and ghost-employee bank details. They also can't change an
 --      employee's email, or create one carrying an app member's email, since
---      email is what links a record to its owner.
+--      email is what links a record to its owner. Employee records can't be
+--      moved to another org from the client.
 --   5. payroll rows: readable only with private rights, or your own slips.
 --   6. compute_payroll_basis / compute_allowances / compute_overtime_pay now
 --      require private rights instead of finance:view (which everyone has).
@@ -87,6 +88,12 @@ returns trigger language plpgsql security definer set search_path = public as $$
 begin
   -- service role / SQL editor / scheduled jobs: no end-user identity
   if auth.uid() is null then return new; end if;
+  -- Records never move between orgs from the client: otherwise a member with
+  -- edit rights here and rights in an org of their own could carry an
+  -- employee's private data across. Rights are judged on the original org.
+  if tg_op = 'UPDATE' and new.org_id is distinct from old.org_id then
+    raise exception 'Employees cannot be moved to another organization';
+  end if;
   if public.can_view_private_hr(new.org_id) then return new; end if;
 
   if tg_op = 'UPDATE' then
@@ -111,10 +118,19 @@ begin
   else
     -- A new record may not carry the email of an existing app member (incl.
     -- the caller): that would hand them its future private data and payslips.
-    if new.email is not null and exists (
-         select 1 from public.org_members m
-         where m.org_id = new.org_id and m.email is not null
-           and lower(m.email) = lower(new.email)) then
+    -- Checked against members' login emails (auth.users), the stored member
+    -- copy, the caller's own email and pending invitations.
+    if new.email is not null and (
+         lower(new.email) = lower(coalesce(auth.jwt()->>'email', ''))
+         or exists (
+           select 1 from public.org_members m
+           left join auth.users u on u.id = m.user_id
+           where m.org_id = new.org_id
+             and (lower(u.email) = lower(new.email) or lower(m.email) = lower(new.email)))
+         or exists (
+           select 1 from public.org_invitations i
+           where i.org_id = new.org_id and i.status = 'pending'
+             and lower(i.email) = lower(new.email))) then
       new.email := null;
     end if;
     new.home_address := null;  new.postal_address := null; new.date_of_birth := null;
