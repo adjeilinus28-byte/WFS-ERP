@@ -3,6 +3,7 @@ import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet,
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
+import { useEmployeePrivate } from '../hooks/useEmployeePrivate'
 import { useDepartments } from '../hooks/useDepartments'
 import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
 import { money, date, num } from '../lib/format'
@@ -345,7 +346,9 @@ export default function Payroll({ ccy }) {
   const toast = useToast()
   const { options: deptOptions } = useDepartments()
   const { rows, loading, insert, update, remove, refresh } = useTable('payroll', { order: { column: 'period', ascending: false } })
-  const { rows: employees } = useTable('employees')
+  const { rows: dirEmployees } = useTable('employees')
+  const { merge: mergePrivate } = useEmployeePrivate()
+  const employees = useMemo(() => mergePrivate(dirEmployees), [mergePrivate, dirEmployees])
   const [sub, setSub] = useState('slips')
   const [taxConfig, setTaxConfig] = useState(null)
   const [drawer, setDrawer] = useState(null)

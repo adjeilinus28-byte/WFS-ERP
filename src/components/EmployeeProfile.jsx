@@ -33,7 +33,7 @@ function FileLink({ label, url, icon: Icon = FileText }) {
   )
 }
 
-export default function EmployeeProfile({ employee, onClose, onEdit, canWrite }) {
+export default function EmployeeProfile({ employee, onClose, onEdit, canWrite, showPrivate = false }) {
   if (!employee) return null
   const e = employee
   const kids = Array.isArray(e.dependants) ? e.dependants : []
@@ -79,18 +79,18 @@ export default function EmployeeProfile({ employee, onClose, onEdit, canWrite })
           <Section title="Contact">
             <Row label="Email" value={e.email} />
             <Row label="Phone" value={e.phone} />
-            <Row label="Home address" value={e.home_address} />
-            <Row label="Postal / PO address" value={e.postal_address} />
+            {showPrivate && <Row label="Home address" value={e.home_address} />}
+            {showPrivate && <Row label="Postal / PO address" value={e.postal_address} />}
           </Section>
 
           <Section title="Personal">
-            <Row label="Date of birth" value={date(e.date_of_birth)} />
+            {showPrivate && <Row label="Date of birth" value={date(e.date_of_birth)} />}
             <Row label="Gender" value={e.gender} />
             <Row label="Nationality" value={e.nationality} />
-            <Row label="Marital status" value={e.marital_status} />
+            {showPrivate && <Row label="Marital status" value={e.marital_status} />}
           </Section>
 
-          {(e.spouse_name || e.number_of_kids > 0 || kids.length > 0) && (
+          {showPrivate && (e.spouse_name || e.number_of_kids > 0 || kids.length > 0) && (
             <Section title="Family">
               <Row label="Spouse name" value={e.spouse_name} />
               <Row label="Spouse phone" value={e.spouse_phone} />
@@ -117,12 +117,12 @@ export default function EmployeeProfile({ employee, onClose, onEdit, canWrite })
             <Row label="Phone" value={e.next_of_kin_phone} />
           </Section>
 
-          <Section title="Identity & statutory">
+          {showPrivate && <Section title="Identity & statutory">
             <Row label="ID type" value={e.id_type} />
             <Row label="ID number" value={e.id_number} />
             <Row label="SSNIT number" value={e.ssnit_number} />
             <Row label="TIN" value={e.tin_number} />
-          </Section>
+          </Section>}
 
           <Section title="Sizing (PPE / uniform)">
             <Row label="Top / shirt size" value={e.top_size || e.dress_size} />
@@ -130,23 +130,25 @@ export default function EmployeeProfile({ employee, onClose, onEdit, canWrite })
             <Row label="Shoe size" value={e.shoe_size} />
           </Section>
 
-          <Section title="Bank & payroll">
+          {showPrivate && <Section title="Bank & payroll">
             <Row label="Bank" value={e.bank_name} />
             <Row label="Branch" value={e.bank_branch} />
             <Row label="Account name" value={e.account_name} />
             <Row label="Account number" value={e.account_number} />
             <Row label="Account type" value={e.account_type?.replace('_', ' ')} />
             <Row label="Mobile money" value={e.mobile_money_no} />
-          </Section>
+          </Section>}
 
           <Section title="Documents">
             <FileLink label="Passport photo" url={e.photo_url} />
+            {showPrivate && <>
             <FileLink label="Contract letter" url={e.contract_url} />
             <FileLink label={e.id_document_type ? `ID document (${e.id_document_type.replace('_', ' ')})` : 'ID document'} url={e.id_document_url} />
             <FileLink label="Non-compliance letter" url={e.compliance_url} icon={AlertTriangle} />
+            </>}
           </Section>
 
-          {e.compliance_note && (
+          {showPrivate && e.compliance_note && (
             <Section title="Non-compliance note">
               <p className="py-3 text-sm text-warn">{e.compliance_note}</p>
             </Section>

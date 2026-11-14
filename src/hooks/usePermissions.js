@@ -59,6 +59,9 @@ export function usePermissions() {
     return (RANK[levels[domain]] ?? 0) >= (RANK[min] ?? 0)
   }, [levels, isOwner])
 
+  // Private HR data (pay, bank, ID, personal) — mirrors can_view_private_hr().
+  const canSeePrivateHr = can('finance', 'edit') || can('people', 'manage')
+
   // convenience: can this user write in the domain a module belongs to?
   const canWriteModule = useCallback((moduleKey) => {
     const d = MODULE_DOMAIN[moduleKey]
@@ -81,5 +84,5 @@ export function usePermissions() {
 
   // deptScope.scope: 'all'|'own_edit'|'own_only'; homeDept: the user's department.
   // Forms for scoped users should default new records' department to homeDept.
-  return { can, canWriteModule, pageVisible, levels, deptScope, loading, reload: load }
+  return { can, canWriteModule, canSeePrivateHr, pageVisible, levels, deptScope, loading, reload: load }
 }

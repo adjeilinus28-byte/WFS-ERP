@@ -8,6 +8,8 @@ import { usePermissions } from '../hooks/usePermissions'
 import { useDepartments } from '../hooks/useDepartments'
 import EmployeeEditor from '../components/EmployeeEditor'
 import EmployeeProfile from '../components/EmployeeProfile'
+import { useEmployeePrivate } from '../hooks/useEmployeePrivate'
+import { stripPrivate } from '../lib/employeeFields'
 import { Users, UserCheck, UserMinus, Hammer, Building2, Network, Plus, Search, Pencil, Trash2, X, Filter } from 'lucide-react'
 
 const STATUS = ['active', 'leave', 'suspended', 'exited']
@@ -31,11 +33,13 @@ function Employees() {
   const { role } = useAuth()
   const toast = useToast()
   const { options: deptOptions } = useDepartments()
-  const { rows, loading, insert, update, remove } = useTable('employees')
+  const { rows: dirRows, loading, insert, update, remove } = useTable('employees')
+  const { merge, refresh: refreshPrivate } = useEmployeePrivate()
+  const rows = useMemo(() => merge(dirRows), [merge, dirRows])
   const [editor, setEditor] = useState({ open: false, row: null })
   const [profile, setProfile] = useState(null)
   const [saving, setSaving] = useState(false)
-  const { can: _can_people } = usePermissions()
+  const { can: _can_people, canSeePrivateHr } = usePermissions()
   const canWrite = _can_people('people', 'edit')
 
   // Filters
@@ -63,8 +67,10 @@ function Employees() {
   const save = async (payload) => {
     setSaving(true)
     try {
-      if (editor.row?.id) { await update(editor.row.id, payload); toast.success('Employee updated') }
-      else { await insert(payload); toast.success('Employee added') }
+      const body = canSeePrivateHr ? payload : stripPrivate(payload)
+      if (editor.row?.id) { await update(editor.row.id, body); toast.success('Employee updated') }
+      else { await insert(body); toast.success('Employee added') }
+      if (canSeePrivateHr) await refreshPrivate()
       setEditor({ open: false, row: null })
     } catch (e) { toast.error(e.message || 'Save failed') }
     finally { setSaving(false) }
@@ -104,7 +110,7 @@ function Employees() {
           <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: 'All depts' }, ...deptOptions]} /></div>
           <div className="w-32"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: 'Any status' }, ...STATUS.map((s) => ({ value: s, label: s }))]} /></div>
           <div className="w-36"><Select value={fWorker} onChange={(e) => setFWorker(e.target.value)} options={[{ value: '', label: 'Any type' }, ...WORKER.map((s) => ({ value: s, label: s }))]} /></div>
-          <div className="w-36"><Select value={fMarital} onChange={(e) => setFMarital(e.target.value)} options={[{ value: '', label: 'Any marital' }, ...['single','married','divorced','widowed'].map((s) => ({ value: s, label: s }))]} /></div>
+          {canSeePrivateHr && <div className="w-36"><Select value={fMarital} onChange={(e) => setFMarital(e.target.value)} options={[{ value: '', label: 'Any marital' }, ...['single','married','divorced','widowed'].map((s) => ({ value: s, label: s }))]} /></div>}
           {activeF > 0 && <button onClick={clear} className="btn-ghost btn-sm"><X size={13} /> Clear ({activeF})</button>}
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
         </div>
@@ -155,7 +161,7 @@ function Employees() {
       <EmployeeEditor open={editor.open} initial={editor.row} deptOptions={deptOptions}
         onClose={() => setEditor({ open: false, row: null })} onSubmit={save} submitting={saving} />
 
-      <EmployeeProfile employee={profile} canWrite={canWrite}
+      <EmployeeProfile employee={profile} canWrite={canWrite} showPrivate={canSeePrivateHr}
         onClose={() => setProfile(null)}
         onEdit={(emp) => { setProfile(null); setEditor({ open: true, row: emp }) }} />
     </>

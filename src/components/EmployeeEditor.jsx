@@ -17,8 +17,11 @@ const TABS = [['employment', 'Employment'], ['contact', 'Contact'], ['personal',
 export default function EmployeeEditor({ open, initial, deptOptions, onClose, onSubmit, submitting }) {
   const [f, setF] = useState({})
   const [tab, setTab] = useState('employment')
-  const { can } = usePermissions()
-  const canSeePay = can('finance', 'view')  // pay rates are finance-sensitive
+  const { canSeePrivateHr } = usePermissions()
+  // Pay, bank, ID and personal fields are only shown to HR/finance managers
+  // (the database hides and protects them for everyone else).
+  const priv = canSeePrivateHr
+  const tabs = priv ? TABS : TABS.filter(([k]) => k !== 'bank')
 
   useEffect(() => {
     if (open) {
@@ -66,7 +69,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
 
         {/* Tab strip */}
         <div className="flex gap-1 overflow-x-auto border-b border-white/[0.06] px-4 py-2">
-          {TABS.map(([k, label]) => (
+          {tabs.map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
               className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
               {label}
@@ -91,8 +94,10 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Email"><input className="input" type="email" value={f.email || ''} onChange={(e) => set('email', e.target.value)} /></Field>
               <Field label="Phone"><input className="input" value={f.phone || ''} onChange={(e) => set('phone', e.target.value)} /></Field>
+              {priv && <>
               <Field label="Home address" span><textarea className="input min-h-[70px]" value={f.home_address || ''} onChange={(e) => set('home_address', e.target.value)} /></Field>
               <Field label="Postal / PO address" span><textarea className="input min-h-[70px]" value={f.postal_address || ''} onChange={(e) => set('postal_address', e.target.value)} /></Field>
+              </>}
               <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3">
                 <div className="eyebrow mb-3">Emergency / Next of kin</div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -106,9 +111,10 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
 
           {tab === 'personal' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Date of birth"><input className="input" type="date" value={f.date_of_birth || ''} onChange={(e) => set('date_of_birth', e.target.value)} /></Field>
+              {priv && <Field label="Date of birth"><input className="input" type="date" value={f.date_of_birth || ''} onChange={(e) => set('date_of_birth', e.target.value)} /></Field>}
               <Field label="Gender"><Select value={f.gender || ''} onChange={(e) => set('gender', e.target.value)} options={[{ value: '', label: '—' }, ...GENDER.map((s) => ({ value: s, label: s }))]} /></Field>
               <Field label="Nationality"><input className="input" value={f.nationality || ''} onChange={(e) => set('nationality', e.target.value)} /></Field>
+              {priv && <>
               <Field label="Marital status"><Select value={f.marital_status || ''} onChange={(e) => set('marital_status', e.target.value)} options={[{ value: '', label: '—' }, ...MARITAL.map((s) => ({ value: s, label: s }))]} /></Field>
               <Field label="Spouse name"><input className="input" value={f.spouse_name || ''} onChange={(e) => set('spouse_name', e.target.value)} /></Field>
               <Field label="Spouse phone"><input className="input" value={f.spouse_phone || ''} onChange={(e) => set('spouse_phone', e.target.value)} /></Field>
@@ -131,15 +137,18 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                   {(f.dependants || []).length === 0 && <p className="text-xs text-ice-faint">No dependants added.</p>}
                 </div>
               </div>
+              </>}
             </div>
           )}
 
           {tab === 'identity' && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {priv && <>
               <Field label="ID type"><Select value={f.id_type || ''} onChange={(e) => set('id_type', e.target.value)} options={[{ value: '', label: '—' }, ...IDTYPE.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></Field>
               <Field label="ID number"><input className="input" value={f.id_number || ''} onChange={(e) => set('id_number', e.target.value)} /></Field>
               <Field label="SSNIT number"><input className="input" value={f.ssnit_number || ''} onChange={(e) => set('ssnit_number', e.target.value)} /></Field>
               <Field label="TIN"><input className="input" value={f.tin_number || ''} onChange={(e) => set('tin_number', e.target.value)} /></Field>
+              </>}
               <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3">
                 <div className="eyebrow mb-3">Sizing (PPE / uniform)</div>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -160,7 +169,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
               <Field label="Account type"><Select value={f.account_type || ''} onChange={(e) => set('account_type', e.target.value)} options={[{ value: '', label: '—' }, ...ACCTYPE.map((s) => ({ value: s, label: s.replace('_', ' ') }))]} /></Field>
               <Field label="Mobile money no."><input className="input" value={f.mobile_money_no || ''} onChange={(e) => set('mobile_money_no', e.target.value)} placeholder="e.g. 024 xxx xxxx" /></Field>
 
-              {canSeePay ? (
+              {priv ? (
                 <>
                   <div className="sm:col-span-2 mt-2 border-t border-white/[0.06] pt-3 text-[11px] font-semibold uppercase tracking-wider text-accent">Pay setup</div>
                   <Field label="Pay type"><Select value={f.pay_type || 'monthly'} onChange={(e) => set('pay_type', e.target.value)}
@@ -245,6 +254,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
           {tab === 'docs' && (
             <div className="space-y-4">
               <FileUpload label="Passport photo" image accept="image/*" value={f.photo_url} onChange={setFile('photo_url')} entityId={f.id} field="photo" />
+              {priv && <>
               <FileUpload label="Contract letter" accept=".pdf,.doc,.docx,image/*" value={f.contract_url} onChange={setFile('contract_url')} entityId={f.id} field="contract" />
               <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
                 <Field label="ID document type">
@@ -259,6 +269,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
                 <Field label="Non-compliance note" span><textarea className="input min-h-[70px]" value={f.compliance_note || ''} onChange={(e) => set('compliance_note', e.target.value)} placeholder="Describe any non-compliance issue…" /></Field>
                 <div className="mt-3"><FileUpload label="Non-compliance letter" accept=".pdf,.doc,.docx,image/*" value={f.compliance_url} onChange={setFile('compliance_url')} entityId={f.id} field="compliance" /></div>
               </div>
+              </>}
               <div className="border-t border-white/[0.06] pt-4">
                 <Field label="Additional notes" span><textarea className="input min-h-[70px]" value={f.notes || ''} onChange={(e) => set('notes', e.target.value)} /></Field>
               </div>
@@ -267,7 +278,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
         </div>
 
         <div className="flex justify-between gap-2 border-t border-white/[0.06] px-5 py-4">
-          <p className="self-center text-[11px] text-ice-faint">Tab: {TABS.find(([k]) => k === tab)?.[1]}</p>
+          <p className="self-center text-[11px] text-ice-faint">{priv ? `Tab: ${TABS.find(([k]) => k === tab)?.[1]}` : 'Pay, bank, ID and personal details are managed by HR/finance.'}</p>
           <div className="flex gap-2">
             <button onClick={onClose} className="btn-ghost">Cancel</button>
             <button onClick={submit} disabled={submitting} className="btn-primary">{submitting ? 'Saving…' : 'Save employee'}</button>
