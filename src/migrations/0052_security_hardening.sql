@@ -47,15 +47,20 @@ create policy irc_update on public.ir_concerns for update using (
   or public.is_ir_officer(org_id)
   or (public.is_counsellor(org_id) and referred_to_counsellor = true)
 );
+-- Counsellors only see / write threads of cases referred to them.
 create policy ire_read on public.ir_engagements for select using (
   public.has_org_role(org_id, array['owner','admin'])
   or public.is_ir_officer(org_id)
-  or public.is_counsellor(org_id)
+  or (public.is_counsellor(org_id) and exists (
+        select 1 from public.ir_concerns c
+        where c.id = concern_id and c.referred_to_counsellor = true))
 );
 create policy ire_write on public.ir_engagements for insert with check (
   public.has_org_role(org_id, array['owner','admin'])
   or public.is_ir_officer(org_id)
-  or public.is_counsellor(org_id)
+  or (public.is_counsellor(org_id) and exists (
+        select 1 from public.ir_concerns c
+        where c.id = concern_id and c.referred_to_counsellor = true))
 );
 
 -- ── 2. Subscription payments: service role only ─────────────────────────────
