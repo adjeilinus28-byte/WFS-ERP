@@ -9,7 +9,7 @@
 --   3. No direct UPDATE on organizations (billing columns were admin-editable);
 --      profile edits keep working through update_org_profile().
 --   4. Admins can no longer create, promote to, edit or demote owners.
---   5. accept_invite() never downgrades an existing owner.
+--   5. Invites can't grant or remove ownership (accept_invite + invite rows).
 --   6. Self-service inserts can't arrive pre-approved (leave, callouts, meals).
 --   7. Overtime: only approvals:manage may approve/decline; inserts start pending.
 --   8. Internal helper functions no longer callable directly by clients
@@ -97,6 +97,12 @@ begin
     raise exception 'This invitation was sent to a different email address';
   end if;
 
+  -- Invites can never grant ownership (create_invite only issues these roles;
+  -- this also rejects rows written into org_invitations by other means).
+  if inv.role not in ('admin','manager','supervisor','operator','viewer') then
+    raise exception 'Invalid invitation role';
+  end if;
+
   insert into public.org_members(org_id, user_id, role, email)
   values (inv.org_id, uid, inv.role, uemail)
   on conflict (org_id, user_id) do update set role = excluded.role
@@ -106,6 +112,13 @@ begin
   return inv.org_id;
 end $$;
 grant execute on function public.accept_invite(text) to authenticated;
+
+-- Invitation rows themselves may only carry non-owner roles.
+drop policy if exists inv_admin_all on public.org_invitations;
+create policy inv_admin_all on public.org_invitations for all
+  using (public.has_org_role(org_id, array['owner','admin']))
+  with check (public.has_org_role(org_id, array['owner','admin'])
+              and role in ('admin','manager','supervisor','operator','viewer'));
 
 -- ── 6. Self-service inserts must start undecided ────────────────────────────
 drop policy if exists leave_requests_insert on public.leave_requests;
