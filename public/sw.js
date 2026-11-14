@@ -17,7 +17,7 @@
 //
 //  Bump CACHE_VERSION on any strategy change to purge old caches on activate.
 // ============================================================================
-const CACHE_VERSION = 'wfs-v2'
+const CACHE_VERSION = 'wfs-v3'
 const SHELL_CACHE  = `${CACHE_VERSION}-shell`   // index.html (offline fallback only)
 const ASSET_CACHE  = `${CACHE_VERSION}-assets`  // immutable hashed build files
 const STATIC_CACHE = `${CACHE_VERSION}-static`  // icons, manifest, fonts

@@ -1,36 +1,28 @@
-// WFS Enterprise operations mark: a hexagon (modular platform / industrial hub)
-// framing radar arcs and connected nodes — "monitoring live operations".
-// Single source of truth for the logo; used on login, splash, and shell.
+import { useId } from 'react'
+
+// WFS Enterprise mark — "Flow W": one continuous line starts at a node (the
+// request), draws the W of WorkFlow, and finishes as a check mark (the work,
+// done). Single source of truth for the logo; used on login, splash, and shell.
+// The favicon (public/favicon.svg) and PWA icons (public/icons) use the same art.
 export function WFSMark({ size = 64, className = '' }) {
-  const s = size
+  const id = useId().replace(/:/g, '')
   return (
-    <svg viewBox="0 0 64 64" width={s} height={s} className={className} role="img" aria-label="WFS Enterprise">
+    <svg viewBox="0 0 64 64" width={size} height={size} className={className} role="img" aria-label="WFS Enterprise">
       <defs>
-        <linearGradient id="wfsHex" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#1B2640" />
+        <linearGradient id={`${id}t`} x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#1E2A47" />
           <stop offset="1" stopColor="#0B1120" />
         </linearGradient>
+        <linearGradient id={`${id}s`} x1="12" y1="16" x2="54" y2="44" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FCD34D" />
+          <stop offset="1" stopColor="#F59E0B" />
+        </linearGradient>
       </defs>
-      {/* rounded-hex tile */}
-      <path d="M32 3 L54.5 16 V48 L32 61 L9.5 48 V16 Z"
-        fill="url(#wfsHex)" stroke="rgba(255,255,255,0.08)" strokeWidth="1"
-        strokeLinejoin="round" />
-      {/* radar arcs */}
-      <g fill="none" stroke="#F59E0B" strokeLinecap="round">
-        <path d="M32 42 A10 10 0 0 1 42 32" strokeWidth="2.4" opacity="0.95" />
-        <path d="M32 46 A14 14 0 0 1 46 32" strokeWidth="2" opacity="0.55" />
-        <path d="M32 50 A18 18 0 0 1 50 32" strokeWidth="1.6" opacity="0.28" />
-      </g>
-      {/* connected operation nodes */}
-      <g>
-        <line x1="32" y1="32" x2="32" y2="18" stroke="#F59E0B" strokeWidth="1.4" opacity="0.5" />
-        <line x1="32" y1="32" x2="44" y2="24" stroke="#F59E0B" strokeWidth="1.4" opacity="0.4" />
-        <line x1="32" y1="32" x2="21" y2="26" stroke="#F59E0B" strokeWidth="1.4" opacity="0.4" />
-        <circle cx="32" cy="32" r="3.4" fill="#F59E0B" />
-        <circle cx="32" cy="18" r="2.2" fill="#F1F5F9" />
-        <circle cx="44" cy="24" r="2" fill="#F59E0B" />
-        <circle cx="21" cy="26" r="2" fill="#F59E0B" />
-      </g>
+      <rect width="64" height="64" rx="16" fill={`url(#${id}t)`} />
+      <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" fill="none" stroke="rgba(255,255,255,0.08)" />
+      <path d="M13 23 L21.5 43 L32 28 L41 41 L53 17" fill="none" stroke={`url(#${id}s)`}
+        strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="13" cy="23" r="4" fill="#F1F5F9" />
     </svg>
   )
 }
