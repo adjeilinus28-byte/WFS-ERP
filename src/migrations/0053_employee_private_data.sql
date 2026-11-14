@@ -15,7 +15,9 @@
 --   3. employee_private(org) RPC returns the private fields the caller may see.
 --   4. Trigger: members without private rights can't change private fields
 --      (updates keep the stored values; inserts get defaults) — stops blind
---      overwrites and ghost-employee bank details.
+--      overwrites and ghost-employee bank details. They also can't change an
+--      employee's email, or create one carrying an app member's email, since
+--      email is what links a record to its owner.
 --   5. payroll rows: readable only with private rights, or your own slips.
 --   6. compute_payroll_basis / compute_allowances / compute_overtime_pay now
 --      require private rights instead of finance:view (which everyone has).
@@ -88,6 +90,10 @@ begin
   if public.can_view_private_hr(new.org_id) then return new; end if;
 
   if tg_op = 'UPDATE' then
+    -- email links a record to its owner (my_employee_ids), so only private-
+    -- rights holders may change it; otherwise a supervisor could set another
+    -- employee's email to their own and read that person's private data.
+    new.email := old.email;
     new.home_address := old.home_address;     new.postal_address := old.postal_address;
     new.date_of_birth := old.date_of_birth;   new.marital_status := old.marital_status;
     new.spouse_name := old.spouse_name;       new.spouse_phone := old.spouse_phone;
@@ -103,6 +109,14 @@ begin
     new.leave_allowance := old.leave_allowance; new.pay_allowances := old.pay_allowances;
     new.compliance_note := old.compliance_note; new.compliance_url := old.compliance_url;
   else
+    -- A new record may not carry the email of an existing app member (incl.
+    -- the caller): that would hand them its future private data and payslips.
+    if new.email is not null and exists (
+         select 1 from public.org_members m
+         where m.org_id = new.org_id and m.email is not null
+           and lower(m.email) = lower(new.email)) then
+      new.email := null;
+    end if;
     new.home_address := null;  new.postal_address := null; new.date_of_birth := null;
     new.marital_status := null; new.spouse_name := null;   new.spouse_phone := null;
     new.number_of_kids := 0;   new.dependants := '[]'::jsonb;
