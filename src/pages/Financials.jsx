@@ -28,7 +28,7 @@ function Tabs({ tab, setTab }) {
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+        <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
     </div>
   )
@@ -225,7 +225,7 @@ export default function Financials() {
 
   return (
     <div>
-      <PageHeader eyebrow="Finance" title="Financial Statements">
+      <PageHeader eyebrow="Finance" title="Financial Statements" sub="Ledger, income statement, balance sheet and cash flow.">
         <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> Export</button>
         {canPost && <button className="btn-primary" onClick={syncLedger} disabled={syncing}><RefreshCw size={15} className={syncing ? 'animate-spin' : ''} /> {syncing ? 'Syncing…' : 'Sync ledger'}</button>}
       </PageHeader>
@@ -478,13 +478,13 @@ function TrialBalanceView({ accounts, totals, ccy }) {
       : (
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-white/[0.02]"><tr>
+            <thead><tr>
               <th className="th">Code</th><th className="th">Account</th><th className="th">Type</th>
               <th className="th text-right">Debit</th><th className="th text-right">Credit</th><th className="th text-right">Balance</th>
             </tr></thead>
             <tbody>
               {active.map((a) => (
-                <tr key={a.account_id} className="transition hover:bg-white/[0.025]">
+                <tr key={a.account_id}>
                   <td className="td font-mono text-xs text-accent">{a.code}</td>
                   <td className="td">{a.name}</td>
                   <td className="td"><Badge tone="mute">{a.account_type}</Badge></td>

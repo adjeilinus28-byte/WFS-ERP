@@ -71,7 +71,7 @@ export default function Settings() {
 
   return (
     <div>
-      <PageHeader eyebrow="Admin" title="Settings">
+      <PageHeader eyebrow="Admin" title="Settings" sub="Workspace profile, branding and modules.">
         {canAdmin && <button className="btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>}
       </PageHeader>
 

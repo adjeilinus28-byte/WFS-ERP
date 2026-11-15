@@ -21,9 +21,9 @@ const iso = (d) => d.toISOString().slice(0, 10)
 function Tabs({ tab, setTab }) {
   const items = [['roster', 'Roster'], ['assign', 'Assignments'], ['patterns', 'Patterns'], ['holidays', 'Holidays']]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+        <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
     </div>
   )
@@ -553,7 +553,7 @@ export default function Shifts() {
 
   return (
     <div>
-      <PageHeader eyebrow="People" title="Shift System" />
+      <PageHeader eyebrow="People" title="Shift System" sub="Shift patterns, rosters and public holidays." />
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Patterns" value={counts.patterns} icon={Repeat} />
         <StatCard label="Assigned employees" value={counts.assigned} icon={Users} />

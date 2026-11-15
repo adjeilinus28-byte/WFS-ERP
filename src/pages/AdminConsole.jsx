@@ -55,9 +55,9 @@ export default function AdminConsole() {
 
   return (
     <div>
-      <PageHeader eyebrow={at('Platform')} title={at('Admin console')} />
+      <PageHeader eyebrow={at('Platform')} title={at('Admin console')} sub="Every workspace, plan and subscription on the platform." />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label={at('Organizations')} value={orgs.length} icon={Building2} />
         <StatCard label={at('Active')} value={activeCount} icon={Check} tone="ok" />
         <StatCard label={at('On trial')} value={trialCount} icon={Users} tone="accent" />

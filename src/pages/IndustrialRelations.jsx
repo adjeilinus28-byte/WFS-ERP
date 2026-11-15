@@ -229,7 +229,7 @@ function IROView() {
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4 lg:grid-cols-6">
         <StatCard label="Total concerns" value={rows.length} icon={Inbox} />
         <StatCard label="Open" value={openCount} tone={openCount ? 'warn' : 'ok'} icon={ClipboardList} />
         <StatCard label="High / urgent" value={urgent.length} tone={urgent.length ? 'bad' : 'ok'} icon={AlertTriangle} />
@@ -407,10 +407,10 @@ export default function IndustrialRelations() {
 
   return (
     <div>
-      <PageHeader eyebrow="People · Confidential" title="Industrial Relations & Wellbeing" />
+      <PageHeader eyebrow="People · Confidential" title="Industrial Relations & Wellbeing" sub="Confidential concerns, case follow-up and counsellor referrals." />
       <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
         {tabs.map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+          <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
         ))}
       </div>
       {tab === 'drop' && <DropBox />}

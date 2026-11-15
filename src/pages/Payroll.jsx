@@ -19,10 +19,10 @@ const thisPeriod = () => businessMonthKey(new Date())
 function SubTabs({ tab, setTab }) {
   const items = [['slips', at('Payslips')], ['status', at('Status')], ['overtime', at('Overtime')], ['tax', at('Tax & Deductions')]]
   return (
-    <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-4">
       {items.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -311,7 +311,7 @@ function OvertimeLog({ ccy, employees, deptOptions, canWrite }) {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">{at('Date')}</th><th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th>
                 <th className="th">{at('Hours')}</th><th className="th">{at('Period')}</th><th className="th">{at('Status')}</th>
                 <th className="th text-right">{at('Actions')}</th>
@@ -556,7 +556,7 @@ export default function Payroll({ ccy }) {
 
       {sub === 'slips' && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
             <StatCard label="Slips (filtered)" value={filtered.length} icon={FileText} />
             <StatCard label="Net total" value={money(totalNet, ccy)} tone="ok" icon={Wallet} />
             <StatCard label="Sent" value={`${sentCount}/${filtered.length}`} icon={CheckCircle2} />
@@ -564,9 +564,9 @@ export default function Payroll({ ccy }) {
           </div>
 
           {/* Filter + actions bar */}
-          <div className="panel mb-4 p-3">
+          <div className="toolbar mb-4">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+              <div className="searchbox">
                 <Search size={15} className="text-ice-faint" />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search employee…" className="w-40 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
               </div>
@@ -588,14 +588,14 @@ export default function Payroll({ ccy }) {
             : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-white/[0.02]"><tr>
+                  <thead><tr>
                     <th className="th">{at('Period')}</th><th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th>
                     <th className="th">{at('Gross')}</th><th className="th">{at('Deductions')}</th><th className="th">{at('Net')}</th>
                     <th className="th">{at('Status')}</th><th className="th">{at('Slip')}</th><th className="th text-right">{at('Actions')}</th>
                   </tr></thead>
                   <tbody>
                     {filtered.map((r) => (
-                      <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                      <tr key={r.id}>
                         <td className="td font-mono text-accent">{r.period}</td>
                         <td className="td">{r.employee_name}</td>
                         <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
@@ -631,13 +631,13 @@ export default function Payroll({ ccy }) {
           : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-white/[0.02]"><tr>
+                <thead><tr>
                   <th className="th">{at('Employee')}</th><th className="th">{at('Department')}</th><th className="th">{at('Last period')}</th>
                   <th className="th">{at('Last net')}</th><th className="th">{at('Status')}</th><th className="th">{at('Payslip')}</th>
                 </tr></thead>
                 <tbody>
                   {status.map((r, i) => (
-                    <tr key={i} className="transition hover:bg-white/[0.025]">
+                    <tr key={i}>
                       <td className="td">{r.employee_name}</td>
                       <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
                       <td className="td font-mono text-accent">{r.last_period}</td>
@@ -657,7 +657,7 @@ export default function Payroll({ ccy }) {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(null)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{drawer === 'new' ? 'New Payslip' : 'Edit Payslip'}</h2>
               <button onClick={() => setDrawer(null)} className="text-ice-faint hover:text-ice"><X size={18} /></button>

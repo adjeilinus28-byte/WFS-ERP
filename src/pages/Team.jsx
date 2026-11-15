@@ -183,7 +183,7 @@ export default function Team() {
 
   return (
     <div>
-      <PageHeader eyebrow={at('Admin')} title={at('Team & access')} />
+      <PageHeader eyebrow={at('Admin')} title={at('Team & access')} sub="Members, roles and what each person can see." />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label={at('Members')} value={members.length} icon={Users} />

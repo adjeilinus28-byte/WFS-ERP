@@ -20,7 +20,7 @@ export default function NewsFlashAdmin() {
 
   return (
     <ModuleScaffold
-      eyebrow="Overview" title="News Flash" table="news_flash"
+      eyebrow="Overview" title="News Flash" sub="Announcements shown to your workforce." table="news_flash"
       newLabel="Post announcement" emptyTitle="No announcements yet"
       emptyHint="Post announcements, campaigns, and notices — they appear on the Command Deck and can be emailed to a department."
       searchKeys={['title', 'category', 'body']}

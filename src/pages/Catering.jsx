@@ -26,7 +26,7 @@ function Tabs({ tab, setTab, canManage }) {
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+        <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
     </div>
   )
@@ -137,7 +137,7 @@ function MyOrders() {
 
   return (
     <>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Days open" value={days.filter((d) => !isLocked(d) && !leaveDates.has(d) && (!offDates.has(d) || canOrderOffDay(d))).length} icon={CalendarDays} />
         <StatCard label="Meals ordered" value={orderedCount} icon={UtensilsCrossed} />
         <StatCard label="Est. spend" value={money(spend, ccy)} icon={TrendingUp} />
@@ -344,10 +344,10 @@ function OrderDashboard() {
           <div className="panel overflow-hidden">
             <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Breakdown')}</span></div>
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr><th className="th">Vendor · Item</th><th className="th">{at('Orders')}</th><th className="th">{at('Value')}</th></tr></thead>
+              <thead><tr><th className="th">Vendor · Item</th><th className="th">{at('Orders')}</th><th className="th">{at('Value')}</th></tr></thead>
               <tbody>
                 {byItem.map((r, i) => (
-                  <tr key={i} className="transition hover:bg-white/[0.025]">
+                  <tr key={i}>
                     <td className="td text-sm">{r.label}</td>
                     <td className="td font-mono">{r.orders}</td>
                     <td className="td font-mono">{num(r.value)}</td>
@@ -515,13 +515,13 @@ export default function Catering() {
 
   return (
     <div>
-      <PageHeader eyebrow="Workplace" title="Catering & Meals" />
+      <PageHeader eyebrow="Workplace" title="Catering & Meals" sub="Plan menus, take meal orders and manage food vendors." />
       <Tabs tab={tab} setTab={setTab} canManage={canManage} />
       {tab === 'order' && <MyOrders />}
       {tab === 'dashboard' && <OrderDashboard />}
       {tab === 'vendors' && canManage && (
         <ModuleScaffold
-          eyebrow="Workplace" title="Food Vendors" table="food_vendors"
+          eyebrow="Workplace" title="Food Vendors" sub="Caterers supplying meals to your sites." table="food_vendors"
           newLabel="New vendor" emptyTitle="No vendors" emptyHint="Add catering vendors, then set their menus in the Menu Manager."
           searchKeys={['name', 'contact_name', 'cuisine']}
           columns={[

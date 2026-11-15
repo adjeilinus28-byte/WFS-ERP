@@ -51,7 +51,7 @@ function KpiDashboard({ targets }) {
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Completed this month" value={totalDone} icon={TrendingUp} sub={period} />
         <StatCard label="Active observers" value={observers.length} icon={Eye} />
         <StatCard label="CCV targets" value={targets.filter((t) => t.form_type === 'ccv').length} icon={ShieldCheck} />
@@ -62,13 +62,13 @@ function KpiDashboard({ targets }) {
       : (
         <div className="panel overflow-hidden">
           <table className="w-full">
-            <thead className="bg-white/[0.02]"><tr>
+            <thead><tr>
               <th className="th">{at('Observer')}</th><th className="th">{at('Role')}</th>
               {['ccv', 'pto', 'take5'].map((ft) => <th key={ft} className="th">{FORM_META[ft].label}</th>)}
             </tr></thead>
             <tbody>
               {observers.map((o, i) => (
-                <tr key={i} className="transition hover:bg-white/[0.025]">
+                <tr key={i}>
                   <td className="td">{o.name}</td>
                   <td className="td">{o.role ? <Badge>{o.role}</Badge> : '—'}</td>
                   {['ccv', 'pto', 'take5'].map((ft) => {
@@ -166,7 +166,7 @@ function InteractionLog() {
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+        <div className="searchbox">
           <Search size={15} className="text-ice-faint" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={at('Search…')} className="w-44 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
         </div>
@@ -187,13 +187,13 @@ function InteractionLog() {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">{at('Ref')}</th><th className="th">{at('Type')}</th><th className="th">{at('Observer')}</th>
                 <th className="th">{at('Location')}</th><th className="th">{at('Date')}</th><th className="th">{at('Action')}</th><th className="th text-right">·</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                  <tr key={r.id}>
                     <td className="td font-mono text-accent whitespace-nowrap">{r.ref_no}</td>
                     <td className="td"><Badge>{FORM_META[r.form_type]?.label || r.form_type}</Badge></td>
                     <td className="td">{r.observer_name}</td>
@@ -218,7 +218,7 @@ function InteractionLog() {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{FORM_META[form.form_type].full}</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
@@ -295,9 +295,9 @@ export default function SafetyInteractions() {
 
   return (
     <div>
-      <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+      <div className="tabs mb-5">
         {tabs.map(([k, l]) => (
-          <button key={k} onClick={() => setSub(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${sub === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+          <button key={k} onClick={() => setSub(k)} className={`tab ${sub === k ? 'tab-on' : ''}`}>{l}</button>
         ))}
       </div>
 

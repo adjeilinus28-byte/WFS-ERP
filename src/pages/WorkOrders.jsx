@@ -134,7 +134,7 @@ export default function WorkOrders() {
 
   return (
     <>
-      <PageHeader eyebrow="Operations" title="Work Orders">
+      <PageHeader eyebrow="Operations" title="Work Orders" sub="Maintenance jobs by priority, progress and due date.">
         {canWrite && (
           <button className="btn-primary" onClick={() => setDrawer({ open: true, row: null })}>
             <Plus size={16} /> New work order
@@ -142,7 +142,7 @@ export default function WorkOrders() {
         )}
       </PageHeader>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Open" value={open} icon={ClipboardList} />
         <StatCard label="Overdue" value={overdue} tone={overdue ? 'bad' : 'ok'} icon={Clock} />
         <StatCard label="Urgent" value={urgent} tone={urgent ? 'bad' : 'ok'} icon={AlertTriangle} />
@@ -150,9 +150,9 @@ export default function WorkOrders() {
       </div>
 
       {/* ── Filter bar ── */}
-      <div className="panel mb-4 p-3">
+      <div className="toolbar mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+          <div className="searchbox">
             <Search size={15} className="text-ice-faint" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…"
               className="w-40 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
@@ -186,7 +186,7 @@ export default function WorkOrders() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]">
+              <thead>
                 <tr>
                   <th className="th">WO #</th><th className="th">Title</th><th className="th">Type</th>
                   <th className="th">Priority</th><th className="th">Assigned</th><th className="th">Due</th>
@@ -199,7 +199,7 @@ export default function WorkOrders() {
                   const d = daysUntil(r.due_date)
                   const overdueRow = d != null && d < 0 && !['done','cancelled'].includes(r.status)
                   return (
-                    <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                    <tr key={r.id}>
                       <td className="td font-mono text-accent whitespace-nowrap">{r.wo_number}</td>
                       <td className="td">{r.title}</td>
                       <td className="td"><Badge>{r.wo_type}</Badge></td>

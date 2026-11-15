@@ -41,7 +41,7 @@ export default function EmployeeProfile({ employee, onClose, onEdit, canWrite, s
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+      <div className="relative h-full w-full max-w-lg overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-navy-800/95 px-5 py-4 backdrop-blur">
           <div className="flex items-start justify-between">

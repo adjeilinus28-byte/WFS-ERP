@@ -70,7 +70,7 @@ function Tabs({ tab, setTab, canManage }) {
   return (
     <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
       {items.map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+        <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
     </div>
   )
@@ -295,12 +295,12 @@ function Attendance() {
             : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-white/[0.02]"><tr>
+                  <thead><tr>
                     <th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th><th className="th">{at('Status')}</th><th className="th">{at('Score')}</th><th className="th">{at('Completed')}</th><th className="th">{at('Expires')}</th>{canManage && <th className="th"></th>}
                   </tr></thead>
                   <tbody>
                     {atts.map((a) => (
-                      <tr key={a.id} className="transition hover:bg-white/[0.025]">
+                      <tr key={a.id}>
                         <td className="td font-medium">{a.employee_name}</td>
                         <td className="td text-sm text-ice-faint">{a.department || '—'}</td>
                         <td className="td">
@@ -427,7 +427,7 @@ function Dashboard() {
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Upcoming sessions" value={upcoming.length} icon={CalendarClock} />
         <StatCard label="Completion rate" value={`${completionRate}%`} tone={completionRate >= 80 ? 'ok' : 'warn'} icon={ClipboardCheck} />
         <StatCard label="Expiring (30d)" value={expiring} tone={expiring ? 'warn' : 'ok'} icon={Clock} />
@@ -489,7 +489,7 @@ export default function Training() {
   const [tab, setTab] = useState('dashboard')
   return (
     <div>
-      <PageHeader eyebrow="Compliance" title="Training & Competency" />
+      <PageHeader eyebrow="Compliance" title="Training & Competency" sub="Sessions, attendance and certificate validity." />
       <Tabs tab={tab} setTab={setTab} canManage={canManage} />
       {tab === 'dashboard' && <Dashboard />}
       {tab === 'schedule' && <Schedule />}

@@ -126,19 +126,48 @@ body {
     @apply font-mono text-[11px] uppercase tracking-[0.18em] text-ice-faint;
   }
   .input {
-    @apply w-full rounded-lg border border-white/10 bg-navy/60 px-3 py-2 text-sm text-ice
+    @apply w-full rounded-[10px] border border-white/10 bg-navy/60 px-3 py-2 text-sm text-ice
            placeholder:text-ice-faint outline-none transition
-           focus:border-accent/60 focus:ring-2 focus:ring-accent/20;
+           hover:border-white/[0.16] focus:border-accent/60 focus:ring-2 focus:ring-accent/20;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] px-3.5 py-2 text-sm font-semibold
            transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
-  .btn-primary { @apply btn bg-accent hover:brightness-110; color: rgb(var(--ink-on-accent)); }
-  .btn-ghost   { @apply btn border border-white/10 text-ice hover:bg-white/[0.04]; }
-  .btn-sm      { @apply px-2.5 py-1.5 text-xs; }
-  .th { @apply px-3 py-2 text-left font-mono text-[11px] uppercase tracking-wider text-ice-faint; }
-  .td { @apply px-3 py-2.5 text-sm text-ice/90 border-t border-white/[0.05]; }
+  .btn-primary {
+    @apply btn bg-accent hover:brightness-110;
+    color: rgb(var(--ink-on-accent));
+    box-shadow: 0 6px 18px -8px rgb(var(--accent) / 0.55);
+  }
+  .btn-ghost   { @apply btn border border-white/10 bg-white/[0.03] text-ice hover:border-white/[0.16] hover:bg-white/[0.06]; }
+  .btn-sm      { @apply rounded-lg px-2.5 py-1.5 text-xs; }
+
+  /* Tables — roomier rows, quiet header, hover wash */
+  .th { @apply px-4 py-3 text-left font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] text-ice-faint; }
+  .td { @apply px-4 py-3 text-sm text-ice/90 border-t border-white/[0.05]; }
+  thead { @apply bg-white/[0.025]; }
+  tbody tr { @apply transition-colors; }
+  tbody tr:hover { @apply bg-white/[0.03]; }
+
+  /* Segmented tab strip */
+  .tabs { @apply inline-flex max-w-full gap-0.5 overflow-x-auto rounded-xl border border-white/[0.07] bg-white/[0.04] p-1; }
+  .tab {
+    @apply whitespace-nowrap rounded-[9px] px-3.5 py-1.5 text-[13px] font-medium text-ice-dim transition
+           hover:bg-white/[0.05] hover:text-ice;
+  }
+  .tab-on, .tab-on:hover {
+    @apply bg-accent font-semibold;
+    color: rgb(var(--ink-on-accent));
+    box-shadow: 0 4px 14px -6px rgb(var(--accent) / 0.6);
+  }
+
+  /* Filter / action bar above a table */
+  .toolbar { @apply rounded-2xl border border-white/[0.07] bg-navy-800/60 p-2.5 backdrop-blur-sm; }
+  .searchbox {
+    @apply flex h-9 items-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-3 transition
+           focus-within:border-accent/50 focus-within:ring-2 focus-within:ring-accent/15;
+  }
+  .toolbar .input { @apply h-9 py-1.5; }
 }
 
 /* Text on the accent colour must stay dark in both themes (amber is light).
@@ -168,6 +197,7 @@ html.light .text-accent { color: rgb(var(--accent-ink)); }
 /* Panels are more opaque in light mode (60% white over grey looks washy). */
 html.light .panel { background-color: rgb(255 255 255 / 0.88); }
 html.light .kpi { background-image: none; background-color: rgb(255 255 255 / 0.92); }
+html.light .toolbar { background-color: rgb(255 255 255 / 0.8); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }

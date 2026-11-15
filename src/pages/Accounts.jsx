@@ -18,11 +18,10 @@ const PAY_STATUS  = ['draft', 'approved', 'paid']
 function Tabs({ tab, setTab }) {
   const items = [['invoices', 'Invoices (AR)'], ['bills', 'Bills (AP)'], ['payments', 'Payments'], ['payroll', 'Payroll']]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition
-            ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -47,7 +46,7 @@ export default function Accounts() {
       {tab === 'bills' && (
         <ModuleScaffold
           key={billsKey}
-          eyebrow="Finance" title="Bills — Accounts Payable" table="bills"
+          eyebrow="Finance" title="Bills — Accounts Payable" sub="Supplier bills, due dates and what is still owed." table="bills"
           newLabel="New bill" emptyTitle="No bills"
           emptyHint="Record supplier bills and manage your payables."
           searchKeys={['bill_no', 'supplier', 'status']}
@@ -95,7 +94,7 @@ export default function Accounts() {
 
       {tab === 'payments' && (
         <ModuleScaffold
-          eyebrow="Finance" title="Payments" table="payments"
+          eyebrow="Finance" title="Payments" sub="Money paid out against supplier bills." table="payments"
           newLabel="New payment" emptyTitle="No payments recorded"
           emptyHint="Log all incoming and outgoing payments against invoices and bills."
           searchKeys={['reference', 'notes']}

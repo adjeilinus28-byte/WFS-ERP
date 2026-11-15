@@ -94,7 +94,7 @@ export default function Invoices({ ccy }) {
         {canWrite && <button className="btn-primary" onClick={openNew}><Plus size={16} /> {at('New invoice')}</button>}
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Total invoices" value={rows.length} icon={Landmark} />
         <StatCard label="Outstanding AR" value={money(outstanding, ccy)} tone={outstanding ? 'warn' : 'ok'} icon={TrendingUp} />
         <StatCard label="Overdue" value={overdue} tone={overdue ? 'bad' : 'ok'} icon={Clock} />
@@ -102,9 +102,9 @@ export default function Invoices({ ccy }) {
       </div>
 
       {/* Filters */}
-      <div className="panel mb-4 p-3">
+      <div className="toolbar mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+          <div className="searchbox">
             <Search size={15} className="text-ice-faint" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search invoice, customer…" className="w-48 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
           </div>
@@ -121,14 +121,14 @@ export default function Invoices({ ccy }) {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">{at('Invoice #')}</th><th className="th">{at('Customer')}</th><th className="th">{at('Due')}</th>
                 <th className="th">{at('Total')}</th><th className="th">{at('Doc')}</th><th className="th">{at('Sent')}</th>
                 <th className="th">{at('Status')}</th><th className="th text-right">{at('Actions')}</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                  <tr key={r.id}>
                     <td className="td font-mono text-accent whitespace-nowrap">{r.invoice_no}</td>
                     <td className="td">{r.customer}<div className="text-[10px] text-ice-faint">{r.customer_email}</div></td>
                     <td className="td whitespace-nowrap">{date(r.due_date)}</td>
@@ -162,7 +162,7 @@ export default function Invoices({ ccy }) {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(null)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{drawer === 'new' ? 'New Invoice' : 'Edit Invoice'}</h2>
               <button onClick={() => setDrawer(null)} className="text-ice-faint hover:text-ice"><X size={18} /></button>

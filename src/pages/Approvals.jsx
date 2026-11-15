@@ -115,9 +115,9 @@ export default function Approvals() {
 
   return (
     <div>
-      <PageHeader eyebrow={at('Workflow')} title={at('Approvals')} />
+      <PageHeader eyebrow={at('Workflow')} title={at('Approvals')} sub="Everything waiting on a decision, in one inbox." />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label={at('Pending total')} value={items.length} icon={Inbox} tone={items.length ? 'warn' : 'ok'} />
         <StatCard label={at('Leave')} value={countBy('leave')} icon={CalendarCheck} />
         <StatCard label={at('Purchase requests')} value={countBy('preq')} icon={ShoppingCart} />

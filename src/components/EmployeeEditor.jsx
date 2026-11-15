@@ -61,7 +61,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-      <div className="relative flex h-full w-full max-w-xl flex-col border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+      <div className="relative flex h-full w-full max-w-xl flex-col border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border sm:overflow-hidden">
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <h2 className="font-display text-lg font-bold text-ice">{initial?.id ? 'Edit Employee' : 'New Employee'}</h2>
           <button onClick={onClose} className="rounded-md p-1.5 text-ice-faint hover:bg-white/5 hover:text-ice"><X size={18} /></button>
@@ -71,7 +71,7 @@ export default function EmployeeEditor({ open, initial, deptOptions, onClose, on
         <div className="flex gap-1 overflow-x-auto border-b border-white/[0.06] px-4 py-2">
           {tabs.map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)}
-              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+              className={`tab ${tab === k ? 'tab-on' : ''}`}>
               {label}
             </button>
           ))}

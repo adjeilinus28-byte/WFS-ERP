@@ -12,7 +12,7 @@ import Drawer from './Drawer'
 // its table name, columns, form fields, and (optionally) a KPI strip.
 //   - readOnly is auto-derived from role (viewers can't mutate)
 export default function ModuleScaffold({
-  eyebrow, title, table, columns, fields, searchKeys,
+  eyebrow, title, sub, table, columns, fields, searchKeys,
   kpis,                         // optional (rows) => <KPI strip/>
   newLabel = 'New record',
   emptyTitle, emptyHint,
@@ -64,7 +64,7 @@ export default function ModuleScaffold({
 
   return (
     <>
-      <PageHeader eyebrow={eyebrow} title={title}>
+      <PageHeader eyebrow={eyebrow} title={title} sub={sub}>
         {canWrite && (
           <button className="btn-primary" onClick={() => setDrawer({ open: true, row: null })}>
             <Plus size={16} /> {at(newLabel)}
@@ -72,7 +72,7 @@ export default function ModuleScaffold({
         )}
       </PageHeader>
 
-      {kpis && <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">{kpis(rows)}</div>}
+      {kpis && <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">{kpis(rows)}</div>}
 
       <DataTable
         columns={columns} rows={rows} loading={loading}

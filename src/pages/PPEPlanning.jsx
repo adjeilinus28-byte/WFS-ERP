@@ -19,9 +19,9 @@ const monthLabel = (k) => businessMonthLabel(k)
 function Tabs({ tab, setTab }) {
   const items = [['sizes', at('Size Demand')], ['requirements', at('Dept Requirements')], ['consumption', at('Consumption Analysis')]]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, l]) => (
-        <button key={k} onClick={() => setTab(k)} className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>{l}</button>
+        <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
     </div>
   )
@@ -65,7 +65,7 @@ export default function PPEPlanning() {
 
   return (
     <div>
-      <PageHeader eyebrow="Supply Chain" title="PPE & Uniform Planning" />
+      <PageHeader eyebrow="Supply Chain" title="PPE & Uniform Planning" sub="PPE consumption and sizing needs across the workforce." />
       <Tabs tab={tab} setTab={setTab} />
 
       {/* Global dept filter */}
@@ -77,7 +77,7 @@ export default function PPEPlanning() {
 
       {tab === 'sizes' && (
         <>
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
             <StatCard label="Workforce" value={emps.length} icon={Users} sub={dept || 'all depts'} />
             <StatCard label="Distinct top sizes" value={topSizes.length} icon={Shirt} />
             <StatCard label="Distinct waist sizes" value={trouserSizes.length} icon={Ruler} />
@@ -97,7 +97,7 @@ export default function PPEPlanning() {
             : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-white/[0.02]"><tr>
+                  <thead><tr>
                     <th className="th">{at('Item')}</th><th className="th">{at('On hand')}</th><th className="th">{at('Reorder')}</th>
                     <th className="th">{at('Workforce need')}</th><th className="th">{at('Status')}</th>
                   </tr></thead>
@@ -107,7 +107,7 @@ export default function PPEPlanning() {
                       const short = Number(it.qty_on_hand) < need
                       const low = Number(it.qty_on_hand) <= Number(it.reorder_level)
                       return (
-                        <tr key={it.id} className="transition hover:bg-white/[0.025]">
+                        <tr key={it.id}>
                           <td className="td">{it.name}<div className="font-mono text-[10px] text-ice-faint">{it.sku}</div></td>
                           <td className="td font-mono">{num(it.qty_on_hand)} {it.uom}</td>
                           <td className="td font-mono">{num(it.reorder_level)}</td>
@@ -175,13 +175,13 @@ function Requirements({ employees, deptOptions }) {
       : (
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-white/[0.02]"><tr>
+            <thead><tr>
               <th className="th">{at('Department')}</th><th className="th">{at('Headcount')}</th>
               <th className="th">{at('Top sizes needed')}</th><th className="th">{at('Waist sizes needed')}</th><th className="th">{at('Shoe sizes needed')}</th>
             </tr></thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="transition hover:bg-white/[0.025]">
+                <tr key={i}>
                   <td className="td font-semibold">{r.dept}</td>
                   <td className="td"><Badge tone="accent">{r.headcount}</Badge></td>
                   <td className="td text-sm">{fmt(r.top)}</td>
@@ -279,10 +279,10 @@ function Consumption({ issuances, ccy, deptOptions }) {
           <div className="panel overflow-hidden lg:col-span-2">
             <div className="border-b border-white/[0.06] px-5 py-3"><span className="eyebrow">{at('Department breakdown')}</span></div>
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr><th className="th">{at('Department')}</th><th className="th">{at('Qty issued')}</th><th className="th">{at('Total cost')}</th><th className="th">{at('% of spend')}</th></tr></thead>
+              <thead><tr><th className="th">{at('Department')}</th><th className="th">{at('Qty issued')}</th><th className="th">{at('Total cost')}</th><th className="th">{at('% of spend')}</th></tr></thead>
               <tbody>
                 {byDept.map((r, i) => (
-                  <tr key={i} className="transition hover:bg-white/[0.025]">
+                  <tr key={i}>
                     <td className="td font-semibold">{r.dept}</td>
                     <td className="td font-mono">{num(r.qty)}</td>
                     <td className="td font-mono">{money(r.cost, ccy)}</td>

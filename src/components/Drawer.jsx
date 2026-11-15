@@ -51,8 +51,8 @@ export default function Drawer({ open, onClose, title, fields, initial, onSubmit
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={onClose} aria-hidden="true" />
       <div ref={panelRef} role="dialog" aria-modal="true" aria-label={title}
-        className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-navy-800/95 px-5 py-4 backdrop-blur">
+        className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.06] bg-navy-800/95 px-5 py-4 backdrop-blur sm:rounded-t-2xl">
           <h2 className="font-display text-lg font-bold text-ice">{title}</h2>
           <button onClick={onClose} aria-label={t('common.close_dialog')} className="rounded-md p-1.5 text-ice-faint hover:bg-white/5 hover:text-ice"><X size={18} /></button>
         </div>
@@ -73,7 +73,7 @@ export default function Drawer({ open, onClose, title, fields, initial, onSubmit
           ))}
         </div>
 
-        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-white/[0.06] bg-navy-800/95 px-5 py-4 backdrop-blur">
+        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-white/[0.06] bg-navy-800/95 px-5 py-4 backdrop-blur sm:rounded-b-2xl">
           <button onClick={onClose} className="btn-ghost">{t('common.cancel')}</button>
           <button onClick={submit} disabled={submitting} className="btn-primary">
             {submitting ? t('common.saving') : t('common.save')}

@@ -21,10 +21,10 @@ const LEAVE_STATUS = ['pending', 'approved', 'declined', 'cancelled']
 
 function TabStrip({ tab, setTab }) {
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {TABS.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -139,7 +139,7 @@ function Requests() {
         <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> {at('Apply for leave')}</button>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Pending" value={pending} tone={pending ? 'warn' : 'ok'} icon={CalendarX} />
         <StatCard label="Approved" value={approved} tone="ok" icon={CalendarCheck} />
         <StatCard label="Currently away" value={away} icon={Users} />
@@ -158,14 +158,14 @@ function Requests() {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">{at('Employee')}</th><th className="th">{at('Dept')}</th><th className="th">{at('Type')}</th>
                 <th className="th">{at('From')}</th><th className="th">{at('To')}</th><th className="th">{at('Days')}</th>
                 <th className="th">{at('Status')}</th><th className="th text-right">{at('Actions')}</th>
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                  <tr key={r.id}>
                     <td className="td">{r.employee_name}</td>
                     <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
                     <td className="td"><Badge>{r.leave_type}</Badge></td>
@@ -195,7 +195,7 @@ function Requests() {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{at('Apply for Leave')}</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
@@ -425,7 +425,7 @@ export default function HR() {
   const [tab, setTab] = useState('requests')
   return (
     <div>
-      <PageHeader eyebrow="People" title="Leave Management" />
+      <PageHeader eyebrow="People" title="Leave Management" sub="Requests, balances and leave types for your workforce." />
       <TabStrip tab={tab} setTab={setTab} />
 
       {tab === 'requests' && <Requests />}
@@ -433,7 +433,7 @@ export default function HR() {
       {tab === 'calendar' && <LeaveCalendar />}
       {tab === 'types' && (
         <ModuleScaffold
-          eyebrow="People" title="Leave Types" table="leave_types"
+          eyebrow="People" title="Leave Types" sub="Leave categories, entitlements and rules." table="leave_types"
           newLabel="New leave type" emptyTitle="No leave types"
           emptyHint="Define leave categories, annual entitlements, and notice rules."
           searchKeys={['name', at('code')]}

@@ -18,10 +18,10 @@ const WORKER = ['surface', 'underground', 'office', 'field']
 function Tabs({ tab, setTab }) {
   const items = [['staff', 'Employees'], ['departments', 'Departments']]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -87,11 +87,11 @@ function Employees() {
 
   return (
     <>
-      <PageHeader eyebrow="People" title="Workforce">
+      <PageHeader eyebrow="People" title="Workforce" sub="Employee directory and department structure.">
         {canWrite && <button className="btn-primary" onClick={() => setEditor({ open: true, row: null })}><Plus size={16} /> New employee</button>}
       </PageHeader>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Headcount" value={rows.length} icon={Users} />
         <StatCard label="Active" value={active} tone="ok" icon={UserCheck} />
         <StatCard label="On leave" value={onLeave} icon={UserMinus} />
@@ -99,9 +99,9 @@ function Employees() {
       </div>
 
       {/* Filter bar */}
-      <div className="panel mb-4 p-3">
+      <div className="toolbar mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+          <div className="searchbox">
             <Search size={15} className="text-ice-faint" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, no., role…"
               className="w-48 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
@@ -125,14 +125,14 @@ function Employees() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">No.</th><th className="th">Name</th><th className="th">Department</th>
                 <th className="th">Position</th><th className="th">Type</th><th className="th">Status</th><th className="th">Hired</th>
                 {canWrite && <th className="th text-right">Actions</th>}
               </tr></thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="cursor-pointer transition hover:bg-white/[0.025]" onClick={() => setProfile(r)}>
+                  <tr key={r.id} className="cursor-pointer" onClick={() => setProfile(r)}>
                     <td className="td font-mono text-accent whitespace-nowrap">{r.employee_no || '—'}</td>
                     <td className="td">
                       <span className="font-medium text-ice hover:text-accent">{r.full_name}</span>
@@ -175,7 +175,7 @@ export default function Workforce() {
       <Tabs tab={tab} setTab={setTab} />
       {tab === 'staff' ? <Employees /> : (
         <ModuleScaffold
-          eyebrow="People" title="Departments" table="departments"
+          eyebrow="People" title="Departments" sub="Your organisation structure, heads and cost centres." table="departments"
           newLabel="New department" emptyTitle="No departments yet"
           emptyHint="Define your org structure — these become the dropdown options across the platform."
           searchKeys={['name', 'code', 'head', 'cost_center']}

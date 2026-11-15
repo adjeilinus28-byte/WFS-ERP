@@ -14,7 +14,7 @@ export default function Assets() {
   const { options: deptOptions } = useDepartments()
   return (
     <ModuleScaffold
-      eyebrow="Operations" title="Asset Register" table="assets"
+      eyebrow="Operations" title="Asset Register" sub="Every machine and vehicle, with status and service dates." table="assets"
       newLabel="New asset" emptyTitle="No assets registered"
       emptyHint="Add your equipment to track status, criticality, and service schedules."
       searchKeys={['asset_code', 'name', 'category', 'location']}

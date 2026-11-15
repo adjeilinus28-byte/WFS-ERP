@@ -94,11 +94,11 @@ export default function Issuance() {
 
   return (
     <>
-      <PageHeader eyebrow="Supply Chain" title="Material Issuance">
+      <PageHeader eyebrow="Supply Chain" title="Material Issuance" sub="Stock issued to people, work orders and departments.">
         {canWrite && <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> Issue item</button>}
       </PageHeader>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Issuances" value={filtered.length} icon={PackageMinus} sub={fPeriod.replace('_', ' ')} />
         <StatCard label="Units issued" value={num(totalQty)} icon={Layers} />
         <StatCard label="Spend (period)" value={money(totalSpend, ccy)} tone="bad" icon={Wallet} />
@@ -106,9 +106,9 @@ export default function Issuance() {
       </div>
 
       {/* Filters */}
-      <div className="panel mb-4 p-3">
+      <div className="toolbar mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+          <div className="searchbox">
             <Search size={15} className="text-ice-faint" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search item, SKU, issued to…"
               className="w-48 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
@@ -132,14 +132,14 @@ export default function Issuance() {
           : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-white/[0.02]"><tr>
+                <thead><tr>
                   <th className="th">Ref</th><th className="th">Item</th><th className="th">Qty</th>
                   <th className="th">Cost</th><th className="th">Issued to</th><th className="th">Date</th>
                   {canWrite && <th className="th text-right">·</th>}
                 </tr></thead>
                 <tbody>
                   {filtered.map((r) => (
-                    <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                    <tr key={r.id}>
                       <td className="td font-mono text-accent whitespace-nowrap">{r.issue_no}</td>
                       <td className="td">{r.item_name}<div className="font-mono text-[10px] text-ice-faint">{r.sku}</div></td>
                       <td className="td font-mono whitespace-nowrap">{num(r.qty)} {r.uom}</td>
@@ -183,7 +183,7 @@ export default function Issuance() {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">Issue Item</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>

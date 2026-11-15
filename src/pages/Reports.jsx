@@ -132,7 +132,7 @@ export default function Reports() {
 
   return (
     <div>
-      <PageHeader eyebrow="Insight" title="Reports">
+      <PageHeader eyebrow="Insight" title="Reports" sub="Trends across operations, people, safety and finance.">
         <button className="btn-ghost" onClick={exportCsv}><Download size={15} /> Export CSV</button>
         <button className="btn-ghost" onClick={() => window.print()}><Printer size={15} /> Print</button>
         <button className="btn-primary" onClick={generate} disabled={busy}><Sparkles size={15} /> {busy ? 'Generating…' : 'Generate AI report'}</button>

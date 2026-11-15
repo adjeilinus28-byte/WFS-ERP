@@ -11,7 +11,7 @@ export default function Inventory() {
   const ccy = activeOrg?.currency || 'GHS'
   return (
     <ModuleScaffold
-      eyebrow="Supply Chain" title="Inventory" table="inventory_items"
+      eyebrow="Supply Chain" title="Inventory" sub="Stock on hand, reorder levels and stock value." table="inventory_items"
       newLabel="New item" emptyTitle="No stock items"
       emptyHint="Track stock levels, reorder points, and store value across warehouses."
       searchKeys={['sku', 'name', 'category', 'location']}

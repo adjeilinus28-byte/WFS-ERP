@@ -17,10 +17,10 @@ const PRIORITY = ['low', 'normal', 'high', 'urgent']
 function Tabs({ tab, setTab }) {
   const items = [['requests', 'Purchase Requests'], ['orders', 'Purchase Orders'], ['suppliers', 'Suppliers']]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -105,11 +105,11 @@ function Requests({ suppliers }) {
 
   return (
     <>
-      <PageHeader eyebrow="Supply Chain" title="Purchase Requests">
+      <PageHeader eyebrow="Supply Chain" title="Purchase Requests" sub="Raise, approve and convert requests into purchase orders.">
         <button className="btn-primary" onClick={() => setDrawer(true)}><Plus size={16} /> New request</button>
       </PageHeader>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Pending" value={pending} tone={pending ? 'warn' : 'ok'} icon={FileClock} />
         <StatCard label="Approved" value={approved} tone="ok" icon={Check} />
         <StatCard label="Converted" value={rows.filter((r) => r.status === 'converted').length} icon={ArrowRight} />
@@ -122,14 +122,14 @@ function Requests({ suppliers }) {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">Ref</th><th className="th">Title</th><th className="th">Dept</th>
                 <th className="th">Approver</th><th className="th">Est. total</th><th className="th">Priority</th>
                 <th className="th">Status</th><th className="th text-right">Actions</th>
               </tr></thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                  <tr key={r.id}>
                     <td className="td font-mono text-accent whitespace-nowrap">{r.request_no}</td>
                     <td className="td">{r.title}</td>
                     <td className="td">{r.department ? <Badge>{r.department}</Badge> : '—'}</td>
@@ -160,7 +160,7 @@ function Requests({ suppliers }) {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(false)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">New Purchase Request</h2>
               <button onClick={() => setDrawer(false)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
@@ -263,11 +263,11 @@ function PurchaseOrders({ suppliers }) {
 
   return (
     <>
-      <PageHeader eyebrow="Supply Chain" title="Purchase Orders">
+      <PageHeader eyebrow="Supply Chain" title="Purchase Orders" sub="Orders sent to suppliers and their responses.">
         {canWrite && <button className="btn-primary" onClick={() => setEdit({ po_number: `PO-${Date.now().toString().slice(-6)}`, status: 'draft', total: 0, currency: ccy })}><Plus size={16} /> New PO</button>}
       </PageHeader>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Total POs" value={rows.length} icon={ShoppingCart} />
         <StatCard label="Awaiting supplier" value={rows.filter((r) => r.status === 'sent' && r.supplier_status === 'pending').length} tone="warn" icon={Clock} />
         <StatCard label="Accepted" value={rows.filter((r) => r.supplier_status === 'accepted').length} tone="ok" icon={Check} />
@@ -280,14 +280,14 @@ function PurchaseOrders({ suppliers }) {
         : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white/[0.02]"><tr>
+              <thead><tr>
                 <th className="th">PO #</th><th className="th">Supplier</th><th className="th">Total</th>
                 <th className="th">Expected</th><th className="th">Status</th><th className="th">Supplier resp.</th>
                 <th className="th text-right">Actions</th>
               </tr></thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="transition hover:bg-white/[0.025]">
+                  <tr key={r.id}>
                     <td className="td font-mono text-accent whitespace-nowrap">{r.po_number}</td>
                     <td className="td">{supplierName(r.supplier_id)}</td>
                     <td className="td font-mono">{money(r.total, ccy)}</td>
@@ -319,7 +319,7 @@ function PurchaseOrders({ suppliers }) {
       {edit && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setEdit(null)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{edit.id ? 'Edit Purchase Order' : 'New Purchase Order'}</h2>
               <button onClick={() => setEdit(null)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
@@ -359,7 +359,7 @@ export default function Procurement() {
       {tab === 'orders' && <PurchaseOrders suppliers={suppliers} />}
       {tab === 'suppliers' && (
         <ModuleScaffold
-          eyebrow="Supply Chain" title="Suppliers" table="suppliers"
+          eyebrow="Supply Chain" title="Suppliers" sub="Vendors you buy from and how to reach them." table="suppliers"
           newLabel="New supplier" emptyTitle="No suppliers"
           emptyHint="Build your approved vendor list. Add an email so POs can be sent for approval."
           searchKeys={['name', 'contact_name', 'email', 'category']}

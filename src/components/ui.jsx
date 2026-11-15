@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react'
-import { CheckCircle2, AlertCircle, X } from 'lucide-react'
+import { CheckCircle2, AlertCircle, X, Inbox } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { at } from '../lib/tr'
 
@@ -15,16 +15,18 @@ export function useAutoT() {
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 const TONE = {
-  ok:   'bg-ok/10 text-ok border-ok/30',
-  warn: 'bg-warn/10 text-warn border-warn/30',
-  bad:  'bg-bad/10 text-bad border-bad/30',
-  info: 'bg-info/10 text-info border-info/30',
-  mute: 'bg-white/[0.04] text-ice-dim border-white/10',
-  accent: 'bg-accent-soft text-accent border-accent-line',
+  ok:   'bg-ok/10 text-ok',
+  warn: 'bg-warn/10 text-warn',
+  bad:  'bg-bad/10 text-bad',
+  info: 'bg-info/10 text-info',
+  mute: 'bg-white/[0.06] text-ice-dim',
+  accent: 'bg-accent-soft text-accent',
 }
+// Pill with a small status dot (coloured tones only).
 export function Badge({ tone = 'mute', children }) {
   return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${TONE[tone] || TONE.mute}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${TONE[tone] || TONE.mute}`}>
+      {tone !== 'mute' && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden="true" />}
       {children}
     </span>
   )
@@ -71,7 +73,7 @@ export function PageHeader({ eyebrow, title, sub, children }) {
       <div>
         {eyebrow && <div className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">{at(eyebrow)}</div>}
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ice sm:text-[32px]">{at(title)}</h1>
-        {sub && <p className="mt-1.5 text-sm text-ice-faint">{sub}</p>}
+        {sub && <p className="mt-1.5 text-sm text-ice-faint">{typeof sub === 'string' ? at(sub) : sub}</p>}
       </div>
       <div className="flex items-center gap-2">{children}</div>
     </div>
@@ -82,8 +84,8 @@ export function PageHeader({ eyebrow, title, sub, children }) {
 export function EmptyState({ title, hint, action }) {
   const at = useAutoT()
   return (
-    <div className="panel flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
-      <div className="h-10 w-10 rounded-lg border border-white/10 bg-white/[0.03]" />
+    <div className="panel flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+      <div className="mb-1 grid h-12 w-12 place-items-center rounded-2xl bg-accent-soft text-accent"><Inbox size={22} /></div>
       <p className="font-display text-lg font-bold text-ice">{at(title)}</p>
       {hint && <p className="max-w-sm text-sm text-ice-faint">{at(hint)}</p>}
       {action && <div className="mt-2">{action}</div>}
@@ -96,7 +98,7 @@ export function Field({ label, children, span }) {
   const at = useAutoT()
   return (
     <label className={`block ${span ? 'sm:col-span-2' : ''}`}>
-      <span className="mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">{at(label)}</span>
+      <span className="mb-1.5 block text-xs font-medium text-ice-dim">{at(label)}</span>
       {children}
     </label>
   )
@@ -148,8 +150,8 @@ export function ToastProvider({ children }) {
       <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2" aria-live="polite" aria-atomic="false">
         {items.map((t) => (
           <div key={t.id} role="status"
-            className={`flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm shadow-pop animate-rise
-              ${t.tone === 'bad' ? 'border-bad/40 bg-bad/10 text-bad' : 'border-ok/40 bg-ok/10 text-ok'}`}>
+            className={`flex items-center gap-2.5 rounded-xl border bg-navy-700 px-4 py-3 text-sm shadow-pop animate-rise
+              ${t.tone === 'bad' ? 'border-bad/40 text-bad' : 'border-ok/40 text-ok'}`}>
             {t.tone === 'bad' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
             <span className="text-ice/90">{t.msg}</span>
             <button onClick={() => setItems((x) => x.filter((i) => i.id !== t.id))} aria-label="Dismiss notification" className="ml-1 opacity-60 hover:opacity-100">

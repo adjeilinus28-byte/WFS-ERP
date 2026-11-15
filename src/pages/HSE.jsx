@@ -18,10 +18,10 @@ const ISTATUS = ['open', 'investigating', 'closed']
 function Tabs({ tab, setTab }) {
   const items = [['incidents', 'Incidents'], ['docs', 'Compliance Documents'], ['kiosk', 'Document Kiosk'], ['safety', 'Safety Interactions']]
   return (
-    <div className="mb-5 inline-flex rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs mb-5">
       {items.map(([k, label]) => (
         <button key={k} onClick={() => setTab(k)}
-          className={`rounded-md px-3.5 py-1.5 text-sm font-semibold transition ${tab === k ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>
+          className={`tab ${tab === k ? 'tab-on' : ''}`}>
           {label}
         </button>
       ))}
@@ -84,7 +84,7 @@ function ComplianceDocs() {
         <div className="eyebrow">Compliance register</div>
         {canWrite && <button className="btn-primary btn-sm" onClick={openNew}><Plus size={14} /> Add document</button>}
       </div>
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Documents" value={rows.length} icon={ShieldCheck} />
         <StatCard label="Expired / critical" value={exp} tone={exp ? 'bad' : 'ok'} icon={FileWarning} />
         <StatCard label="Expiring ≤45d" value={soon} tone={soon ? 'warn' : 'ok'} icon={FileWarning} />
@@ -109,7 +109,7 @@ function ComplianceDocs() {
       {drawer && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm animate-fade-in" onClick={() => setDrawer(null)} />
-          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in">
+          <div className="relative h-full w-full max-w-md overflow-y-auto border-l border-white/10 bg-navy-800 shadow-pop animate-slide-in sm:my-3 sm:mr-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
               <h2 className="font-display text-lg font-bold text-ice">{drawer === 'new' ? 'Add Document' : 'Edit Document'}</h2>
               <button onClick={() => setDrawer(null)} className="text-ice-faint hover:text-ice"><X size={18} /></button>
@@ -160,7 +160,7 @@ function DocumentKiosk() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy/50 px-3 py-1.5">
+        <div className="searchbox">
           <Search size={15} className="text-ice-faint" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search documents…" className="w-56 bg-transparent text-sm text-ice placeholder:text-ice-faint/70 outline-none" />
         </div>
@@ -215,7 +215,7 @@ export default function HSE() {
       <Tabs tab={tab} setTab={setTab} />
       {tab === 'incidents' ? (
         <ModuleScaffold
-          eyebrow="Compliance" title="HSE & Safety" table="hse_incidents"
+          eyebrow="Compliance" title="HSE & Safety" sub="Incidents, severity and corrective actions." table="hse_incidents"
           newLabel="Log incident" emptyTitle="No incidents logged"
           emptyHint="Record near-misses, injuries, and environmental events with corrective actions."
           searchKeys={['incident_no', 'incident_type', 'location', 'reported_by']}
@@ -259,9 +259,9 @@ export default function HSE() {
             </>
           }}
         />
-      ) : tab === 'docs' ? <><PageHeader eyebrow="Compliance" title="Compliance Documents" /><ComplianceDocs /></>
-        : tab === 'kiosk' ? <><PageHeader eyebrow="Compliance" title="Document Kiosk" /><DocumentKiosk /></>
-        : <><PageHeader eyebrow="Compliance" title="Safety Interactions" /><SafetyInteractions /></>}
+      ) : tab === 'docs' ? <><PageHeader eyebrow="Compliance" title="Compliance Documents" sub="Permits, licences and certificates with expiry tracking." /><ComplianceDocs /></>
+        : tab === 'kiosk' ? <><PageHeader eyebrow="Compliance" title="Document Kiosk" sub="Documents shared with the workforce to view and print." /><DocumentKiosk /></>
+        : <><PageHeader eyebrow="Compliance" title="Safety Interactions" sub="Field observations, critical control checks and monthly targets." /><SafetyInteractions /></>}
     </div>
   )
 }
