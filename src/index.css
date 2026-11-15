@@ -39,8 +39,8 @@
   --shadow-pop:  0 18px 50px -12px rgba(0,0,0,0.7);
 
   /* Page background */
-  --page-g1: #141C30;
-  --page-g2: #080C16;
+  --page-g1: #121A30;
+  --page-g2: #070B14;
 
   /* Ink for text sitting on the accent colour (amber needs dark text in BOTH themes) */
   --ink-on-accent: 8 12 22;
@@ -100,8 +100,28 @@ body {
 
 @layer components {
   .panel {
-    @apply rounded-xl border border-white/[0.06] bg-navy-800/60 backdrop-blur-sm shadow-deck;
+    @apply rounded-2xl border border-white/[0.07] bg-navy-800/70 backdrop-blur-sm shadow-deck;
   }
+  /* KPI tile — soft top-lit surface, lifts slightly on hover */
+  .kpi {
+    @apply rounded-2xl border border-white/[0.07] bg-gradient-to-b from-navy-700/80 to-navy-800/70 p-5
+           shadow-deck transition duration-200 hover:-translate-y-0.5 hover:border-white/[0.12];
+  }
+  /* Square icon button used in the top bar */
+  .icon-btn {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.07] bg-white/[0.04]
+           text-ice-dim transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-ice;
+  }
+  /* Sidebar navigation row */
+  .nav-item {
+    @apply flex items-center gap-3 rounded-[10px] border border-transparent px-3 py-2 text-sm font-medium
+           text-ice-dim transition hover:bg-white/[0.04] hover:text-ice;
+  }
+  .nav-item-active {
+    @apply border-accent-line bg-accent-soft font-semibold text-ice hover:bg-accent-soft;
+  }
+  /* Small coloured chip behind an icon */
+  .chip { @apply grid h-8 w-8 shrink-0 place-items-center rounded-[10px]; }
   .eyebrow {
     @apply font-mono text-[11px] uppercase tracking-[0.18em] text-ice-faint;
   }
@@ -147,6 +167,7 @@ html.light .text-accent { color: rgb(var(--accent-ink)); }
 
 /* Panels are more opaque in light mode (60% white over grey looks washy). */
 html.light .panel { background-color: rgb(255 255 255 / 0.88); }
+html.light .kpi { background-image: none; background-color: rgb(255 255 255 / 0.92); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }

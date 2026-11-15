@@ -40,28 +40,38 @@ export const statusTone = (s = '') => {
 }
 
 // ── KPI tile ─────────────────────────────────────────────────────────────────
+const CHIP = {
+  accent: 'bg-accent-soft text-accent',
+  ok:     'bg-ok/10 text-ok',
+  warn:   'bg-warn/10 text-warn',
+  bad:    'bg-bad/10 text-bad',
+  info:   'bg-info/10 text-info',
+}
+const SUB = { bad: 'text-bad', ok: 'text-ok', warn: 'text-warn' }
+
 export function StatCard({ label, value, sub, tone = 'accent', icon: Icon }) {
   const at = useAutoT()
   return (
-    <div className="panel p-4 animate-rise">
-      <div className="flex items-start justify-between">
-        <span className="eyebrow">{at(label)}</span>
-        {Icon && <Icon size={16} className="text-ice-faint" />}
+    <div className="kpi animate-rise">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ice-faint">{at(label)}</span>
+        {Icon && <span className={`chip ${CHIP[tone] || CHIP.accent}`}><Icon size={16} /></span>}
       </div>
-      <div className="mt-3 font-mono text-2xl font-medium tracking-tight text-ice">{value}</div>
-      {sub && <div className={`mt-1 text-xs ${tone === 'bad' ? 'text-bad' : tone === 'ok' ? 'text-ok' : 'text-ice-faint'}`}>{at(sub)}</div>}
+      <div className="mt-3 truncate font-display text-[28px] font-bold leading-tight tracking-tight text-ice">{value}</div>
+      {sub && <div className={`mt-1.5 text-xs font-medium ${SUB[tone] || 'text-ice-faint'}`}>{at(sub)}</div>}
     </div>
   )
 }
 
 // ── Page header ──────────────────────────────────────────────────────────────
-export function PageHeader({ eyebrow, title, children }) {
+export function PageHeader({ eyebrow, title, sub, children }) {
   const at = useAutoT()
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        {eyebrow && <div className="eyebrow mb-1">{at(eyebrow)}</div>}
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ice">{at(title)}</h1>
+        {eyebrow && <div className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">{at(eyebrow)}</div>}
+        <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ice sm:text-[32px]">{at(title)}</h1>
+        {sub && <p className="mt-1.5 text-sm text-ice-faint">{sub}</p>}
       </div>
       <div className="flex items-center gap-2">{children}</div>
     </div>

@@ -104,7 +104,7 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       <button ref={btnRef} onClick={() => setOpen((o) => !o)}
-        className="relative rounded-lg p-2 text-ice-faint hover:bg-white/5 hover:text-ice"
+        className="icon-btn relative"
         aria-label={at('Notifications')} title={at('Notifications')}>
         <Bell size={17} />
         {count > 0 && (
