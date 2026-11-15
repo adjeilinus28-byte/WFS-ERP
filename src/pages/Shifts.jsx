@@ -380,8 +380,8 @@ function Roster() {
         <div className="w-44"><Select value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'All departments' }, ...deptOptions]} /></div>
         <div className="w-44"><Select value={patternFilter} onChange={(e) => setPatternFilter(e.target.value)} options={[{ value: '', label: 'All patterns' }, ...patterns.map((p) => ({ value: p.id, label: p.name }))]} /></div>
         {canWrite && (
-          <div className="inline-flex rounded-lg border border-white/10 bg-navy/60 p-0.5">
-            <button onClick={() => setMode('shifts')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'shifts' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Shifts</button>
+          <div className="tabs !p-0.5">
+            <button onClick={() => setMode('shifts')} className={`tab !px-2.5 !py-1 !text-xs ${mode === 'shifts' ? 'tab-on' : ''}`}>Shifts</button>
             <button onClick={() => setMode('attendance')} className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${mode === 'attendance' ? 'bg-bad text-white' : 'text-ice-dim hover:text-ice'}`}>Attendance</button>
           </div>
         )}

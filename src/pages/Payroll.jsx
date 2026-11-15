@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
 import { useEmployeePrivate } from '../hooks/useEmployeePrivate'
 import { useDepartments } from '../hooks/useDepartments'
-import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
+import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState, PageHeader } from '../components/ui'
 import { money, date, num } from '../lib/format'
 import { businessMonthKey, currentBusinessMonthLabel } from '../lib/period'
 import { periodFilterList } from '../lib/accounting'
@@ -552,6 +552,7 @@ export default function Payroll({ ccy }) {
 
   return (
     <div>
+      <PageHeader eyebrow="Finance" title="Payroll" sub="Payslips, overtime, pay setup and tax settings." />
       <SubTabs tab={sub} setTab={setSub} />
 
       {sub === 'slips' && (

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Landmark, TrendingUp, Clock, Wallet, CheckCircle2, ExternalLink } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
-import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState } from '../components/ui'
+import { StatCard, Badge, statusTone, Field, Select, useToast, EmptyState, PageHeader } from '../components/ui'
 import FileUpload from '../components/FileUpload'
 import { money, date } from '../lib/format'
 import { at } from '../lib/tr'
@@ -89,10 +89,9 @@ export default function Invoices({ ccy }) {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="eyebrow">{at('Finance · Accounts Receivable')}</div>
+      <PageHeader eyebrow="Finance" title="Invoices — Accounts Receivable" sub="Customer invoices, what is outstanding and what is overdue.">
         {canWrite && <button className="btn-primary" onClick={openNew}><Plus size={16} /> {at('New invoice')}</button>}
-      </div>
+      </PageHeader>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         <StatCard label="Total invoices" value={rows.length} icon={Landmark} />

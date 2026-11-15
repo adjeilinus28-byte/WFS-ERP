@@ -68,7 +68,7 @@ function TrainingAttachment({ value, name, onChange }) {
 function Tabs({ tab, setTab, canManage }) {
   const items = [['dashboard', at('Dashboard')], ['schedule', at('Schedule')], ['attendance', at('Attendance')], ['matrix', at('Compliance Matrix')]]
   return (
-    <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs flex-wrap mb-5">
       {items.map(([k, l]) => (
         <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}

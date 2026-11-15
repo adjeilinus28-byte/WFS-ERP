@@ -408,7 +408,7 @@ export default function IndustrialRelations() {
   return (
     <div>
       <PageHeader eyebrow="People · Confidential" title="Industrial Relations & Wellbeing" sub="Confidential concerns, case follow-up and counsellor referrals." />
-      <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
+      <div className="tabs flex-wrap mb-5">
         {tabs.map(([k, l]) => (
           <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
         ))}

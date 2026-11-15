@@ -26,7 +26,7 @@ function Tabs({ tab, setTab }) {
     ['cash', 'Cash Flow'], ['trial', 'Trial Balance'], ['journal', 'Journal'], ['coa', 'Chart of Accounts'],
   ]
   return (
-    <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs flex-wrap mb-5">
       {items.map(([k, l]) => (
         <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
@@ -234,9 +234,9 @@ export default function Financials() {
       <div className="panel mb-4 flex flex-wrap items-center gap-3 p-3">
         <span className="font-mono text-[11px] uppercase tracking-wider text-ice-faint">Period:</span>
         <div className="w-44"><Select value={period} onChange={(e) => setPeriod(e.target.value)} options={allPeriods.map((p) => ({ value: p, label: businessMonthLabel(p) }))} /></div>
-        <div className="inline-flex rounded-lg border border-white/10 bg-navy/60 p-0.5">
-          <button onClick={() => setScope('period')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'period' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Month</button>
-          <button onClick={() => setScope('fy')} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${scope === 'fy' ? 'bg-accent text-navy' : 'text-ice-dim hover:text-ice'}`}>Fiscal year</button>
+        <div className="tabs !p-0.5">
+          <button onClick={() => setScope('period')} className={`tab !px-2.5 !py-1 !text-xs ${scope === 'period' ? 'tab-on' : ''}`}>Month</button>
+          <button onClick={() => setScope('fy')} className={`tab !px-2.5 !py-1 !text-xs ${scope === 'fy' ? 'tab-on' : ''}`}>Fiscal year</button>
         </div>
         <span className="font-mono text-[11px] text-ice-faint">{periodLabel} · business month 21st–20th</span>
         <span className="ml-auto">

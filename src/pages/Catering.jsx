@@ -24,7 +24,7 @@ function Tabs({ tab, setTab, canManage }) {
   const items = [['order', at('My Orders')], ['dashboard', at('Order Dashboard')]]
   if (canManage) { items.push(['callouts', at('Callout Approvals')], ['vendors', at('Vendors')], ['menu', at('Menu Manager')]) }
   return (
-    <div className="mb-5 inline-flex flex-wrap rounded-lg border border-white/10 bg-navy/40 p-1">
+    <div className="tabs flex-wrap mb-5">
       {items.map(([k, l]) => (
         <button key={k} onClick={() => setTab(k)} className={`tab ${tab === k ? 'tab-on' : ''}`}>{l}</button>
       ))}
