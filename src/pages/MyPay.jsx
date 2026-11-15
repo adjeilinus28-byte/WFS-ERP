@@ -11,6 +11,8 @@ import { at } from '../lib/tr'
 // page never sees anyone else's pay.
 const n = (v) => Number(v || 0)
 const amt = (v, ccy) => new Intl.NumberFormat('en-GH', { style: 'currency', currency: ccy || 'GHS', minimumFractionDigits: 2 }).format(n(v))
+// Whole-number version for the KPI tiles (exact figures are on the payslip below).
+const amt0 = (v, ccy) => new Intl.NumberFormat('en-GH', { style: 'currency', currency: ccy || 'GHS', maximumFractionDigits: 0 }).format(n(v))
 const periodLabel = (p) => {
   if (!p || !/^\d{4}-\d{2}$/.test(p)) return p || '—'
   const [y, m] = p.split('-').map(Number)
@@ -86,10 +88,10 @@ export default function MyPay() {
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4 print:hidden">
-            <StatCard label={`Net pay · ${periodLabel(slip.period)}`} value={amt(slip.net_pay, ccy)} tone="ok" icon={Wallet} />
-            <StatCard label="Gross pay" value={amt(slip.gross_pay, ccy)} icon={Receipt} />
-            <StatCard label="All deductions" value={amt(n(slip.gross_pay) - n(slip.net_pay), ccy)} tone="warn" icon={Landmark} />
-            <StatCard label={`${year} so far (net)`} value={amt(ytdNet, ccy)} icon={CalendarCheck} sub={`${ytd.length} ${at('payslip(s)')} · ${at('tax')} ${amt(ytdTax, ccy)}`} />
+            <StatCard label={`Net pay · ${periodLabel(slip.period)}`} value={amt0(slip.net_pay, ccy)} tone="ok" icon={Wallet} />
+            <StatCard label="Gross pay" value={amt0(slip.gross_pay, ccy)} icon={Receipt} />
+            <StatCard label="All deductions" value={amt0(n(slip.gross_pay) - n(slip.net_pay), ccy)} tone="warn" icon={Landmark} />
+            <StatCard label={`${year} so far (net)`} value={amt0(ytdNet, ccy)} icon={CalendarCheck} sub={`${ytd.length} ${at('payslip(s)')} · ${at('tax')} ${amt(ytdTax, ccy)}`} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">

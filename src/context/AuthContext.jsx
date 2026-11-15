@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading]   = useState(true)
   const [membLoaded, setMembLoaded] = useState(false)
   const mounted = useRef(true)
+  const userIdRef = useRef(null)   // who the loaded memberships belong to
 
   // Load membership via the SECURITY DEFINER RPC. NEVER awaited inside the
   // onAuthStateChange callback — that holds the auth lock and deadlocks every
@@ -20,7 +21,9 @@ export function AuthProvider({ children }) {
   const loadMemberships = useCallback(async () => {
     const { data, error } = await supabase.rpc('my_memberships')
     if (!mounted.current) return
-    if (error) { console.error('[WFS] my_memberships failed', error); setMems([]) }
+    // On a failed refresh (e.g. a network blip) keep what we already have rather
+    // than dropping the user out of their workspace.
+    if (error) { console.error('[WFS] my_memberships failed', error); setMems((prev) => prev) }
     else {
       setMems(data || [])
       setActive((prev) => {
@@ -37,16 +40,25 @@ export function AuthProvider({ children }) {
     mounted.current = true
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
+      userIdRef.current = data.session?.user?.id || null
       setLoading(false)
       if (data.session) setTimeout(loadMemberships, 0)
       else setMembLoaded(true)
     })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, sess) => {
       setSession(sess)
       // DEFER — do not await Supabase calls here (deadlock).
-      if (sess) { setMembLoaded(false); setTimeout(loadMemberships, 0) }
-      else { setMems([]); setActive(null); setMembLoaded(true) }
+      if (sess) {
+        // Supabase re-fires SIGNED_IN whenever the tab regains focus and
+        // TOKEN_REFRESHED about hourly. For the SAME user those must not drop
+        // the app back to the "Loading workspace" splash — that unmounts every
+        // page and discards open forms. Only a new/different user gets the splash.
+        const sameUser = userIdRef.current && userIdRef.current === sess.user?.id
+        userIdRef.current = sess.user?.id || null
+        if (!sameUser) { setMembLoaded(false); setTimeout(loadMemberships, 0) }
+        else if (evt === 'USER_UPDATED') setTimeout(loadMemberships, 0)   // silent refresh
+      } else { userIdRef.current = null; setMems([]); setActive(null); setMembLoaded(true) }
     })
 
     return () => { mounted.current = false; sub.subscription.unsubscribe() }
