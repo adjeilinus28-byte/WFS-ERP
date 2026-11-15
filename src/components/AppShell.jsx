@@ -52,7 +52,7 @@ function ThemeToggle() {
 }
 
 function Logo() {
-  return <WFSMark size={36} className="h-9 w-9 shrink-0" />
+  return <WFSMark size={34} className="h-[34px] w-[34px] shrink-0" />
 }
 
 // The tenant's own logo, shown in the organization chip beside its name. Falls
@@ -130,10 +130,10 @@ export default function AppShell({ children }) {
       <a href="#main" className="skip-link">{t('common.skip_to_content')}</a>
       <CommandPalette />
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-white/[0.06] bg-navy-900/85 backdrop-blur-xl transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center gap-3 px-6 pb-4 pt-5">
+        <div className="flex items-center gap-2.5 px-5 pb-4 pt-5">
           <Logo />
           <div className="min-w-0 leading-tight">
-            <div className="truncate font-display text-[15px] font-extrabold tracking-tight text-ice">WFS Enterprise</div>
+            <div className="whitespace-nowrap font-display text-[13px] font-extrabold tracking-tight text-ice">WFS Enterprise</div>
             <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-ice-faint">Operations Platform</div>
           </div>
           <button className="ml-auto lg:hidden" onClick={() => setOpen(false)} aria-label={t('common.close')}><X size={18} className="text-ice-faint" /></button>

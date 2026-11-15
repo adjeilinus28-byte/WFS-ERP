@@ -200,7 +200,7 @@ export default function Dashboard() {
       <NewsFlash />
 
       {/* Module-aware KPI cards */}
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">
         {cards.slice(0, 8)}
       </div>
 
