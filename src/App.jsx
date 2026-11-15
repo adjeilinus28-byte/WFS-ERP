@@ -32,6 +32,8 @@ const AdminConsole = lazy(() => import('./pages/AdminConsole'))
 const Team = lazy(() => import('./pages/Team'))
 const AcceptInvite = lazy(() => import('./pages/AcceptInvite'))
 const Settings = lazy(() => import('./pages/Settings'))
+const MyPay = lazy(() => import('./pages/MyPay'))
+const AuditLog = lazy(() => import('./pages/AuditLog'))
 
 function Splash({ label = 'Loading…' }) {
   return (
@@ -140,6 +142,8 @@ function SubscribedApp() {
         <Route path="/team" element={<Team />} />
         <Route path="/approvals" element={<Approvals />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/my-pay" element={<MyPay />} />
+        <Route path="/audit" element={<AuditLog />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

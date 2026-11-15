@@ -202,3 +202,15 @@ html.light .toolbar { background-color: rgb(255 255 255 / 0.8); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* Printing (payslips, reports): drop the app chrome and print on white. */
+@media print {
+  aside, header, .skip-link, .print\:hidden { display: none !important; }
+  html, body, #root, #root > div, main { height: auto !important; overflow: visible !important; background: #fff !important; }
+  :root {
+    --ice: 15 23 42; --ice-dim: 51 65 85; --ice-faint: 94 108 132;
+    --line: 15 23 42; --wash: 15 23 42; --navy-800: 255 255 255; --navy-700: 255 255 255; --accent-ink: 180 83 9;
+  }
+  .panel, .kpi { box-shadow: none !important; backdrop-filter: none !important; background: #fff !important; }
+  .text-accent { color: rgb(var(--accent-ink)) !important; }
+}

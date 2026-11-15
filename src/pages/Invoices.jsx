@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Landmark, TrendingUp, Clock, Wallet, CheckCircle2, ExternalLink } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTable } from '../hooks/useTable'
@@ -111,6 +112,7 @@ export default function Invoices({ ccy }) {
           <div className="w-36"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: at('All statuses') }, ...INV_STATUS.map((s) => ({ value: s, label: s }))]} /></div>
           <div className="w-32"><Select value={fSent} onChange={(e) => setFSent(e.target.value)} options={[{ value: '', label: at('Sent & unsent') }, { value: 'sent', label: at('Sent only') }, { value: 'unsent', label: at('Unsent only') }]} /></div>
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+          <ExportCsvButton name="invoices" rows={filtered} columns={[['invoice_no', 'Invoice no.'], ['customer', 'Customer'], ['issue_date', 'Issue date'], ['due_date', 'Due date'], ['amount', 'Amount'], ['tax', 'Tax'], ['total', 'Total'], ['status', 'Status'], ['reference', 'Reference / PO']]} />
         </div>
       </div>
 

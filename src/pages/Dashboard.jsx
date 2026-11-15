@@ -10,6 +10,7 @@ import { StatCard, PageHeader, Badge } from '../components/ui'
 import { daysUntil, date, money } from '../lib/format'
 import { inCurrentBusinessMonth, currentBusinessMonthLabel } from '../lib/period'
 import NewsFlash from '../components/NewsFlash'
+import SetupChecklist from '../components/SetupChecklist'
 import {
   Wrench, ClipboardList, Boxes, ShieldAlert, AlertTriangle, ArrowUpRight, ArrowRight,
   PackageMinus, Wallet, CalendarCheck, TrendingUp, TrendingDown, Users, CheckCircle2,
@@ -198,6 +199,9 @@ export default function Dashboard() {
 
       {/* News Flash slider */}
       <NewsFlash />
+
+      {/* Setup checklist — owners/admins, until the workspace is set up */}
+      <SetupChecklist />
 
       {/* Module-aware KPI cards */}
       <div className="mb-5 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">

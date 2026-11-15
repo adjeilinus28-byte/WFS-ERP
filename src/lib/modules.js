@@ -1,12 +1,13 @@
 import {
   LayoutDashboard, Wrench, Boxes, ShoppingCart, ClipboardList,
   Users, ShieldAlert, BarChart3, Settings as SettingsIcon,
-  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock, GraduationCap, Scale, ClipboardCheck, UsersRound } from 'lucide-react'
+  UserCog, Landmark, PackageMinus, Megaphone, Shirt, UtensilsCrossed, HeartHandshake, CalendarClock, GraduationCap, Scale, ClipboardCheck, UsersRound, Wallet, ScrollText } from 'lucide-react'
 
 export const MODULES = [
   { key: 'dashboard',   label: 'Command Deck', icon: LayoutDashboard, path: '/',            section: 'Overview' },
   { key: 'news',        label: 'News Flash',     icon: Megaphone,       path: '/news',        section: 'Overview' },
   { key: 'approvals',   label: 'Approvals',     icon: ClipboardCheck,  path: '/approvals',   section: 'Overview' },
+  { key: 'my_pay',      label: 'My pay',        icon: Wallet,          path: '/my-pay',      section: 'Overview' },
   { key: 'assets',      label: 'Assets',        icon: Wrench,          path: '/assets',      section: 'Operations' },
   { key: 'work_orders', label: 'Work Orders',   icon: ClipboardList,   path: '/work-orders', section: 'Operations' },
   { key: 'inventory',   label: 'Inventory',     icon: Boxes,           path: '/inventory',   section: 'Supply Chain' },
@@ -24,6 +25,7 @@ export const MODULES = [
   { key: 'hse',         label: 'HSE & Safety',  icon: ShieldAlert,     path: '/hse',         section: 'Compliance' },
   { key: 'reports',     label: 'Reports',       icon: BarChart3,       path: '/reports',     section: 'Insight' },
   { key: 'team',        label: 'Team & access', icon: UsersRound,      path: '/team',        section: 'Settings' },
+  { key: 'audit',       label: 'Audit log',     icon: ScrollText,      path: '/audit',       section: 'Admin' },
   { key: 'settings',    label: 'Settings',      icon: SettingsIcon,    path: '/settings',    section: 'Admin' },
 ]
 
@@ -37,7 +39,8 @@ export const INDUSTRY_PRESETS = {
 
 export const moduleByKey = Object.fromEntries(MODULES.map((m) => [m.key, m]))
 
-export const ALWAYS_ON = new Set(['settings', 'dashboard'])
+// my_pay: every employee's own payslips. audit: admin-only (gated by the admin domain).
+export const ALWAYS_ON = new Set(['settings', 'dashboard', 'my_pay', 'audit'])
 
 export function visibleModules(enabled = []) {
   const set = new Set([...enabled, ...ALWAYS_ON])

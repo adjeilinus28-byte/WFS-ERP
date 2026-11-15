@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, X, Search, Filter, Trash2, PackageMinus, Wallet, TrendingDown, Layers } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { useAuth } from '../context/AuthContext'
@@ -121,6 +122,7 @@ export default function Issuance() {
           <div className="w-36"><Select value={fDept} onChange={(e) => setFDept(e.target.value)}
             options={[{value:'',label:'All depts'}, ...deptOptions]} /></div>
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+          <ExportCsvButton name="issuances" rows={filtered} columns={[['issue_no', 'Issue no.'], ['issue_date', 'Date'], ['item_name', 'Item'], ['sku', 'SKU'], ['qty', 'Quantity'], ['uom', 'Unit'], ['unit_cost', 'Unit cost'], ['total_cost', 'Line cost'], ['issued_to_type', 'Issued to (type)'], ['issued_to', 'Issued to'], ['department', 'Department']]} />
         </div>
       </div>
 

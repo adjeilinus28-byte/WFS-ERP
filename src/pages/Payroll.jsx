@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet, CheckCircle2, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -577,6 +578,7 @@ export default function Payroll({ ccy }) {
               <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: at('All departments') }, ...deptOptions]} /></div>
               <span className="font-mono text-[11px] text-ice-faint">{filtered.length}</span>
               <div className="ml-auto flex gap-2">
+                <ExportCsvButton name="payroll" rows={filtered} columns={[['period', 'Period'], ['employee_name', 'Employee'], ['badge_no', 'Badge no.'], ['department', 'Department'], ['basic_pay', 'Basic pay'], ['gross_pay', 'Gross pay'], ['ssnit', 'SSNIT (employee)'], ['paye_amount', 'PAYE'], ['net_pay', 'Net pay'], ['status', 'Status']]} />
                 {canWrite && <button onClick={() => sendBatch('all')} disabled={sending || filtered.length === 0} className="btn-ghost btn-sm"><Send size={13} /> {sending ? 'Sending…' : 'Generate & send all'}</button>}
                 {canWrite && <button onClick={openNew} className="btn-primary btn-sm"><Plus size={14} /> {at('New slip')}</button>}
               </div>

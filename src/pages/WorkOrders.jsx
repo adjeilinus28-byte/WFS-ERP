@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, Pencil, Trash2, Search, Filter, X } from 'lucide-react'
 import { useTable } from '../hooks/useTable'
 import { supabase } from '../lib/supabase'
@@ -172,6 +173,7 @@ export default function WorkOrders() {
             </button>
           )}
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+          <ExportCsvButton name="work-orders" rows={filtered} columns={[['wo_number', 'WO number'], ['title', 'Title'], ['wo_type', 'Type'], ['priority', 'Priority'], ['status', 'Status'], ['assigned_to', 'Assigned to'], ['department', 'Department'], ['due_date', 'Due date'], ['progress', 'Progress %']]} />
         </div>
       </div>
 

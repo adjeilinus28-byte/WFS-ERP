@@ -23,7 +23,7 @@ export const MODULE_DOMAIN = {
   hse: 'compliance', training: 'compliance',
   // approvals / insight / admin
   approvals: 'approvals', reports: 'insight',
-  settings: 'admin', team: 'admin',
+  settings: 'admin', team: 'admin', audit: 'admin',
 }
 
 export function usePermissions() {

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Search, Pencil, Trash2 } from 'lucide-react'
+import { Search, Pencil, Trash2, Download } from 'lucide-react'
+import { exportCsv } from '../lib/csv'
 import { EmptyState, useAutoT } from './ui'
 
-export default function DataTable({ columns, rows, loading, onEdit, onDelete, searchKeys, emptyTitle, emptyHint }) {
+export default function DataTable({ columns, rows, loading, onEdit, onDelete, searchKeys, emptyTitle, emptyHint, exportName = 'export' }) {
   const at = useAutoT()
   const [q, setQ] = useState('')
 
@@ -27,6 +28,10 @@ export default function DataTable({ columns, rows, loading, onEdit, onDelete, se
         <span className="ml-auto rounded-full bg-white/[0.06] px-2.5 py-0.5 font-mono text-[11px] text-ice-dim">
           {filtered.length}{q.trim() && filtered.length !== rows.length ? ` / ${rows.length}` : ''}
         </span>
+        <button className="btn-ghost btn-sm" disabled={!filtered.length} title={at('Export CSV')}
+          onClick={() => exportCsv(exportName, columns.map((c) => ({ key: c.key, label: at(c.label) })), filtered)}>
+          <Download size={13} /> <span className="hidden sm:inline">{at('Export CSV')}</span>
+        </button>
       </div>
 
       {loading ? (

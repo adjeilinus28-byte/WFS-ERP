@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, PageHeader, Select, EmptyState, useToast } from '../components/ui'
 import { date } from '../lib/format'
@@ -113,6 +114,7 @@ function Employees() {
           {canSeePrivateHr && <div className="w-36"><Select value={fMarital} onChange={(e) => setFMarital(e.target.value)} options={[{ value: '', label: 'Any marital' }, ...['single','married','divorced','widowed'].map((s) => ({ value: s, label: s }))]} /></div>}
           {activeF > 0 && <button onClick={clear} className="btn-ghost btn-sm"><X size={13} /> Clear ({activeF})</button>}
           <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+          <ExportCsvButton name="employees" rows={filtered} columns={[['employee_no', 'Employee no.'], ['full_name', 'Name'], ['department', 'Department'], ['position', 'Position'], ['worker_type', 'Worker type'], ['status', 'Status'], ['email', 'Email'], ['phone', 'Phone'], ['hired_on', 'Hired on']]} />
         </div>
       </div>
 

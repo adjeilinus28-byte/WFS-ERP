@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import ExportCsvButton from '../components/ExportCsvButton'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, PageHeader, Field, Select, useToast, EmptyState } from '../components/ui'
 import Drawer from '../components/Drawer'
@@ -150,6 +151,7 @@ function Requests() {
         <div className="w-40"><Select value={fStatus} onChange={(e) => setFStatus(e.target.value)} options={[{ value: '', label: at('All statuses') }, ...LEAVE_STATUS.map((s) => ({ value: s, label: s }))]} /></div>
         <div className="w-40"><Select value={fDept} onChange={(e) => setFDept(e.target.value)} options={[{ value: '', label: at('All depts') }, ...deptOptions]} /></div>
         <span className="ml-auto font-mono text-[11px] text-ice-faint">{filtered.length} of {rows.length}</span>
+          <ExportCsvButton name="leave-requests" rows={filtered} columns={[['employee_name', 'Employee'], ['department', 'Department'], ['leave_type', 'Leave type'], ['start_date', 'From'], ['end_date', 'To'], ['days', 'Days'], ['status', 'Status'], ['reason', 'Reason']]} />
       </div>
 
       <div className="panel overflow-hidden">

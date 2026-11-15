@@ -80,6 +80,7 @@ export default function ModuleScaffold({
         onEdit={canWrite ? (r) => setDrawer({ open: true, row: r }) : undefined}
         onDelete={canWrite ? del : undefined}
         emptyTitle={emptyTitle} emptyHint={emptyHint}
+        exportName={table}
       />
 
       <Drawer
