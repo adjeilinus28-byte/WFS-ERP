@@ -9,8 +9,10 @@ import { at } from '../lib/tr'
 // ticked from real data, so it completes itself as the workspace is filled in.
 // Hidden once everything is done, or when dismissed (remembered per workspace
 // in this browser).
-const count = async (table, orgId) => {
-  const { count: c } = await supabase.from(table).select('*', { count: 'exact', head: true }).eq('org_id', orgId)
+// Counts a named column, never '*': employees only grants its directory columns
+// (private HR fields are hidden), so a '*' count is rejected with a 403.
+const count = async (table, orgId, col = 'id') => {
+  const { count: c } = await supabase.from(table).select(col, { count: 'exact', head: true }).eq('org_id', orgId)
   return c || 0
 }
 
@@ -31,7 +33,7 @@ export default function SetupChecklist() {
         supabase.from('organizations').select('contact_email, address, hse_head_email, ops_head_email').eq('id', activeOrgId).maybeSingle(),
         count('departments', activeOrgId),
         has('workforce') ? count('employees', activeOrgId) : 0,
-        count('org_members', activeOrgId),
+        count('org_members', activeOrgId, 'user_id'),
         has('assets') ? count('assets', activeOrgId) : 0,
         has('inventory') ? count('inventory_items', activeOrgId) : 0,
         has('accounts') ? supabase.from('tax_settings').select('org_id').eq('org_id', activeOrgId).maybeSingle() : Promise.resolve({ data: null }),
