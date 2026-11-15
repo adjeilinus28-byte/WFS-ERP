@@ -8,7 +8,7 @@
 --     record id, a readable label), and for edits which fields changed plus any
 --     status change. It never stores field VALUES other than status, so pay,
 --     bank and ID data never land in the log.
---   • Clients can only read the log (admin domain) — no insert/update/delete.
+--   • Clients can only read the log (owners and admins) — no insert/update/delete.
 --   • Confidential tables (industrial relations) are deliberately not audited.
 --  Idempotent. Run after 0053.
 -- ============================================================================
@@ -85,8 +85,11 @@ revoke insert, update, delete, truncate on public.audit_log from anon, authentic
 revoke select on public.audit_log from anon;
 alter table public.audit_log enable row level security;
 drop policy if exists al_read on public.audit_log;
+-- Owners and admins only: the log spans every department and names payroll and
+-- employee records, so it must not follow the broader admin:view level
+-- (managers have that by default) or bypass department scoping.
 create policy al_read on public.audit_log for select using (
-  public.is_platform_owner() or public.can_in_domain(org_id, 'admin', 'view')
+  public.is_platform_owner() or public.has_org_role(org_id, array['owner','admin'])
 );
 create index if not exists audit_log_entity_idx on public.audit_log(org_id, entity, created_at desc);
 

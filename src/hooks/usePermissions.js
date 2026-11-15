@@ -79,6 +79,7 @@ export function usePermissions() {
     if (ov === 'hide') return false
     if (ov === 'show') return true
     const d = MODULE_DOMAIN[moduleKey]
+    if (moduleKey === 'audit') return can('admin', 'manage')   // owners/admins only (matches al_read)
     return d ? can(d, 'view') : true    // no domain → visible by default
   }, [pageOverrides, isOwner, can])
 
