@@ -2,7 +2,7 @@
 // Scans every active tenant for: low stock, service due, overdue work orders,
 // document expiry, and open high/critical HSE cases, then emails managers via
 // Brevo and writes a notification_log row per tenant.
-const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
+const { admin, sendBrevo, shell, recipientsFor, esc } = require('./_lib')
 
 const li = (s) => `<li style="margin:4px 0">${s}</li>`
 
@@ -27,16 +27,16 @@ exports.handler = async () => {
 
     const alerts = []
     ;(inv || []).filter((r) => Number(r.qty_on_hand) <= Number(r.reorder_level))
-      .forEach((r) => alerts.push(`Low stock: <b>${r.name}</b> (${r.qty_on_hand} ${r.uom})`))
-    ;(assets || []).forEach((a) => { const d = days(a.next_service_date); if (d != null && d <= 7) alerts.push(`Service ${d < 0 ? 'overdue' : `due in ${d}d`}: <b>${a.name}</b>`) })
-    ;(wos || []).forEach((w) => { const d = days(w.due_date); if (d != null && d < 0 && !['done','cancelled'].includes(w.status)) alerts.push(`Overdue WO <b>${w.wo_number}</b>: ${w.title}`) })
+      .forEach((r) => alerts.push(`Low stock: <b>${esc(r.name)}</b> (${esc(r.qty_on_hand)} ${esc(r.uom)})`))
+    ;(assets || []).forEach((a) => { const d = days(a.next_service_date); if (d != null && d <= 7) alerts.push(`Service ${d < 0 ? 'overdue' : `due in ${d}d`}: <b>${esc(a.name)}</b>`) })
+    ;(wos || []).forEach((w) => { const d = days(w.due_date); if (d != null && d < 0 && !['done','cancelled'].includes(w.status)) alerts.push(`Overdue WO <b>${esc(w.wo_number)}</b>: ${esc(w.title)}`) })
     ;(docs || []).filter((x) => ['expired','critical','expiring'].includes(x.expiry_status))
-      .forEach((x) => alerts.push(`Document <b>${x.name}</b> ${x.expiry_status}`))
+      .forEach((x) => alerts.push(`Document <b>${esc(x.name)}</b> ${esc(x.expiry_status)}`))
     ;(hse || []).filter((h) => ['high','critical'].includes(h.severity) && h.status !== 'closed')
-      .forEach((h) => alerts.push(`Open ${h.severity} HSE: <b>${h.incident_no}</b>`))
+      .forEach((h) => alerts.push(`Open ${esc(h.severity)} HSE: <b>${esc(h.incident_no)}</b>`))
     ;(sups || []).filter((x) => (x.status || 'active') === 'active').forEach((x) => {
       const d = days(x.tax_clearance_expiry)
-      if (d != null && d <= 30 && (d < 0 || [30, 14, 7, 3, 1, 0].includes(d))) alerts.push(`Supplier tax clearance ${d < 0 ? 'expired' : `expires in ${d}d`}: <b>${x.name}</b>`)
+      if (d != null && d <= 30 && (d < 0 || [30, 14, 7, 3, 1, 0].includes(d))) alerts.push(`Supplier tax clearance ${d < 0 ? 'expired' : `expires in ${d}d`}: <b>${esc(x.name)}</b>`)
     })
 
     if (alerts.length === 0) continue

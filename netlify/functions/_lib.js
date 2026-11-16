@@ -65,4 +65,4 @@ async function recipientsFor(sb, orgId, roles = ['owner', 'admin', 'manager']) {
   return (data || []).map((m) => m.email).filter(Boolean)
 }
 
-module.exports = { admin, sendBrevo, shell, recipientsFor }
+module.exports = { admin, sendBrevo, shell, recipientsFor, esc }
