@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, Field, Select, useToast } from '../components/ui'
 import { supabase } from '../lib/supabase'
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { useDepartments } from '../hooks/useDepartments'
 import Payroll from './Payroll'
 import Invoices from './Invoices'
+import BankCash from './BankCash'
 import { Landmark, TrendingUp, TrendingDown, Clock, Wallet } from 'lucide-react'
 
 const INV_STATUS  = ['draft', 'sent', 'partial', 'paid', 'overdue', 'cancelled']
@@ -16,7 +17,7 @@ const PAY_METHOD  = ['bank_transfer', 'cash', 'cheque', 'mobile_money', 'card']
 const PAY_STATUS  = ['draft', 'approved', 'paid']
 
 function Tabs({ tab, setTab }) {
-  const items = [['invoices', 'Invoices (AR)'], ['bills', 'Bills (AP)'], ['payments', 'Payments'], ['payroll', 'Payroll']]
+  const items = [['invoices', 'Invoices (AR)'], ['bills', 'Bills (AP)'], ['payments', 'Payments'], ['bank', 'Bank & cash'], ['payroll', 'Payroll']]
   return (
     <div className="tabs mb-5">
       {items.map(([k, label]) => (
@@ -36,6 +37,13 @@ export default function Accounts() {
   const { options: deptOptions } = useDepartments()
   const [payBill, setPayBill] = useState(null)     // bill row being paid
   const [billsKey, setBillsKey] = useState(0)       // bump to force bills reload
+  const [banks, setBanks] = useState([])
+  useEffect(() => {
+    if (!activeOrgId) return
+    supabase.from('bank_accounts').select('id, name, is_active').eq('org_id', activeOrgId).order('created_at')
+      .then(({ data }) => setBanks(data || []))
+  }, [activeOrgId, tab])
+  const bankName = Object.fromEntries(banks.map((b) => [b.id, b.name]))
 
   return (
     <div>
@@ -94,18 +102,22 @@ export default function Accounts() {
 
       {tab === 'payments' && (
         <ModuleScaffold
-          eyebrow="Finance" title="Payments" sub="Money paid out against supplier bills." table="payments"
+          eyebrow="Finance" title="Payments" sub="Money in and out — supplier payments, customer receipts and other bank transactions." table="payments"
           newLabel="New payment" emptyTitle="No payments recorded"
           emptyHint="Log all incoming and outgoing payments against invoices and bills."
           searchKeys={['reference', 'notes']}
           columns={[
             { key: 'paid_on',   label: 'Date',      render: (v) => date(v) },
-            { key: 'amount',    label: 'Amount',    render: (v) => <span className="font-semibold text-ok">{money(v, ccy)}</span> },
+            { key: 'direction', label: 'Type',      render: (v) => v === 'in' ? <Badge tone="ok">{at('Money in')}</Badge> : <Badge>{at('Money out')}</Badge> },
+            { key: 'amount',    label: 'Amount',    render: (v, r) => <span className={`font-semibold ${r.direction === 'in' ? 'text-ok' : 'text-ice'}`}>{money(v, ccy)}</span> },
+            { key: 'bank_account_id', label: 'Bank account', render: (v) => bankName[v] || <span className="text-ice-faint">{at('not linked')}</span> },
             { key: 'method',    label: 'Method',    render: (v) => v ? <Badge>{v.replace('_', ' ')}</Badge> : '—' },
             { key: 'reference', label: 'Reference', render: (v) => <span className="font-mono text-xs">{v || '—'}</span> },
             { key: 'notes',     label: 'Notes' },
           ]}
           fields={[
+            { key: 'direction', label: 'Type',                type: 'select', options: [{ value: 'out', label: 'Money out' }, { value: 'in', label: 'Money in' }], default: 'out' },
+            { key: 'bank_account_id', label: 'Bank account',  type: 'select', options: banks.filter((b) => b.is_active).map((b) => ({ value: b.id, label: b.name })) },
             { key: 'amount',    label: 'Amount',              type: 'number', required: true, default: 0 },
             { key: 'paid_on',   label: 'Payment date',        type: 'date' },
             { key: 'method',    label: 'Method',              type: 'select', options: PAY_METHOD.map((s) => ({ value: s, label: s.replace('_', ' ') })), default: 'bank_transfer' },
@@ -126,11 +138,13 @@ export default function Accounts() {
         />
       )}
 
+      {tab === 'bank' && <BankCash />}
+
       {tab === 'payroll' && <Payroll ccy={ccy} />}
 
       {payBill && (
         <PayBillDialog
-          bill={payBill} ccy={ccy} orgId={activeOrgId}
+          bill={payBill} ccy={ccy} orgId={activeOrgId} banks={banks.filter((b) => b.is_active)}
           onClose={() => setPayBill(null)}
           onPaid={() => { setPayBill(null); setBillsKey((k) => k + 1) }}
         />
@@ -142,13 +156,14 @@ export default function Accounts() {
 // ── Pay a bill: records an outbound payment linked to the bill. The DB trigger
 // (0029) recomputes the bill's status → partial/paid from the payment total, so
 // there's no manual status flip and no double-entry re-keying. ──────────────
-function PayBillDialog({ bill, ccy, orgId, onClose, onPaid }) {
+function PayBillDialog({ bill, ccy, orgId, banks = [], onClose, onPaid }) {
   const toast = useToast()
   const outstanding = Number(bill.total || bill.amount || 0)
   const [amount, setAmount] = useState(outstanding)
   const [method, setMethod] = useState('bank')
   const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10))
   const [reference, setReference] = useState('')
+  const [bankId, setBankId] = useState(banks[0]?.id || '')
   const [busy, setBusy] = useState(false)
 
   const submit = async () => {
@@ -159,7 +174,7 @@ function PayBillDialog({ bill, ccy, orgId, onClose, onPaid }) {
       const { error } = await supabase.from('payments').insert({
         org_id: orgId, direction: 'out', method,
         amount: amt, paid_on: paidOn, reference: reference || null,
-        bill_id: bill.id,
+        bill_id: bill.id, bank_account_id: bankId || null,
         notes: `Payment for bill ${bill.bill_no || ''}`,
       })
       if (error) throw error
@@ -188,6 +203,12 @@ function PayBillDialog({ bill, ccy, orgId, onClose, onPaid }) {
           <Field label={at('Payment date')}>
             <input className="input" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
           </Field>
+          {banks.length > 0 && (
+            <Field label={at('Paid from')}>
+              <Select value={bankId} onChange={(e) => setBankId(e.target.value)}
+                options={[...banks.map((b) => ({ value: b.id, label: b.name })), { value: '', label: 'Not linked to an account' }]} />
+            </Field>
+          )}
           <Field label={at('Reference / cheque no.')}>
             <input className="input" value={reference} onChange={(e) => setReference(e.target.value)} />
           </Field>

@@ -20,6 +20,7 @@ exports.handler = async () => {
       sb.from('documents_status').select('name, expiry_status, expiry_date').eq('org_id', oid),
       sb.from('hse_incidents').select('incident_no, severity, status, incident_type').eq('org_id', oid),
     ])
+    const { data: sups } = await sb.from('suppliers').select('name, tax_clearance_expiry, status').eq('org_id', oid).not('tax_clearance_expiry', 'is', null)
 
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const days = (d) => d ? Math.round((new Date(d).setHours(0,0,0,0) - today) / 86400000) : null
@@ -33,6 +34,10 @@ exports.handler = async () => {
       .forEach((x) => alerts.push(`Document <b>${x.name}</b> ${x.expiry_status}`))
     ;(hse || []).filter((h) => ['high','critical'].includes(h.severity) && h.status !== 'closed')
       .forEach((h) => alerts.push(`Open ${h.severity} HSE: <b>${h.incident_no}</b>`))
+    ;(sups || []).filter((x) => (x.status || 'active') === 'active').forEach((x) => {
+      const d = days(x.tax_clearance_expiry)
+      if (d != null && d <= 30 && (d < 0 || [30, 14, 7, 3, 1, 0].includes(d))) alerts.push(`Supplier tax clearance ${d < 0 ? 'expired' : `expires in ${d}d`}: <b>${x.name}</b>`)
+    })
 
     if (alerts.length === 0) continue
     const to = await recipientsFor(sb, oid)

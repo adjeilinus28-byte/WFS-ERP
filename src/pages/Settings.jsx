@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { at } from '../lib/tr'
 import { Check } from 'lucide-react'
 import Letterhead, { invalidateLetterhead } from '../components/Letterhead'
+import ApprovalRules from '../components/ApprovalRules'
 
 const INDUSTRIES = [
   { value: 'mining', label: 'Mining' },
@@ -219,6 +220,9 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        {/* Approval rules */}
+        <ApprovalRules canAdmin={canAdmin} currency={form.currency || activeOrg?.currency || 'GHS'} />
 
         {/* Modules */}
         <div className="panel p-5">

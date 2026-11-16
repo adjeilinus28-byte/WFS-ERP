@@ -5,7 +5,8 @@ import { usePermissions } from '../hooks/usePermissions'
 import { PageHeader, StatCard, EmptyState, Badge, useToast } from '../components/ui'
 import { money, date } from '../lib/format'
 import { at } from '../lib/tr'
-import { CalendarCheck, ShoppingCart, BookOpen, Check, X, Inbox, Clock } from 'lucide-react'
+import { CalendarCheck, ShoppingCart, BookOpen, Check, X, Inbox, Clock, UserCheck, Zap } from 'lucide-react'
+import { useApprovalRules } from '../components/ApprovalRules'
 
 // One inbox for everything awaiting a decision. Each source keeps its own native
 // approval mechanism — this page just gathers them and applies the same update
@@ -29,7 +30,7 @@ const SOURCES = {
     detail: (r, ccy) => `${at('Manual entry')} · ${date(r.entry_date)}`,
   },
   overtime: {
-    label: 'Overtime', icon: Clock, link: '/payroll',
+    label: 'Overtime', icon: Clock, link: '/accounts',
     title: (r) => `${r.employee_name || 'Employee'} — ${r.hours || '?'} ${at('hrs')}`,
     detail: (r, ccy) => [r.department, date(r.work_date), r.reason].filter(Boolean).join(' · '),
   },
@@ -45,6 +46,22 @@ export default function Approvals() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)      // ref being acted on
   const [filter, setFilter] = useState('all')
+  const { rules } = useApprovalRules()
+  const [myEmpIds, setMyEmpIds] = useState([])
+  useEffect(() => {
+    if (!activeOrgId) return
+    supabase.rpc('my_employee_ids', { p_org: activeOrgId }).then(({ data }) =>
+      setMyEmpIds((data || []).map((r) => (typeof r === 'string' ? r : r.my_employee_ids || r.id)).filter(Boolean)))
+  }, [activeOrgId])
+  const RULE_KEY = { leave: 'leave', preq: 'purchase_request', overtime: 'overtime', journal: 'journal' }
+  // Is this the signed-in person's own request? (Mirrors the database guard.)
+  const isMine = (item) => {
+    const r = item.row
+    if (item.kind === 'leave') return !!r.employee_id && myEmpIds.includes(r.employee_id)
+    if (item.kind === 'overtime') return r.created_by === user?.id || (!!r.employee_id && myEmpIds.includes(r.employee_id))
+    return !!r.created_by && r.created_by === user?.id
+  }
+  const selfBlocked = (item) => (rules[RULE_KEY[item.kind]]?.block_self ?? true) && isMine(item)
 
   const load = useCallback(async () => {
     if (!activeOrgId) { setItems([]); setLoading(false); return }
@@ -121,17 +138,23 @@ export default function Approvals() {
         <StatCard label={at('Pending total')} value={items.length} icon={Inbox} tone={items.length ? 'warn' : 'ok'} />
         <StatCard label={at('Leave')} value={countBy('leave')} icon={CalendarCheck} />
         <StatCard label={at('Purchase requests')} value={countBy('preq')} icon={ShoppingCart} />
-        <StatCard label={at('Journals')} value={countBy('journal')} icon={BookOpen} />
+        <StatCard label={at('Overtime & journals')} value={countBy('overtime') + countBy('journal')} icon={BookOpen} />
       </div>
 
+      <p className="mb-4 flex items-center gap-1.5 text-xs text-ice-faint">
+        <Zap size={12} className="text-accent" />
+        {at('Who can approve what, and auto-approve limits, are set in Settings → Approval rules.')}
+      </p>
+
       {/* Type filter */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {[['all', at('All')], ['leave', at('Leave')], ['preq', at('Purchase requests')], ['journal', at('Journals')]].map(([k, lbl]) => (
-          <button key={k} onClick={() => setFilter(k)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${filter === k ? 'bg-accent text-navy' : 'bg-white/[0.04] text-ice-dim hover:text-ice'}`}>
-            {lbl}
-          </button>
-        ))}
+      <div className="mb-4">
+        <div className="tabs">
+          {[['all', at('All')], ['leave', at('Leave')], ['preq', at('Purchase requests')], ['overtime', at('Overtime')], ['journal', at('Journals')]].map(([k, lbl]) => (
+            <button key={k} onClick={() => setFilter(k)} className={`tab ${filter === k ? 'tab-on' : ''}`}>
+              {lbl}{k !== 'all' && countBy(k) ? ` · ${countBy(k)}` : ''}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!canApprove ? (
@@ -161,6 +184,12 @@ export default function Approvals() {
                     <Clock size={11} /> {date(item.when)} · {src.detail(item.row, ccy)}
                   </div>
                 </div>
+                {selfBlocked(item) ? (
+                  <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/[0.05] px-3 py-1.5 text-xs text-ice-faint"
+                    title={at('Approval rules stop people approving their own requests.')}>
+                    <UserCheck size={13} /> {at('Your request — another approver must decide')}
+                  </span>
+                ) : (
                 <div className="flex shrink-0 gap-2">
                   <button onClick={() => decide(item, false)} disabled={acting}
                     className="flex items-center gap-1 rounded-lg bg-bad/15 px-3 py-1.5 text-xs font-medium text-bad hover:bg-bad/25 disabled:opacity-50">
@@ -171,6 +200,7 @@ export default function Approvals() {
                     <Check size={13} /> {acting ? at('…') : at('Approve')}
                   </button>
                 </div>
+                )}
               </div>
             )
           })}

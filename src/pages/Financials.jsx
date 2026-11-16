@@ -166,14 +166,33 @@ export default function Financials() {
         ])
       }
 
-      // Payments (outbound, against a bill) → DR AP, CR Cash — settles the payable
-      const { data: pmts } = await supabase.from('payments').select('*').eq('org_id', activeOrgId).eq('direction', 'out').not('bill_id', 'is', null)
+      // Payments → post through the bank account's own ledger account when one is
+      // linked (Bank & cash), otherwise the 'cash' posting rule.
+      //   out + bill    → DR AP,       CR bank   (settles the payable)
+      //   out, no bill  → DR expense,  CR bank   (bank charges, petty spend…)
+      //   in + invoice  → DR bank,     CR AR     (customer receipt)
+      //   in, no invoice→ DR bank,     CR other income
+      const { data: banks } = await supabase.from('bank_accounts').select('id, gl_account_id').eq('org_id', activeOrgId)
+      const acctById = Object.fromEntries(accountsList.map((a) => [a.id, a]))
+      const bankGl = Object.fromEntries((banks || []).map((b) => [b.id, acctById[b.gl_account_id]]))
+      const otherIncome = acctByCode['4100'] || ruleAcct('revenue')
+      const { data: pmts } = await supabase.from('payments').select('*').eq('org_id', activeOrgId)
       for (const p of pmts || []) {
         const amt = Number(p.amount || 0); if (!amt) continue
-        await mk('payment', p.id, p.paid_on || p.created_at?.slice(0, 10), `Payment ${p.reference || p.id.slice(0, 8)}`, [
-          { account_id: ruleAcct('ap').id, debit: amt, credit: 0, description: 'Settle payable' },
-          { account_id: ruleAcct('cash').id, debit: 0, credit: amt, description: 'Cash out' },
-        ])
+        const bank = bankGl[p.bank_account_id] || ruleAcct('cash')
+        const day = p.paid_on || p.created_at?.slice(0, 10)
+        const label = `${p.direction === 'in' ? 'Receipt' : 'Payment'} ${p.reference || p.id.slice(0, 8)}`
+        if (p.direction === 'in') {
+          await mk('payment', p.id, day, label, [
+            { account_id: bank.id, debit: amt, credit: 0, description: 'Money in' },
+            { account_id: (p.invoice_id ? ruleAcct('ar') : otherIncome).id, debit: 0, credit: amt, description: p.invoice_id ? 'Settle receivable' : 'Other income' },
+          ])
+        } else {
+          await mk('payment', p.id, day, label, [
+            { account_id: (p.bill_id ? ruleAcct('ap') : ruleAcct('expense')).id, debit: amt, credit: 0, description: p.bill_id ? 'Settle payable' : 'Expense' },
+            { account_id: bank.id, debit: 0, credit: amt, description: 'Money out' },
+          ])
+        }
       }
 
       // Issuance → DR Materials expense, CR Inventory
@@ -535,8 +554,10 @@ function JournalView({ entries, accounts, ccy, canPost, onChange }) {
       const { error: lErr } = await supabase.from('journal_lines').insert(lines)
       if (lErr) throw lErr
       const { error: pErr } = await supabase.rpc('post_journal_entry', { p_entry: ent.id })
-      if (pErr) throw pErr
-      toast.success('Journal posted'); setOpen(false)
+      if (pErr && pErr.code !== '42501') throw pErr
+      if (pErr) toast.success('Journal saved — sent to Approvals for another approver to post')
+      else toast.success('Journal posted')
+      setOpen(false)
       setForm({ entry_date: new Date().toISOString().slice(0, 10), memo: '', lines: [{ account_id: '', debit: '', credit: '' }, { account_id: '', debit: '', credit: '' }] })
       onChange()
     } catch (e) { toast.error(e.message) }

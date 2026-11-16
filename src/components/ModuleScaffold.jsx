@@ -14,6 +14,7 @@ import Drawer from './Drawer'
 export default function ModuleScaffold({
   eyebrow, title, sub, table, columns, fields, searchKeys,
   kpis,                         // optional (rows) => <KPI strip/>
+  extra,                        // optional (rows) => panel(s) shown between the KPIs and the table
   newLabel = 'New record',
   emptyTitle, emptyHint,
   beforeSave,                   // optional (payload) => payload  (e.g. inject defaults)
@@ -73,6 +74,7 @@ export default function ModuleScaffold({
       </PageHeader>
 
       {kpis && <div className="mb-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-4">{kpis(rows)}</div>}
+      {extra && extra(rows)}
 
       <DataTable
         columns={columns} rows={rows} loading={loading}

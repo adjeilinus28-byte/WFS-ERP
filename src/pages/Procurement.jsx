@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import Suppliers from './Suppliers'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, PageHeader, Field, Select, useToast, EmptyState } from '../components/ui'
 import { at } from '../lib/tr'
@@ -357,28 +358,7 @@ export default function Procurement() {
       <Tabs tab={tab} setTab={setTab} />
       {tab === 'requests' && <Requests suppliers={suppliers} />}
       {tab === 'orders' && <PurchaseOrders suppliers={suppliers} />}
-      {tab === 'suppliers' && (
-        <ModuleScaffold
-          eyebrow="Supply Chain" title="Suppliers" sub="Vendors you buy from and how to reach them." table="suppliers"
-          newLabel="New supplier" emptyTitle="No suppliers"
-          emptyHint="Build your approved vendor list. Add an email so POs can be sent for approval."
-          searchKeys={['name', 'contact_name', 'email', 'category']}
-          columns={[
-            { key: 'name', label: 'Supplier' },
-            { key: 'category', label: 'Category', render: (v) => v ? <Badge>{v}</Badge> : '—' },
-            { key: 'contact_name', label: 'Contact' },
-            { key: 'email', label: 'Email', render: (v) => v || <span className="text-warn">no email</span> },
-            { key: 'phone', label: 'Phone' },
-          ]}
-          fields={[
-            { key: 'name', label: 'Supplier name', required: true, span: true },
-            { key: 'category', label: 'Category' },
-            { key: 'contact_name', label: 'Contact name' },
-            { key: 'email', label: 'Email (for PO approval)', type: 'email' },
-            { key: 'phone', label: 'Phone' },
-          ]}
-        />
-      )}
+      {tab === 'suppliers' && <Suppliers />}
     </div>
   )
 }
