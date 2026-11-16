@@ -33,7 +33,7 @@ function Modal({ title, onClose, children, footer, wide }) {
   )
 }
 
-function AccountDialog({ initial, glAccounts, orgId, currency, onClose, onSaved }) {
+function AccountDialog({ initial, glAccounts, canLinkLedger, orgId, currency, onClose, onSaved }) {
   const toast = useToast()
   const [f, setF] = useState(() => ({
     name: '', bank_name: '', account_number: '', currency, gl_account_id: '', opening_balance: 0, opening_date: today(), is_active: true,
@@ -64,8 +64,9 @@ function AccountDialog({ initial, glAccounts, orgId, currency, onClose, onSaved 
         <Field label="Account number"><input className="input" value={f.account_number || ''} onChange={(e) => set('account_number', e.target.value)} /></Field>
         <Field label="Currency"><Select value={f.currency} onChange={(e) => set('currency', e.target.value)} options={['GHS', 'USD', 'EUR', 'GBP', 'NGN', 'ZAR']} /></Field>
         <Field label="Ledger account">
-          <Select value={f.gl_account_id || ''} onChange={(e) => set('gl_account_id', e.target.value)}
+          <Select value={f.gl_account_id || ''} onChange={(e) => set('gl_account_id', e.target.value)} disabled={!canLinkLedger}
             options={[{ value: '', label: 'Default cash account' }, ...glAccounts.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]} />
+          {!canLinkLedger && <p className="mt-1 text-[11px] text-ice-faint">{at('Only owners and admins can change the ledger account.')}</p>}
         </Field>
         <Field label="Opening balance"><input className="input" type="number" step="0.01" value={f.opening_balance} onChange={(e) => set('opening_balance', e.target.value)} /></Field>
         <Field label="Opening balance date"><input className="input" type="date" value={f.opening_date || ''} onChange={(e) => set('opening_date', e.target.value)} /></Field>
@@ -170,10 +171,11 @@ function ReconcileDialog({ account, txns, onClose, onSaved }) {
 }
 
 export default function BankCash() {
-  const { activeOrgId, activeOrg } = useAuth()
+  const { activeOrgId, activeOrg, role } = useAuth()
   const { can } = usePermissions()
   const toast = useToast()
   const canEdit = can('finance', 'edit')
+  const canLinkLedger = ['owner', 'admin'].includes(role)   // the server enforces this too
   const ccy = activeOrg?.currency || 'GHS'
   const [accounts, setAccounts] = useState(null)
   const [payments, setPayments] = useState([])
@@ -358,7 +360,7 @@ export default function BankCash() {
         </>
       )}
 
-      {dlg?.kind === 'account' && <AccountDialog initial={dlg.data} glAccounts={gl} orgId={activeOrgId} currency={ccy} onClose={() => setDlg(null)} onSaved={() => { setDlg(null); load() }} />}
+      {dlg?.kind === 'account' && <AccountDialog initial={dlg.data} glAccounts={gl} canLinkLedger={canLinkLedger} orgId={activeOrgId} currency={ccy} onClose={() => setDlg(null)} onSaved={() => { setDlg(null); load() }} />}
       {dlg?.kind === 'txn' && <TxnDialog accounts={active} defaultAccount={current?.id} orgId={activeOrgId} onClose={() => setDlg(null)} onSaved={() => { setDlg(null); load() }} />}
       {dlg?.kind === 'reconcile' && <ReconcileDialog account={dlg.data} txns={stats[dlg.data.id]?.tx || []} onClose={() => setDlg(null)} onSaved={() => { setDlg(null); load() }} />}
     </div>
