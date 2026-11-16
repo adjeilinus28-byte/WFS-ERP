@@ -7,6 +7,7 @@ import { MODULES, ALWAYS_ON } from '../lib/modules'
 import { useTranslation } from 'react-i18next'
 import { at } from '../lib/tr'
 import { Check } from 'lucide-react'
+import Letterhead, { invalidateLetterhead } from '../components/Letterhead'
 
 const INDUSTRIES = [
   { value: 'mining', label: 'Mining' },
@@ -33,10 +34,26 @@ export default function Settings() {
     setForm({
       name: activeOrg.org_name, accent_color: activeOrg.accent_color,
       currency: activeOrg.currency, industry: activeOrg.industry,
-      contact_email: activeOrg.contact_email || '',
       logo_url: activeOrg.logo_url || '',
     })
     setModules(activeOrg.enabled_modules || [])
+    // Contact details live on the organizations row (my_memberships doesn't
+    // return them). They are only sent on save once loaded, so a slow load
+    // can never blank them.
+    let alive = true
+    supabase.from('organizations')
+      .select('office_location, address, contact_phone, contact_phone_2, contact_email')
+      .eq('id', activeOrgId).maybeSingle()
+      .then(({ data }) => {
+        if (!alive || !data) return
+        setForm((f) => ({
+          ...f, _contactLoaded: true,
+          office_location: data.office_location || '', address: data.address || '',
+          contact_phone: data.contact_phone || '', contact_phone_2: data.contact_phone_2 || '',
+          contact_email: data.contact_email || '',
+        }))
+      })
+    return () => { alive = false }
   }, [activeOrgId])
 
   useEffect(() => {
@@ -52,10 +69,14 @@ export default function Settings() {
 
   const save = async () => {
     setSaving(true)
-    const patch = { ...form, enabled_modules: modules }
+    const { _contactLoaded, ...rest } = form
+    const patch = { ...rest, enabled_modules: modules }
+    if (!_contactLoaded) {
+      for (const k of ['office_location', 'address', 'contact_phone', 'contact_phone_2', 'contact_email']) delete patch[k]
+    }
     const { error } = await supabase.rpc('update_org_profile', { p_org: activeOrgId, p_patch: patch })
     if (error) toast.error(error.message)
-    else { toast.success('Settings saved'); await reloadMemberships() }
+    else { invalidateLetterhead(activeOrgId); toast.success('Settings saved'); await reloadMemberships() }
     setSaving(false)
   }
 
@@ -116,9 +137,6 @@ export default function Settings() {
             <Field label="Currency">
               <Select value={form.currency || 'GHS'} options={['GHS', 'USD', 'NGN', 'ZAR', 'EUR', 'GBP']} disabled={!canAdmin} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
             </Field>
-            <Field label="Contact email" span>
-              <input className="input" value={form.contact_email || ''} disabled={!canAdmin} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
-            </Field>
           </div>
           <div className="mt-4">
             <span className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-ice-faint">Accent colour</span>
@@ -155,7 +173,50 @@ export default function Settings() {
                 </div>
               )}
             </div>
-            <p className="mt-1.5 text-[11px] text-ice-faint">Shown beside your organization name. PNG or SVG, under 300 KB.</p>
+            <p className="mt-1.5 text-[11px] text-ice-faint">Shown in the sidebar, on printed documents and in emails. Saved as PNG; under 300 KB.</p>
+          </div>
+        </div>
+
+        {/* Letterhead & contact details */}
+        <div className="panel p-5 lg:col-span-2">
+          <div className="eyebrow mb-1">{at('Letterhead & contact details')}</div>
+          <p className="mb-4 text-xs text-ice-faint">{at('Printed on payslips, reports and every printed page. Leave a line blank to hide it.')}</p>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Office location" span>
+                <input className="input" value={form.office_location || ''} disabled={!canAdmin} maxLength={120}
+                  placeholder="e.g. Head office · Airport City, Accra"
+                  onChange={(e) => setForm({ ...form, office_location: e.target.value })} />
+              </Field>
+              <Field label="Address" span>
+                <textarea className="input min-h-[64px]" value={form.address || ''} disabled={!canAdmin} maxLength={240}
+                  placeholder={'e.g. P.O. Box CT 1234, Cantonments\nGhanaPost GPS: GA-123-4567'}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })} />
+              </Field>
+              <Field label="Phone line 1">
+                <input className="input" type="tel" value={form.contact_phone || ''} disabled={!canAdmin} maxLength={40}
+                  placeholder="e.g. +233 30 000 0000" onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+              </Field>
+              <Field label="Phone line 2 (optional)">
+                <input className="input" type="tel" value={form.contact_phone_2 || ''} disabled={!canAdmin} maxLength={40}
+                  placeholder="e.g. +233 24 000 0000" onChange={(e) => setForm({ ...form, contact_phone_2: e.target.value })} />
+              </Field>
+              <Field label="Contact email" span>
+                <input className="input" type="email" value={form.contact_email || ''} disabled={!canAdmin} maxLength={120}
+                  placeholder="e.g. info@company.com" onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
+              </Field>
+            </div>
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-ice-dim">{at('Preview')}</span>
+              <div className="rounded-xl border border-white/10 bg-white p-5 shadow-deck [--ice:15_23_42] [--ice-dim:51_65_85] [--ice-faint:94_108_132]">
+                <Letterhead title={at('Payslip')} subtitle="October 2026" name={form.name} logo={form.logo_url}
+                  contact={{ office_location: form.office_location, address: form.address, contact_phone: form.contact_phone, contact_phone_2: form.contact_phone_2, contact_email: form.contact_email }} />
+                <div className="mt-4 space-y-1.5 border-t border-slate-200 pt-3">
+                  <div className="h-2 w-2/3 rounded bg-slate-200" /><div className="h-2 w-1/2 rounded bg-slate-200" /><div className="h-2 w-3/5 rounded bg-slate-200" />
+                </div>
+              </div>
+              <p className="mt-1.5 text-[11px] text-ice-faint">{at('This is how the top of a printed document will look. Save to apply.')}</p>
+            </div>
           </div>
         </div>
 

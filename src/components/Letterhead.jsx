@@ -1,32 +1,39 @@
 import { useEffect, useState } from 'react'
+import { MapPin, Phone, Mail } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { initials } from '../lib/format'
 import { trimLogo } from '../lib/logo'
 
-// Company letterhead: the tenant's logo, name and contact line. Used at the top
-// of every printed page (AppShell, print-only) and inside documents such as the
-// payslip. Falls back to the company initials when no logo has been uploaded.
+// Company letterhead: logo and name on the left, contact block on the right
+// (office location, address, up to two phone lines, email). Used at the top of
+// every printed page (AppShell, print-only), inside documents such as the
+// payslip, and as a live preview in Settings. Falls back to the company
+// initials when no logo has been uploaded.
+const CONTACT_COLS = 'office_location, address, contact_phone, contact_phone_2, contact_email'
 const cache = {}
 
-function useOrgContact(orgId) {
+export function invalidateLetterhead(orgId) { delete cache[orgId] }
+
+function useOrgContact(orgId, override) {
   const [c, setC] = useState(() => cache[orgId] || null)
   useEffect(() => {
-    if (!orgId || cache[orgId]) { setC(cache[orgId] || null); return }
+    if (override || !orgId) return
+    if (cache[orgId]) { setC(cache[orgId]); return }
     let alive = true
-    supabase.from('organizations').select('address, contact_email, contact_phone').eq('id', orgId).maybeSingle()
+    supabase.from('organizations').select(CONTACT_COLS).eq('id', orgId).maybeSingle()
       .then(({ data }) => { cache[orgId] = data || {}; if (alive) setC(cache[orgId]) })
     return () => { alive = false }
-  }, [orgId])
-  return c || {}
+  }, [orgId, override])
+  return override || c || {}
 }
 
 // size = logo height. Wide logos keep their shape (up to ~3.5x as wide), and the
 // empty border around the artwork is trimmed so it reads at that size.
-export function OrgLogo({ size = 48, className = '' }) {
+export function OrgLogo({ size = 48, className = '', src: srcOverride, name: nameOverride }) {
   const { activeOrg } = useAuth()
-  const name = activeOrg?.org_name || ''
-  const raw = activeOrg?.logo_url || ''
+  const name = nameOverride ?? activeOrg?.org_name ?? ''
+  const raw = srcOverride ?? activeOrg?.logo_url ?? ''
   const [src, setSrc] = useState(raw)
   useEffect(() => {
     let alive = true
@@ -46,23 +53,47 @@ export function OrgLogo({ size = 48, className = '' }) {
   )
 }
 
-export default function Letterhead({ title, subtitle, size = 46, right = null }) {
-  const { activeOrg, activeOrgId } = useAuth()
-  const c = useOrgContact(activeOrgId)
-  const contact = [c.address, c.contact_email, c.contact_phone].filter(Boolean).join(' · ')
+function ContactLine({ icon: Icon, children }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-end gap-1.5">
+      <span className="whitespace-pre-line text-right">{children}</span>
+      <Icon size={11} className="mt-[3px] shrink-0 text-ice-faint" aria-hidden="true" />
+    </div>
+  )
+}
+
+/**
+ * props:
+ *  title / subtitle  document line under the company name ("Payslip · October 2026")
+ *  badge             small element shown under the contact block (e.g. Paid)
+ *  contact, name, logo   overrides for the Settings preview
+ */
+export default function Letterhead({ title, subtitle, size = 46, badge = null, contact: contactOverride, name: nameOverride, logo }) {
+  const { activeOrg, activeOrgId } = useAuth()
+  const c = useOrgContact(activeOrgId, contactOverride)
+  const name = nameOverride ?? activeOrg?.org_name
+  const phones = [c.contact_phone, c.contact_phone_2].filter((v) => v && v.trim()).join('  ·  ')
+  const hasContact = c.office_location || c.address || phones || c.contact_email
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 items-center gap-3.5">
-        <OrgLogo size={size} />
+        <OrgLogo size={size} src={logo} name={name} />
         <div className="min-w-0">
-          <div className="font-display text-lg font-bold leading-tight text-ice">{activeOrg?.org_name}</div>
-          {contact && <div className="mt-0.5 text-xs text-ice-faint">{contact}</div>}
+          <div className="font-display text-lg font-bold leading-tight text-ice">{name}</div>
           {(title || subtitle) && (
-            <div className="mt-1 text-sm text-ice-dim">{[title, subtitle].filter(Boolean).join(' · ')}</div>
+            <div className="mt-0.5 text-sm text-ice-dim">{[title, subtitle].filter(Boolean).join(' · ')}</div>
           )}
         </div>
       </div>
-      {right}
+      {(hasContact || badge) && (
+        <div className="ml-auto max-w-xs space-y-0.5 text-[11px] leading-snug text-ice-dim">
+          {c.office_location && <ContactLine icon={MapPin}><span className="font-semibold text-ice">{c.office_location}</span></ContactLine>}
+          {c.address && <ContactLine icon={MapPin}>{c.address}</ContactLine>}
+          {phones && <ContactLine icon={Phone}>{phones}</ContactLine>}
+          {c.contact_email && <ContactLine icon={Mail}>{c.contact_email}</ContactLine>}
+          {badge && <div className="flex justify-end pt-1">{badge}</div>}
+        </div>
+      )}
     </div>
   )
 }
@@ -73,7 +104,7 @@ export function PrintLetterhead() {
   const printed = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
   return (
     <div className="print-letterhead mb-6 hidden border-b border-white/10 pb-4 print:block">
-      <Letterhead right={<div className="whitespace-nowrap pt-1 text-xs text-ice-faint">Printed {printed}</div>} />
+      <Letterhead subtitle={`Printed ${printed}`} />
     </div>
   )
 }

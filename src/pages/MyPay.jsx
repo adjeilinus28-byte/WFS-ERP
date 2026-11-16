@@ -100,7 +100,7 @@ export default function MyPay() {
             <div id="payslip" data-print-doc className="panel p-5 lg:col-span-2 lg:p-6">
               <div className="mb-5 border-b border-white/[0.06] pb-4">
                 <Letterhead title={at('Payslip')} subtitle={periodLabel(slip.period)}
-                  right={<Badge tone={slip.status === 'paid' ? 'ok' : 'info'}>{slip.status}</Badge>} />
+                  badge={<Badge tone={slip.status === 'paid' ? 'ok' : 'info'}>{slip.status}</Badge>} />
               </div>
               <div className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1 rounded-xl bg-white/[0.03] p-4 text-sm sm:grid-cols-3">
                 <div><div className="text-xs text-ice-faint">{at('Employee')}</div><div className="font-medium text-ice">{slip.employee_name || '—'}</div></div>
