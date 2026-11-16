@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trimImageElement } from '../lib/logo'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, Field, Select, useToast, Badge } from '../components/ui'
@@ -71,12 +72,15 @@ export default function Settings() {
     reader.onload = () => {
       const img = new Image()
       img.onerror = () => toast.error('Could not read that image')
-      img.onload = () => {
-        const scale = Math.min(1, 512 / Math.max(img.naturalWidth || 512, img.naturalHeight || 512))
-        const w = Math.max(1, Math.round((img.naturalWidth || 512) * scale))
-        const h = Math.max(1, Math.round((img.naturalHeight || 512) * scale))
+      img.onload = async () => {
+        // Crop the empty border so the logo reads well at letterhead/email sizes.
+        const src = (await trimImageElement(img).catch(() => null)) || img
+        const sw = src.naturalWidth || src.width || 512, sh = src.naturalHeight || src.height || 512
+        const scale = Math.min(1, 512 / Math.max(sw, sh))
+        const w = Math.max(1, Math.round(sw * scale))
+        const h = Math.max(1, Math.round(sh * scale))
         const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        canvas.getContext('2d').drawImage(src, 0, 0, w, h)
         const png = canvas.toDataURL('image/png')
         if (png.length > 700 * 1024) { toast.error('That logo is too detailed — try a simpler or smaller image'); return }
         setForm((f) => ({ ...f, logo_url: png }))

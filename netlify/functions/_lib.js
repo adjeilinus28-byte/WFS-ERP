@@ -45,7 +45,7 @@ function shell(orgOrName, accent, title, bodyHtml) {
   const name = esc(org.name || 'WFS Enterprise')
   const base = (process.env.URL || '').replace(/\/$/, '')
   const logo = org.id && org.logo_url && base
-    ? `<td style="padding-right:14px;vertical-align:middle"><img src="${base}/.netlify/functions/org-logo?org=${org.id}&v=${shortHash(org.logo_url)}" alt="${name}" width="44" height="44" style="display:block;width:44px;height:44px;object-fit:contain;background:#ffffff;border-radius:8px;padding:3px" /></td>`
+    ? `<td style="padding-right:14px;vertical-align:middle"><img src="${base}/.netlify/functions/org-logo?org=${org.id}&v=${shortHash(org.logo_url)}" alt="${name}" height="44" style="display:block;height:44px;width:auto;max-width:176px;background:#ffffff;border-radius:8px;padding:4px 6px" /></td>`
     : ''
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
     <div style="background:#080C16;padding:18px 24px">

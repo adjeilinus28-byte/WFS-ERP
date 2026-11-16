@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { initials } from '../lib/format'
+import { trimLogo } from '../lib/logo'
 
 // Company letterhead: the tenant's logo, name and contact line. Used at the top
 // of every printed page (AppShell, print-only) and inside documents such as the
@@ -20,12 +21,22 @@ function useOrgContact(orgId) {
   return c || {}
 }
 
+// size = logo height. Wide logos keep their shape (up to ~3.5x as wide), and the
+// empty border around the artwork is trimmed so it reads at that size.
 export function OrgLogo({ size = 48, className = '' }) {
   const { activeOrg } = useAuth()
   const name = activeOrg?.org_name || ''
-  if (activeOrg?.logo_url) {
-    return <img src={activeOrg.logo_url} alt={`${name} logo`} style={{ width: size, height: size }}
-      className={`shrink-0 rounded-lg object-contain ${className}`} />
+  const raw = activeOrg?.logo_url || ''
+  const [src, setSrc] = useState(raw)
+  useEffect(() => {
+    let alive = true
+    setSrc(raw)
+    if (raw) trimLogo(raw).then((t) => { if (alive) setSrc(t) })
+    return () => { alive = false }
+  }, [raw])
+  if (raw) {
+    return <img src={src} alt={`${name} logo`} style={{ height: size, width: 'auto', maxWidth: size * 3.5 }}
+      className={`shrink-0 object-contain ${className}`} />
   }
   return (
     <span style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
@@ -35,7 +46,7 @@ export function OrgLogo({ size = 48, className = '' }) {
   )
 }
 
-export default function Letterhead({ title, subtitle, size = 52, right = null }) {
+export default function Letterhead({ title, subtitle, size = 46, right = null }) {
   const { activeOrg, activeOrgId } = useAuth()
   const c = useOrgContact(activeOrgId)
   const contact = [c.address, c.contact_email, c.contact_phone].filter(Boolean).join(' · ')
