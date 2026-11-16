@@ -12,7 +12,8 @@
 --     back to pending for a fresh decision.
 --  4. Leave auto-approval measures the full date range (not only the days
 --     figure typed into the request), so a long leave can't slip through.
---  Service-role jobs (auth.uid() is null) are not affected.
+--  Service-role jobs (auth.uid() is null) are not affected; remove_member's
+--  purge may still clear attribution (flagged per transaction).
 -- ============================================================================
 
 -- 1 ─ creator stamp
@@ -20,6 +21,8 @@ create or replace function public.stamp_creator()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if auth.uid() is null then return new; end if;
+  -- remove_member(purge) clears attribution; it sets this flag for its own transaction.
+  if tg_op = 'UPDATE' and coalesce(current_setting('wfs.creator_reassign', true), '') = 'on' then return new; end if;
   if tg_op = 'INSERT' then
     new.created_by := auth.uid();
   elsif new.created_by is distinct from old.created_by then
@@ -38,6 +41,46 @@ begin
     execute format('create trigger a_trg_stamp_creator before insert or update on public.%I for each row execute function public.stamp_creator();', t);
   end loop;
 end $$;
+
+-- remove_member(purge) keeps working: it flags its own attribution clean-up.
+create or replace function public.remove_member(p_org uuid, p_user uuid, p_purge boolean default false)
+returns void language plpgsql security definer set search_path = public as $mm$
+declare target_role text;
+begin
+  if not public.has_org_role(p_org, array['owner','admin']) then
+    raise exception 'Only owners and admins can remove members';
+  end if;
+  if p_user = auth.uid() then
+    raise exception 'You cannot remove yourself';
+  end if;
+  select role into target_role from public.org_members where org_id = p_org and user_id = p_user;
+  if target_role is null then raise exception 'That member is not part of this organization'; end if;
+  if target_role = 'owner' then raise exception 'Owners cannot be removed'; end if;
+
+  delete from public.member_permissions   where org_id = p_org and user_id = p_user;
+  delete from public.member_page_overrides where org_id = p_org and user_id = p_user;
+  delete from public.org_members           where org_id = p_org and user_id = p_user;
+
+  if p_purge then
+    delete from public.notification_dismissals where org_id = p_org and user_id = p_user;
+    -- Preserve operational/financial records, remove attribution.
+    perform set_config('wfs.creator_reassign', 'on', true);
+    update public.journal_entries     set created_by = null where org_id = p_org and created_by = p_user;
+    update public.inventory_txns      set created_by = null where org_id = p_org and created_by = p_user;
+    update public.purchase_orders     set created_by = null where org_id = p_org and created_by = p_user;
+    update public.purchase_requests   set created_by = null where org_id = p_org and created_by = p_user;
+    update public.overtime_entries    set created_by = null where org_id = p_org and created_by = p_user;
+    update public.requisitions        set created_by = null where org_id = p_org and created_by = p_user;
+    update public.work_orders         set created_by = null where org_id = p_org and created_by = p_user;
+    update public.safety_interactions set created_by = null where org_id = p_org and created_by = p_user;
+    update public.training_sessions   set created_by = null where org_id = p_org and created_by = p_user;
+    update public.news_flash          set created_by = null where org_id = p_org and created_by = p_user;
+    update public.purchase_requests   set requested_by = null where org_id = p_org and requested_by = p_user::text;
+    perform set_config('wfs.creator_reassign', 'off', true);
+  end if;
+end
+$mm$;
+grant execute on function public.remove_member(uuid, uuid, boolean) to authenticated;
 
 -- 2 ─ posting only through post_journal_entry(), for every source type
 create or replace function public.guard_journal_posting()
