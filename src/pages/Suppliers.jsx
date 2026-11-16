@@ -15,8 +15,8 @@ export function clearanceState(expiry) {
   if (!expiry) return { tone: 'warn', label: 'Missing', chase: true }
   const d = daysUntil(expiry)
   if (d < 0) return { tone: 'bad', label: 'Expired', chase: true }
-  if (d <= 30) return { tone: 'warn', label: `Expires in ${d}d`, chase: true }
-  return { tone: 'ok', label: `Valid to ${date(expiry)}`, chase: false }
+  if (d <= 30) return { tone: 'warn', label: d === 0 ? 'Expires today' : `${d} day${d === 1 ? '' : 's'} left`, chase: true }
+  return { tone: 'ok', label: `Valid · ${date(expiry)}`, chase: false }
 }
 
 export default function Suppliers() {
