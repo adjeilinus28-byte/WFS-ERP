@@ -11,7 +11,7 @@ exports.handler = async (event) => {
     const { org_id, news_id } = JSON.parse(event.body || '{}')
     if (!org_id || !news_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and news_id required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).single()
     const { data: n } = await sb.from('news_flash').select('*').eq('id', news_id).single()
     if (!n) return { statusCode: 404, body: JSON.stringify({ error: 'announcement not found' }) }
     if (!n.notify_target) return { statusCode: 200, body: JSON.stringify({ ok: false, note: 'email not requested' }) }
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
       ${n.link_url ? `<p><a href="${n.link_url}" style="color:${org.accent_color || '#F59E0B'};font-weight:bold">${n.link_label || 'Learn more'}</a></p>` : ''}
       ${n.priority === 'high' ? '<p style="color:#b91c1c;font-weight:bold;font-size:13px">Marked important</p>' : ''}`
 
-    const ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${cat}: ${n.title}`, html: shell(org.name, org.accent_color, 'Announcement', body) })
+    const ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${cat}: ${n.title}`, html: shell(org, org.accent_color, 'Announcement', body) })
     await sb.from('news_flash').update({ emailed_at: new Date().toISOString() }).eq('id', news_id)
     await sb.from('notification_log').insert({ org_id, alert_type: 'news_flash', subject: n.title, recipients: [...to, ...cc], status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok, to: to.length, cc: cc.length }) }

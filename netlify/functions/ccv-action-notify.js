@@ -8,7 +8,7 @@ exports.handler = async (event) => {
     const { org_id, interaction_id } = JSON.parse(event.body || '{}')
     if (!org_id || !interaction_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and interaction_id required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).single()
     const { data: s } = await sb.from('safety_interactions').select('*').eq('id', interaction_id).single()
     if (!s) return { statusCode: 404, body: JSON.stringify({ error: 'record not found' }) }
     if (!s.assigned_to_email) return { statusCode: 200, body: JSON.stringify({ ok: false, note: 'no assignee email' }) }
@@ -24,7 +24,7 @@ exports.handler = async (event) => {
       </table>
       <p><b>Action required:</b><br/>${s.action_description || '—'}</p>
       <p style="margin-top:14px">Please complete and close this action in the HSE → Safety Interactions module before the due date.</p>`
-    const ok = await sendBrevo({ to: [s.assigned_to_email], subject: `[${org.name}] CCV action assigned to you — close-out required`, html: shell(org.name, org.accent_color, 'Critical Control Verification', body) })
+    const ok = await sendBrevo({ to: [s.assigned_to_email], subject: `[${org.name}] CCV action assigned to you — close-out required`, html: shell(org, org.accent_color, 'Critical Control Verification', body) })
     await sb.from('safety_interactions').update({ notified: true }).eq('id', interaction_id)
     await sb.from('notification_log').insert({ org_id, alert_type: 'ccv_action', subject: `CCV action ${s.ref_no || ''}`, recipients: [s.assigned_to_email], status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok }) }

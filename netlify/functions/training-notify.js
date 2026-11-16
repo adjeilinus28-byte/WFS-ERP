@@ -15,7 +15,7 @@ exports.handler = async (event) => {
     const { org_id, session_id } = JSON.parse(event.body || '{}')
     if (!org_id || !session_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and session_id required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).single()
     const { data: s } = await sb.from('training_sessions').select('*').eq('id', session_id).single()
     if (!s) return { statusCode: 404, body: JSON.stringify({ error: 'session not found' }) }
 
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
     if (emails.length) {
       const to = [emails[0]]; const cc = emails.slice(1)
       const attachments = s.attachment_url ? [{ url: s.attachment_url, name: s.attachment_name || 'attachment' }] : []
-      ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${typeLabel}: ${s.title} — ${when}`, html: shell(org.name, accent, 'Training Scheduled', bodyHtml), attachments })
+      ok = await sendBrevo({ to, cc, subject: `[${org.name}] ${typeLabel}: ${s.title} — ${when}`, html: shell(org, accent, 'Training Scheduled', bodyHtml), attachments })
     }
 
     // Create/refresh the News Flash banner — notify_target null => no duplicate email

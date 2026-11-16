@@ -66,10 +66,10 @@ export function StatCard({ label, value, sub, tone = 'accent', icon: Icon }) {
 }
 
 // ── Page header ──────────────────────────────────────────────────────────────
-export function PageHeader({ eyebrow, title, sub, children }) {
+export function PageHeader({ eyebrow, title, sub, children, printHidden = false }) {
   const at = useAutoT()
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className={`mb-6 flex flex-wrap items-end justify-between gap-3 ${printHidden ? 'print:hidden' : ''}`}>
       <div>
         {eyebrow && <div className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">{at(eyebrow)}</div>}
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-ice sm:text-[32px]">{at(title)}</h1>

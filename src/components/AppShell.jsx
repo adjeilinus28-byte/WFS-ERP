@@ -8,6 +8,7 @@ import CommandPalette from './CommandPalette'
 import NotificationBell from './NotificationBell'
 import SubChip from './SubChip'
 import { WFSMark } from './Brand'
+import { PrintLetterhead } from './Letterhead'
 import { visibleModules } from '../lib/modules'
 import { usePermissions } from '../hooks/usePermissions'
 import { initials } from '../lib/format'
@@ -208,7 +209,7 @@ export default function AppShell({ children }) {
         </header>
 
         <main id="main" key={`${loc.pathname}:${i18n.resolvedLanguage || i18n.language}`} className="flex-1 overflow-y-auto px-4 pb-8 pt-4 lg:px-8 animate-fade-in">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div className="mx-auto max-w-7xl"><PrintLetterhead />{children}</div>
         </main>
       </div>
     </div>

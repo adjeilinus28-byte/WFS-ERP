@@ -4,7 +4,7 @@ const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
-  const { data: orgs } = await sb.from('organizations').select('id, name, accent_color').eq('status', 'active')
+  const { data: orgs } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('status', 'active')
   let actionReminders = 0, kpiReminders = 0
 
   for (const org of orgs || []) {
@@ -18,7 +18,7 @@ exports.handler = async () => {
       const body = `<p>Reminder: a CCV action assigned to you is <b>${overdue ? 'OVERDUE' : 'due soon'}</b>.</p>
         <p><b>${a.ref_no || 'CCV'}</b> — ${a.action_description || ''}<br/>Due: ${a.action_due || 'ASAP'} · Location: ${a.location || '—'}</p>
         <p>Please close it out in the HSE module.</p>`
-      const ok = await sendBrevo({ to: [a.assigned_to_email], subject: `[${org.name}] ${overdue ? 'OVERDUE' : 'Reminder'}: CCV action ${a.ref_no || ''}`, html: shell(org.name, org.accent_color, 'Safety Action Reminder', body) })
+      const ok = await sendBrevo({ to: [a.assigned_to_email], subject: `[${org.name}] ${overdue ? 'OVERDUE' : 'Reminder'}: CCV action ${a.ref_no || ''}`, html: shell(org, org.accent_color, 'Safety Action Reminder', body) })
       if (ok) actionReminders++
     }
 
@@ -40,7 +40,7 @@ exports.handler = async () => {
         if (behind.length) {
           const body = `<p>Month-end reminder: your safety interaction KPIs are below target.</p>
             <p>${behind.join('<br/>')}</p><p>Please complete your outstanding CCVs / PTOs / Take 5s before month end.</p>`
-          const ok = await sendBrevo({ to: [e.email], subject: `[${org.name}] Safety KPI reminder — ${behind.length} target(s) outstanding`, html: shell(org.name, org.accent_color, 'Safety KPI', body) })
+          const ok = await sendBrevo({ to: [e.email], subject: `[${org.name}] Safety KPI reminder — ${behind.length} target(s) outstanding`, html: shell(org, org.accent_color, 'Safety KPI', body) })
           if (ok) kpiReminders++
         }
       }

@@ -8,7 +8,7 @@ const li = (s) => `<li style="margin:4px 0">${s}</li>`
 
 exports.handler = async () => {
   const sb = admin()
-  const { data: orgs } = await sb.from('organizations').select('id, name, accent_color').eq('status', 'active')
+  const { data: orgs } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('status', 'active')
   let summary = []
 
   for (const org of orgs || []) {
@@ -36,7 +36,7 @@ exports.handler = async () => {
 
     if (alerts.length === 0) continue
     const to = await recipientsFor(sb, oid)
-    const html = shell(org.name, org.accent_color, 'Daily Operations Alert',
+    const html = shell(org, org.accent_color, 'Daily Operations Alert',
       `<p>${alerts.length} item(s) need attention today:</p><ul>${alerts.map(li).join('')}</ul>`)
     const ok = await sendBrevo({ to, subject: `[${org.name}] ${alerts.length} operational alert(s)`, html })
     await sb.from('notification_log').insert({ org_id: oid, alert_type: 'daily_sweep', subject: `${alerts.length} alerts`, recipients: to, status: ok ? 'sent' : 'failed', detail: { count: alerts.length } })

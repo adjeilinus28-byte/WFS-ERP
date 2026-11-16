@@ -9,7 +9,7 @@ exports.handler = async (event) => {
     const { org_id, concern_id, event: kind } = JSON.parse(event.body || '{}')
     if (!org_id || !concern_id || !kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id, concern_id, event required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color, iro_email, counsellor_email, wellbeing_note').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color, iro_email, counsellor_email, wellbeing_note').eq('id', org_id).single()
     const { data: c } = await sb.from('ir_concerns').select('*').eq('id', concern_id).single()
     if (!c) return { statusCode: 404, body: JSON.stringify({ error: 'concern not found' }) }
 
@@ -26,7 +26,7 @@ exports.handler = async (event) => {
       // Also acknowledge the worker if they left a contact email
       if (c.contact_email) {
         await sendBrevo({ to: [c.contact_email], subject: `[${org.name}] Your concern was received — ${c.case_id}`,
-          html: shell(org.name, org.accent_color, 'Concern Received',
+          html: shell(org, org.accent_color, 'Concern Received',
             `<p>Thank you for speaking up. Your concern has been received and will be handled confidentially.</p>
              <p>Your case reference is ${caseRef}. Keep it (with your access code) to check status or reply.</p>
              ${org.wellbeing_note ? `<p style="color:#6b7280;font-size:13px">${org.wellbeing_note}</p>` : ''}`) })
@@ -50,7 +50,7 @@ exports.handler = async (event) => {
     }
 
     if (to.length === 0) return { statusCode: 200, body: JSON.stringify({ ok: false, note: 'no recipient configured' }) }
-    const ok = await sendBrevo({ to, subject, html: shell(org.name, org.accent_color, 'Industrial Relations', body) })
+    const ok = await sendBrevo({ to, subject, html: shell(org, org.accent_color, 'Industrial Relations', body) })
     await sb.from('notification_log').insert({ org_id, alert_type: `ir_${kind}`, subject, recipients: to, status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok }) }
   } catch (e) {

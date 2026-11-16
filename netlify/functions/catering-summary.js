@@ -4,7 +4,7 @@ const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
-  const { data: orgs } = await sb.from('organizations').select('id, name, accent_color, contact_email')
+  const { data: orgs } = await sb.from('organizations').select('id, name, logo_url, accent_color, contact_email')
   let sent = 0
 
   for (const org of orgs || []) {
@@ -37,7 +37,7 @@ exports.handler = async () => {
 
     const to = await recipientsFor(sb, org.id, ['owner', 'admin', 'manager'])
     if (org.contact_email && !to.includes(org.contact_email)) to.push(org.contact_email)
-    const ok = await sendBrevo({ to, subject: `[${org.name}] Catering summary — next 2 days`, html: shell(org.name, org.accent_color, 'Catering Summary', html) })
+    const ok = await sendBrevo({ to, subject: `[${org.name}] Catering summary — next 2 days`, html: shell(org, org.accent_color, 'Catering Summary', html) })
     if (ok) sent++
     await sb.from('notification_log').insert({ org_id: org.id, alert_type: 'catering_summary', subject: 'Catering summary (2 days)', recipients: to, status: ok ? 'sent' : 'failed' })
 
@@ -65,7 +65,7 @@ exports.handler = async () => {
         const allergies = dayOrders.filter((o) => o.allergies).map((o) => `${o.employee_name}: ${o.allergies}`)
         if (allergies.length) vhtml += `<p style="font-size:12px;color:#b91c1c;margin:4px 0">⚠ Allergies — ${allergies.join('; ')}</p>`
       }
-      const vok = await sendBrevo({ to: [v.email], subject: `[${org.name}] Your order summary — next 2 days`, html: shell(org.name, org.accent_color, 'Vendor Order Summary', vhtml) })
+      const vok = await sendBrevo({ to: [v.email], subject: `[${org.name}] Your order summary — next 2 days`, html: shell(org, org.accent_color, 'Vendor Order Summary', vhtml) })
       await sb.from('notification_log').insert({ org_id: org.id, alert_type: 'vendor_summary', subject: `Vendor summary — ${v.name}`, recipients: [v.email], status: vok ? 'sent' : 'failed' })
     }
   }

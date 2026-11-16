@@ -63,9 +63,26 @@ export default function Settings() {
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please choose an image file'); return }
     if (file.size > 300 * 1024) { toast.error('Logo must be under 300 KB'); return }
+    // Re-encode as PNG (max 512px). PNG displays everywhere — including email
+    // apps that don't support WebP — and drawing to a canvas also strips any
+    // script from SVG uploads.
     const reader = new FileReader()
-    reader.onload = () => setForm((f) => ({ ...f, logo_url: reader.result }))
     reader.onerror = () => toast.error('Could not read that file')
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => toast.error('Could not read that image')
+      img.onload = () => {
+        const scale = Math.min(1, 512 / Math.max(img.naturalWidth || 512, img.naturalHeight || 512))
+        const w = Math.max(1, Math.round((img.naturalWidth || 512) * scale))
+        const h = Math.max(1, Math.round((img.naturalHeight || 512) * scale))
+        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        const png = canvas.toDataURL('image/png')
+        if (png.length > 700 * 1024) { toast.error('That logo is too detailed — try a simpler or smaller image'); return }
+        setForm((f) => ({ ...f, logo_url: png }))
+      }
+      img.src = reader.result
+    }
     reader.readAsDataURL(file)
   }
 

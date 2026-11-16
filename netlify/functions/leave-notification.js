@@ -9,7 +9,7 @@ exports.handler = async (event) => {
     if (!org_id || !request_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and request_id required' }) }
 
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color, contact_email').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color, contact_email').eq('id', org_id).single()
     const { data: lr } = await sb.from('leave_requests').select('*').eq('id', request_id).single()
     if (!lr) return { statusCode: 404, body: JSON.stringify({ error: 'request not found' }) }
 
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
           : '<p>Contact your manager or HR if you have questions.</p>'}`
     }
 
-    const ok = await sendBrevo({ to, subject, html: shell(org.name, org.accent_color, 'Leave Notification', body) })
+    const ok = await sendBrevo({ to, subject, html: shell(org, org.accent_color, 'Leave Notification', body) })
     await sb.from('leave_requests').update({ notified: true }).eq('id', request_id)
     await sb.from('notification_log').insert({ org_id, alert_type: `leave_${kind}`, subject, recipients: to, status: ok ? 'sent' : 'failed' })
 

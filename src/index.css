@@ -212,6 +212,8 @@ html.light .toolbar { background-color: rgb(255 255 255 / 0.8); }
     --line: 15 23 42; --wash: 15 23 42; --navy-800: 255 255 255; --navy-700: 255 255 255; --accent-ink: 180 83 9;
   }
   .panel, .kpi { box-shadow: none !important; backdrop-filter: none !important; background: #fff !important; }
+  main:has([data-print-doc]) .print-letterhead { display: none !important; }
+  img { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   /* Accent text (e.g. net pay) prints in dark ink so it matches any tenant brand colour */
   .text-accent { color: rgb(var(--ice)) !important; }
 }

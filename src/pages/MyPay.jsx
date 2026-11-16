@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { PageHeader, StatCard, EmptyState, Badge } from '../components/ui'
 import { date } from '../lib/format'
 import { at } from '../lib/tr'
+import Letterhead from '../components/Letterhead'
 
 // Self-service payslips. The database only returns payroll rows that belong to
 // the signed-in person's own employee record (matched by login email), so this
@@ -76,7 +77,7 @@ export default function MyPay() {
 
   return (
     <div>
-      <PageHeader eyebrow="My account" title="My pay" sub="Your payslips once payroll is approved. Only you and payroll staff can see them.">
+      <PageHeader eyebrow="My account" title="My pay" sub="Your payslips once payroll is approved. Only you and payroll staff can see them." printHidden>
         {slip && <button className="btn-ghost print:hidden" onClick={() => window.print()}><Printer size={15} /> {at('Print payslip')}</button>}
       </PageHeader>
 
@@ -96,13 +97,10 @@ export default function MyPay() {
 
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Payslip */}
-            <div id="payslip" className="panel p-5 lg:col-span-2 lg:p-6">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="font-display text-lg font-bold text-ice">{activeOrg?.org_name}</div>
-                  <div className="text-sm text-ice-faint">{at('Payslip')} · {periodLabel(slip.period)}</div>
-                </div>
-                <Badge tone={slip.status === 'paid' ? 'ok' : 'info'}>{slip.status}</Badge>
+            <div id="payslip" data-print-doc className="panel p-5 lg:col-span-2 lg:p-6">
+              <div className="mb-5 border-b border-white/[0.06] pb-4">
+                <Letterhead title={at('Payslip')} subtitle={periodLabel(slip.period)}
+                  right={<Badge tone={slip.status === 'paid' ? 'ok' : 'info'}>{slip.status}</Badge>} />
               </div>
               <div className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1 rounded-xl bg-white/[0.03] p-4 text-sm sm:grid-cols-3">
                 <div><div className="text-xs text-ice-faint">{at('Employee')}</div><div className="font-medium text-ice">{slip.employee_name || '—'}</div></div>

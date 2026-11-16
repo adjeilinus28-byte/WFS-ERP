@@ -11,7 +11,7 @@ exports.handler = async (event) => {
     const { org_id, event: kind, request_id, po_id } = JSON.parse(event.body || '{}')
     if (!org_id || !kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and event required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).single()
     const base = process.env.URL || process.env.DEPLOY_PRIME_URL || ''
     let to, subject, body, cc
 
@@ -70,7 +70,7 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'unknown event' }) }
     }
 
-    const ok = await sendBrevo({ to, cc, subject, html: shell(org.name, org.accent_color, 'Procurement', body) })
+    const ok = await sendBrevo({ to, cc, subject, html: shell(org, org.accent_color, 'Procurement', body) })
     await sb.from('notification_log').insert({ org_id, alert_type: kind, subject, recipients: to, status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok, recipients: to.length }) }
   } catch (e) {

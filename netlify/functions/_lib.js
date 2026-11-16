@@ -35,11 +35,25 @@ async function sendBrevo({ to, cc, subject, html, attachments }) {
   return res.ok
 }
 
-function shell(orgName, accent, title, bodyHtml) {
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const shortHash = (str) => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36) }
+
+// Branded email wrapper. First argument: the organization row (preferably with
+// id + logo_url, so its logo shows in the header) or just its name.
+function shell(orgOrName, accent, title, bodyHtml) {
+  const org = orgOrName && typeof orgOrName === 'object' ? orgOrName : { name: orgOrName }
+  const name = esc(org.name || 'WFS Enterprise')
+  const base = (process.env.URL || '').replace(/\/$/, '')
+  const logo = org.id && org.logo_url && base
+    ? `<td style="padding-right:14px;vertical-align:middle"><img src="${base}/.netlify/functions/org-logo?org=${org.id}&v=${shortHash(org.logo_url)}" alt="${name}" width="44" height="44" style="display:block;width:44px;height:44px;object-fit:contain;background:#ffffff;border-radius:8px;padding:3px" /></td>`
+    : ''
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
-    <div style="background:#080C16;padding:20px 24px">
-      <div style="color:#F1F5F9;font-size:18px;font-weight:800">${orgName}</div>
-      <div style="color:${accent || '#F59E0B'};font-size:11px;letter-spacing:2px;text-transform:uppercase">WFS Enterprise · ${title}</div>
+    <div style="background:#080C16;padding:18px 24px">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr>${logo}
+        <td style="vertical-align:middle">
+          <div style="color:#F1F5F9;font-size:18px;font-weight:800">${name}</div>
+          <div style="color:${accent || '#F59E0B'};font-size:11px;letter-spacing:2px;text-transform:uppercase">WFS Enterprise · ${esc(title)}</div>
+        </td></tr></table>
     </div>
     <div style="padding:24px;color:#111827;font-size:14px;line-height:1.6">${bodyHtml}</div>
     <div style="padding:14px 24px;background:#f8fafc;color:#64748B;font-size:11px">Powered by WorkFlow Solutions · workflow-app.net</div>

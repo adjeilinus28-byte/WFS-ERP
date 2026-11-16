@@ -4,7 +4,7 @@ const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
-  const { data: orgs } = await sb.from('organizations').select('id, name, accent_color, hse_head_email')
+  const { data: orgs } = await sb.from('organizations').select('id, name, logo_url, accent_color, hse_head_email')
   let reminders = 0, expiryAlerts = 0
 
   for (const org of orgs || []) {
@@ -26,7 +26,7 @@ exports.handler = async () => {
       const body = `<p>Reminder: you have training scheduled in 2 days.</p>
         <h3>${s.title}</h3><p><b>${when}</b>${s.venue ? ' · ' + s.venue : ''}${s.mode === 'online' && s.link_url ? ` · <a href="${s.link_url}">Online link</a>` : ''}</p>
         <p style="font-size:13px;color:#6b7280">Please make yourself available. Attendance will be recorded.</p>`
-      const ok = await sendBrevo({ to: [emails[0]], cc: emails.slice(1), subject: `[${org.name}] Reminder: ${s.title} in 2 days`, html: shell(org.name, accent, 'Training Reminder', body) })
+      const ok = await sendBrevo({ to: [emails[0]], cc: emails.slice(1), subject: `[${org.name}] Reminder: ${s.title} in 2 days`, html: shell(org, accent, 'Training Reminder', body) })
       if (ok) reminders++
     }
 
@@ -42,7 +42,7 @@ exports.handler = async () => {
       const body = `<p><b>${expiring.length}</b> certification(s) expire within 30 days and need renewal scheduling.</p>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px"><tr><td style="padding:3px 8px;font-weight:bold">Employee</td><td style="padding:3px 8px;font-weight:bold">Department</td><td style="padding:3px 8px;font-weight:bold">Expires</td></tr>${rows}</table>`
       const to = org.hse_head_email ? [org.hse_head_email] : await recipientsFor(sb, org.id, ['owner', 'admin', 'manager'])
-      const ok = await sendBrevo({ to, subject: `[${org.name}] ${expiring.length} certification(s) expiring soon`, html: shell(org.name, accent, 'Certification Expiry', body) })
+      const ok = await sendBrevo({ to, subject: `[${org.name}] ${expiring.length} certification(s) expiring soon`, html: shell(org, accent, 'Certification Expiry', body) })
       if (ok) expiryAlerts++
       // Notify each affected employee individually
       const ids = expiring.map((e) => e.employee_id).filter(Boolean)
@@ -52,7 +52,7 @@ exports.handler = async () => {
           const emp = (emps || []).find((x) => x.id === e.employee_id)
           if (!emp?.email) continue
           await sendBrevo({ to: [emp.email], subject: `[${org.name}] Your certification expires ${e.expires_at}`,
-            html: shell(org.name, accent, 'Certification Expiry', `<p>Your certification is due to expire on <b>${e.expires_at}</b>. Please arrange renewal with your supervisor.</p>`) })
+            html: shell(org, accent, 'Certification Expiry', `<p>Your certification is due to expire on <b>${e.expires_at}</b>. Please arrange renewal with your supervisor.</p>`) })
         }
       }
     }

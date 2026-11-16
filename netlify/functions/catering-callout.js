@@ -9,7 +9,7 @@ exports.handler = async (event) => {
     const { org_id, callout_id, event: kind } = JSON.parse(event.body || '{}')
     if (!org_id || !callout_id || !kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id, callout_id, event required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).single()
     const { data: r } = await sb.from('callout_requests').select('*').eq('id', callout_id).single()
     if (!r) return { statusCode: 404, body: JSON.stringify({ error: 'callout not found' }) }
     const dayLabel = new Date(r.service_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
@@ -39,7 +39,7 @@ exports.handler = async (event) => {
     }
 
     if (to.length === 0) return { statusCode: 200, body: JSON.stringify({ ok: false, note: 'no recipient' }) }
-    const ok = await sendBrevo({ to, subject, html: shell(org.name, org.accent_color, 'Catering Callout', body) })
+    const ok = await sendBrevo({ to, subject, html: shell(org, org.accent_color, 'Catering Callout', body) })
     await sb.from('notification_log').insert({ org_id, alert_type: `callout_${kind}`, subject, recipients: to, status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok }) }
   } catch (e) {

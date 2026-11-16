@@ -10,7 +10,7 @@ exports.handler = async (event) => {
     const { org_id, ids, period, department } = JSON.parse(event.body || '{}')
     if (!org_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color, currency').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color, currency').eq('id', org_id).single()
     const ccy = org?.currency || 'GHS'
 
     let q = sb.from('payroll').select('*').eq('org_id', org_id)
@@ -94,7 +94,7 @@ exports.handler = async (event) => {
           ${s.ssnit_employer ? `<tr><td>Employer SSNIT (${s.ssnit_employer_rate || 13}%)</td><td style="text-align:right">${money(s.ssnit_employer, ccy)}</td></tr>` : ''}
         </table>
         <p style="color:#6b7280;font-size:12px;margin-top:10px">This payslip is confidential.</p>`
-      const ok = await sendBrevo({ to: [email], subject: `[${org.name}] Payslip — ${s.period}`, html: shell(org.name, org.accent_color, 'Payslip', body) })
+      const ok = await sendBrevo({ to: [email], subject: `[${org.name}] Payslip — ${s.period}`, html: shell(org, org.accent_color, 'Payslip', body) })
       if (ok) { await sb.from('payroll').update({ payslip_sent: true, sent_at: new Date().toISOString(), email }).eq('id', s.id); sent++ }
       else skipped++
     }

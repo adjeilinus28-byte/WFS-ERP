@@ -8,7 +8,7 @@ exports.handler = async (event) => {
     const { org_id, incident_id } = JSON.parse(event.body || '{}')
     if (!org_id || !incident_id) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and incident_id required' }) }
     const sb = admin()
-    const { data: org } = await sb.from('organizations').select('name, accent_color, hse_head_email, ops_head_email').eq('id', org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color, hse_head_email, ops_head_email').eq('id', org_id).single()
     const { data: inc } = await sb.from('hse_incidents').select('*').eq('id', incident_id).single()
     if (!inc) return { statusCode: 404, body: JSON.stringify({ error: 'incident not found' }) }
 
@@ -40,7 +40,7 @@ exports.handler = async (event) => {
       ${inc.corrective_action ? `<p><b>Corrective action</b><br/>${inc.corrective_action}</p>` : ''}
       <p style="margin-top:14px">Please review this incident in the HSE &amp; Safety module and coordinate any follow-up.</p>`
 
-    const ok = await sendBrevo({ to, subject: `[${org.name}] HSE Incident ${inc.incident_no || ''} — ${(inc.severity || '').toUpperCase()} (${inc.department || 'site'})`, html: shell(org.name, org.accent_color, 'HSE Incident Alert', body) })
+    const ok = await sendBrevo({ to, subject: `[${org.name}] HSE Incident ${inc.incident_no || ''} — ${(inc.severity || '').toUpperCase()} (${inc.department || 'site'})`, html: shell(org, org.accent_color, 'HSE Incident Alert', body) })
     await sb.from('hse_incidents').update({ notified: true }).eq('id', incident_id)
     await sb.from('notification_log').insert({ org_id, alert_type: 'hse_incident', subject: `Incident ${inc.incident_no || ''}`, recipients: to, status: ok ? 'sent' : 'failed' })
     return { statusCode: 200, body: JSON.stringify({ ok, recipients: to.length }) }

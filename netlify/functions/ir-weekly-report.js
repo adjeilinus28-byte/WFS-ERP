@@ -4,7 +4,7 @@ const { admin, sendBrevo, shell } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
-  const { data: orgs } = await sb.from('organizations').select('id, name, accent_color, iro_email, counsellor_email')
+  const { data: orgs } = await sb.from('organizations').select('id, name, logo_url, accent_color, iro_email, counsellor_email')
   let sent = 0
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
 
@@ -30,7 +30,7 @@ exports.handler = async () => {
         ${stale.length ? `<p style="color:#b91c1c"><b>Ageing:</b> ${stale.length} open case(s) untouched 7+ days — ${stale.slice(0, 8).map((c) => c.case_id).join(', ')}.</p>` : ''}
         ${urgent.length ? `<p style="color:#b91c1c"><b>Attention:</b> ${urgent.length} case(s) marked high/urgent need review.</p>` : ''}
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px"><tr><td style="padding:3px 8px;font-weight:bold">Case</td><td style="padding:3px 8px;font-weight:bold">Category</td><td style="padding:3px 8px;font-weight:bold">Severity</td><td style="padding:3px 8px;font-weight:bold">Status</td></tr>${rows}</table>`
-      const ok = await sendBrevo({ to: [org.iro_email], subject: `[${org.name}] Weekly IR report — ${open.length} open`, html: shell(org.name, org.accent_color, 'IR Weekly Report', body) })
+      const ok = await sendBrevo({ to: [org.iro_email], subject: `[${org.name}] Weekly IR report — ${open.length} open`, html: shell(org, org.accent_color, 'IR Weekly Report', body) })
       if (ok) sent++
       await sb.from('notification_log').insert({ org_id: org.id, alert_type: 'ir_weekly_iro', subject: 'IR weekly report', recipients: [org.iro_email], status: ok ? 'sent' : 'failed' })
     }
@@ -43,7 +43,7 @@ exports.handler = async () => {
         const body = `<p>Weekly counselling caseload summary.</p><p>You have <b>${mine.length}</b> active case(s).</p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px"><tr><td style="padding:3px 8px;font-weight:bold">Case</td><td style="padding:3px 8px;font-weight:bold">Category</td><td style="padding:3px 8px;font-weight:bold">Worker</td><td style="padding:3px 8px;font-weight:bold">Status</td></tr>${rows}</table>
           <p style="color:#6b7280;font-size:12px;margin-top:8px">Please continue to handle each case with care and confidentiality.</p>`
-        const ok = await sendBrevo({ to: [org.counsellor_email], subject: `[${org.name}] Weekly counselling report — ${mine.length} active`, html: shell(org.name, org.accent_color, 'Counselling Weekly Report', body) })
+        const ok = await sendBrevo({ to: [org.counsellor_email], subject: `[${org.name}] Weekly counselling report — ${mine.length} active`, html: shell(org, org.accent_color, 'Counselling Weekly Report', body) })
         if (ok) sent++
         await sb.from('notification_log').insert({ org_id: org.id, alert_type: 'ir_weekly_counsellor', subject: 'Counselling weekly report', recipients: [org.counsellor_email], status: ok ? 'sent' : 'failed' })
       }

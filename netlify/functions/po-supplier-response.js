@@ -35,7 +35,7 @@ exports.handler = async (event) => {
     if (decision === 'accepted') patch.status = 'sent'
     await sb.from('purchase_orders').update(patch).eq('id', po)
 
-    const { data: org } = await sb.from('organizations').select('name, accent_color').eq('id', order.org_id).single()
+    const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', order.org_id).single()
     const { data: sup } = order.supplier_id ? await sb.from('suppliers').select('*').eq('id', order.supplier_id).single() : { data: null }
 
     if (decision === 'accepted') {
@@ -57,7 +57,7 @@ exports.handler = async (event) => {
       // Notify buyer + accounts
       const to = await recipientsFor(sb, order.org_id, ['owner', 'admin', 'manager'])
       await sendBrevo({ to, subject: `[${org.name}] Supplier ACCEPTED PO ${order.po_number}`,
-        html: shell(org.name, org.accent_color, 'Procurement',
+        html: shell(org, org.accent_color, 'Procurement',
           `<p><b>${sup?.name || 'Supplier'}</b> accepted PO <b>${order.po_number}</b> (${order.currency} ${Number(order.total||0).toLocaleString()}).</p>
            <p>A bill has been created in Accounts → Bills for follow-up.</p>`) })
       await sb.from('notification_log').insert({ org_id: order.org_id, alert_type: 'po_accepted', subject: `PO ${order.po_number} accepted`, status: 'sent' })
@@ -65,7 +65,7 @@ exports.handler = async (event) => {
     } else {
       const to = await recipientsFor(sb, order.org_id, ['owner', 'admin', 'manager'])
       await sendBrevo({ to, subject: `[${org.name}] Supplier DECLINED PO ${order.po_number}`,
-        html: shell(org.name, org.accent_color, 'Procurement',
+        html: shell(org, org.accent_color, 'Procurement',
           `<p><b>${sup?.name || 'Supplier'}</b> declined PO <b>${order.po_number}</b>. You may wish to revise the order or contact another supplier.</p>`) })
       await sb.from('notification_log').insert({ org_id: order.org_id, alert_type: 'po_declined', subject: `PO ${order.po_number} declined`, status: 'sent' })
       return html('Order Declined', `Your response has been recorded and ${org.name} has been notified.`, '#dc2626')
