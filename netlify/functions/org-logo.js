@@ -13,9 +13,8 @@ exports.handler = async (event) => {
   try {
     const { data } = await admin().from('organizations').select('logo_url').eq('id', org).maybeSingle()
     const logo = data?.logo_url || ''
-    if (/^https:\/\//i.test(logo)) {
-      return { statusCode: 302, headers: { Location: logo, 'Cache-Control': 'public, max-age=3600' }, body: '' }
-    }
+    // Only embedded images are served. Never redirect to a stored URL: that would
+    // let anyone who can edit a workspace turn this link into an open redirect.
     const m = logo.match(DATA_URI)
     if (!m) return { statusCode: 404, headers: { 'Cache-Control': 'public, max-age=300' }, body: 'No logo' }
     return {
