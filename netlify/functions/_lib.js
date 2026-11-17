@@ -49,6 +49,12 @@ const safeUrl = (u) => {
   return esc('https://' + s)
 }
 const json = (statusCode, obj) => ({ statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) })
+// True when a database timestamp (e.g. created_at default now()) is within the
+// last `mins` minutes. Used so "new record" emails can't be replayed later.
+const isRecent = (ts, mins = 15) => {
+  const t = ts ? new Date(ts).getTime() : NaN
+  return Number.isFinite(t) && Date.now() - t < mins * 60000 && t - Date.now() < 5 * 60000
+}
 
 // ── Who is calling? ─────────────────────────────────────────────────────────
 // Every function a signed-in user triggers starts with this. It reads the
@@ -115,4 +121,4 @@ async function recipientsFor(sb, orgId, roles = ['owner', 'admin', 'manager']) {
   return (data || []).map((m) => m.email).filter(Boolean)
 }
 
-module.exports = { admin, sendBrevo, shell, recipientsFor, esc, safeColor, safeUrl, json, requireMember }
+module.exports = { admin, sendBrevo, shell, recipientsFor, esc, safeColor, safeUrl, json, isRecent, requireMember }

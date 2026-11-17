@@ -4,8 +4,13 @@
 // Everything people type (titles, notes, names, line items) is HTML-escaped with
 // esc() before it goes into an email body, and records are only looked up inside
 // the workspace named in the call. The caller must be signed in and a member of
-// that workspace.
-const { admin, sendBrevo, shell, recipientsFor, esc, requireMember } = require('./_lib')
+// that workspace; po_to_supplier also needs supply-chain edit rights (the same
+// rule the database applies to purchase orders). Each event must match the
+// record's own state or nothing is sent (409): request_submitted only for a
+// pending request created in the last 15 minutes, request_approved / declined
+// only when the request has that status, po_to_supplier only while the supplier
+// has not answered yet.
+const { admin, sendBrevo, shell, recipientsFor, esc, isRecent, requireMember } = require('./_lib')
 
 const crypto = require('crypto')
 
@@ -14,7 +19,8 @@ exports.handler = async (event) => {
   try {
     const { org_id, event: kind, request_id, po_id } = JSON.parse(event.body || '{}')
     const sb = admin()
-    const auth = await requireMember(event, org_id, { sb })
+    const perms = kind === 'po_to_supplier' ? [['supply_chain', 'edit']] : undefined
+    const auth = await requireMember(event, org_id, { sb, perms })
     if (auth.error) return auth.error
     if (!kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and event required' }) }
     const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).maybeSingle()
@@ -25,6 +31,12 @@ exports.handler = async (event) => {
     if (kind === 'request_submitted' || kind === 'request_approved' || kind === 'request_declined') {
       const { data: pr } = await sb.from('purchase_requests').select('*').eq('id', request_id).eq('org_id', org_id).maybeSingle()
       if (!pr) return { statusCode: 404, body: JSON.stringify({ error: 'request not found' }) }
+      if (kind === 'request_submitted' && !(pr.status === 'pending' && isRecent(pr.created_at))) {
+        return { statusCode: 409, body: JSON.stringify({ error: 'request is not a new pending request' }) }
+      }
+      if (kind !== 'request_submitted' && pr.status !== (kind === 'request_approved' ? 'approved' : 'declined')) {
+        return { statusCode: 409, body: JSON.stringify({ error: 'request status does not match' }) }
+      }
       cc = pr.cc_emails
 
       if (kind === 'request_submitted') {
@@ -49,6 +61,9 @@ exports.handler = async (event) => {
     } else if (kind === 'po_to_supplier') {
       const { data: po } = await sb.from('purchase_orders').select('*').eq('id', po_id).eq('org_id', org_id).maybeSingle()
       if (!po) return { statusCode: 404, body: JSON.stringify({ error: 'PO not found' }) }
+      if (po.supplier_status && po.supplier_status !== 'pending') {
+        return { statusCode: 409, body: JSON.stringify({ error: `supplier already ${po.supplier_status} this order` }) }
+      }
       cc = po.cc_emails
       const { data: sup } = po.supplier_id ? await sb.from('suppliers').select('*').eq('id', po.supplier_id).eq('org_id', org_id).maybeSingle() : { data: null }
       if (!sup?.email) return { statusCode: 400, body: JSON.stringify({ error: 'supplier has no email' }) }

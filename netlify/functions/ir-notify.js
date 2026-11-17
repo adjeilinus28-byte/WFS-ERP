@@ -2,21 +2,41 @@
 // POST { org_id, concern_id, event }
 //   event: submitted | urgent | referred | engagement
 // Caller must be signed in and a member of org_id; the concern is only looked
-// up inside that workspace, and everything typed is HTML-escaped.
-const { admin, sendBrevo, shell, esc, json, requireMember } = require('./_lib')
+// up inside that workspace, and everything typed is HTML-escaped. Each event
+// must match the concern's own state or nothing is sent (409):
+//   submitted / urgent  only for a concern still 'new' and created in the last
+//                       15 minutes; urgent-or-not comes from its stored severity
+//   referred            only when the concern is marked referred_to_counsellor
+//   engagement          only when a counsellor posted on it in the last 15 minutes
+const { admin, sendBrevo, shell, esc, json, isRecent, requireMember } = require('./_lib')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' }
   try {
-    const { org_id, concern_id, event: kind } = JSON.parse(event.body || '{}')
+    const { org_id, concern_id, event: requested } = JSON.parse(event.body || '{}')
     const sb = admin()
     const auth = await requireMember(event, org_id, { sb })
     if (auth.error) return auth.error
-    if (!concern_id || !kind) return json(400, { error: 'org_id, concern_id, event required' })
+    if (!concern_id || !requested) return json(400, { error: 'org_id, concern_id, event required' })
     const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color, iro_email, counsellor_email, wellbeing_note').eq('id', org_id).maybeSingle()
     if (!org) return json(404, { error: 'organization not found' })
     const { data: c } = await sb.from('ir_concerns').select('*').eq('id', concern_id).eq('org_id', org_id).maybeSingle()
     if (!c) return json(404, { error: 'concern not found' })
+
+    let kind = requested
+    if (requested === 'submitted' || requested === 'urgent') {
+      if (!(c.status === 'new' && isRecent(c.created_at))) return json(409, { error: 'concern is not new' })
+      kind = ['urgent', 'high'].includes(c.severity) ? 'urgent' : 'submitted'
+    } else if (requested === 'referred') {
+      if (!c.referred_to_counsellor) return json(409, { error: 'concern has not been referred' })
+    } else if (requested === 'engagement') {
+      const { data: eng } = await sb.from('ir_engagements').select('created_at')
+        .eq('org_id', org_id).eq('concern_id', concern_id).eq('author_role', 'counsellor')
+        .order('created_at', { ascending: false }).limit(1)
+      if (!eng || !eng[0] || !isRecent(eng[0].created_at)) return json(409, { error: 'no recent counsellor message' })
+    } else {
+      return json(400, { error: 'unknown event' })
+    }
 
     let to = [], subject = '', body = ''
     const caseRef = `<b>${esc(c.case_id)}</b>`
