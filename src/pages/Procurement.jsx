@@ -61,6 +61,9 @@ function Requests({ suppliers }) {
     try {
       const [created] = await insert({
         ...form, est_total: Number(form.est_total || 0), currency: ccy,
+        // empty pickers are null, not '' (supplier_id is a uuid, needed_by a date)
+        supplier_id: form.supplier_id || null, needed_by: form.needed_by || null,
+        department: form.department || null, cc_emails: form.cc_emails.trim() || null,
         request_no: `PR-${Date.now().toString().slice(-6)}`,
         requested_by: user?.email, status: 'pending',
       })
