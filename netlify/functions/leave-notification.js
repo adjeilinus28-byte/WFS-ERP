@@ -2,10 +2,14 @@
 // POST { org_id, request_id, event }  event: submitted | approved | declined
 // Caller must be signed in and a member of org_id; the request is only looked
 // up inside that workspace, and everything typed is HTML-escaped. What the email
-// says comes from the request's own status, never from `event`: approved /
-// declined only send when the request really has that status (409 otherwise),
-// and submitted only for a request created in the last 15 minutes.
-const { admin, sendBrevo, shell, recipientsFor, esc, json, isRecent, requireMember } = require('./_lib')
+// says comes from the request's own status, never from `event`:
+//   submitted          only for a request created in the last 15 minutes, and
+//                      only once: the request's `notified` flag is claimed
+//                      atomically (false → true) before anything is sent
+//   approved/declined  only when the request really has that status (409), and
+//                      only by someone allowed to decide leave in this workspace
+//                      (same rule as the database's check_approval(); 403)
+const { admin, sendBrevo, shell, recipientsFor, esc, json, isRecent, requireMember, canDecide } = require('./_lib')
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' }
@@ -30,9 +34,19 @@ exports.handler = async (event) => {
       mode = lr.status === 'pending' ? 'submitted' : lr.status
     } else {
       if (lr.status !== kind) return json(409, { error: `request is not ${kind}` })
+      if (!(await canDecide(sb, org_id, auth.member, 'leave'))) return json(403, { error: 'Only an approver can send a leave decision' })
       mode = kind
     }
     if (!['submitted', 'approved', 'declined'].includes(mode)) return json(409, { error: 'nothing to notify' })
+
+    // A submission is announced once: claim the flag before sending.
+    let claimed = false
+    if (kind === 'submitted') {
+      const { data: rows } = await sb.from('leave_requests').update({ notified: true })
+        .eq('id', request_id).eq('org_id', org_id).eq('notified', false).select('id')
+      if (!rows || rows.length === 0) return json(409, { error: 'already notified' })
+      claimed = true
+    }
 
     // Pull the employee's own email if linked
     let empEmail = null
@@ -65,7 +79,8 @@ exports.handler = async (event) => {
     }
 
     const ok = await sendBrevo({ to, subject, html: shell(org, org.accent_color, 'Leave Notification', body) })
-    await sb.from('leave_requests').update({ notified: true }).eq('id', request_id).eq('org_id', org_id)
+    // If the announcement could not be sent, release the claim so it can be retried.
+    if (claimed && !ok) await sb.from('leave_requests').update({ notified: false }).eq('id', request_id).eq('org_id', org_id)
     await sb.from('notification_log').insert({ org_id, alert_type: `leave_${mode}`, subject, recipients: to, status: ok ? 'sent' : 'failed' })
 
     return json(200, { ok, recipients: to.length })

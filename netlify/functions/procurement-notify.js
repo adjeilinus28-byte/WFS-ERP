@@ -8,9 +8,10 @@
 // rule the database applies to purchase orders). Each event must match the
 // record's own state or nothing is sent (409): request_submitted only for a
 // pending request created in the last 15 minutes, request_approved / declined
-// only when the request has that status, po_to_supplier only while the supplier
-// has not answered yet.
-const { admin, sendBrevo, shell, recipientsFor, esc, isRecent, requireMember } = require('./_lib')
+// only when the request has that status and the caller may decide purchase
+// requests (same rule as the database's check_approval(); 403 otherwise),
+// po_to_supplier only while the supplier has not answered yet.
+const { admin, sendBrevo, shell, recipientsFor, esc, isRecent, requireMember, canDecide } = require('./_lib')
 
 const crypto = require('crypto')
 
@@ -36,6 +37,9 @@ exports.handler = async (event) => {
       }
       if (kind !== 'request_submitted' && pr.status !== (kind === 'request_approved' ? 'approved' : 'declined')) {
         return { statusCode: 409, body: JSON.stringify({ error: 'request status does not match' }) }
+      }
+      if (kind !== 'request_submitted' && !(await canDecide(sb, org_id, auth.member, 'purchase_request'))) {
+        return { statusCode: 403, body: JSON.stringify({ error: 'Only an approver can send a purchase request decision' }) }
       }
       cc = pr.cc_emails
 

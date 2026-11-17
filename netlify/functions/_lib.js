@@ -92,6 +92,21 @@ async function requireMember(event, orgId, { roles, perms, sb } = {}) {
   return { user, member }
 }
 
+// May this member decide (approve/decline) an item of `type` ('leave',
+// 'purchase_request', 'overtime')? Same rule as the database's check_approval():
+// the member's role must rank at or above the workspace's approver role for that
+// type (approval_rule(), default manager), using the database's role_rank().
+async function canDecide(sb, orgId, member, type) {
+  const { data: rule, error } = await sb.rpc('approval_rule', { p_org: orgId, p_type: type })
+  const approverRole = (Array.isArray(rule) ? rule[0] : rule)?.approver_role
+  if (error || !approverRole) return false
+  const [{ data: mine }, { data: needed }] = await Promise.all([
+    sb.rpc('role_rank', { p_role: member.role }),
+    sb.rpc('role_rank', { p_role: approverRole }),
+  ])
+  return Number.isFinite(mine) && Number.isFinite(needed) && mine >= needed
+}
+
 const shortHash =(str) => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36) }
 
 // Branded email wrapper. First argument: the organization row (preferably with
@@ -121,4 +136,4 @@ async function recipientsFor(sb, orgId, roles = ['owner', 'admin', 'manager']) {
   return (data || []).map((m) => m.email).filter(Boolean)
 }
 
-module.exports = { admin, sendBrevo, shell, recipientsFor, esc, safeColor, safeUrl, json, isRecent, requireMember }
+module.exports = { admin, sendBrevo, shell, recipientsFor, esc, safeColor, safeUrl, json, isRecent, requireMember, canDecide }
