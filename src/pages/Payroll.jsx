@@ -270,13 +270,18 @@ function OvertimeLog({ ccy, employees, deptOptions, canWrite }) {
     const emp = employees.find((e) => e.id === form.employee_id)
     setSaving(true)
     try {
-      const { error } = await supabase.from('overtime_entries').insert({
+      const { data: created, error } = await supabase.from('overtime_entries').insert({
         org_id: activeOrgId, employee_id: form.employee_id, employee_name: emp?.full_name || null,
         department: emp?.department || null, work_date: form.work_date, hours: Number(form.hours),
         reason: form.reason || null, period: bmonth(form.work_date), status: 'pending',
-      })
+      }).select('id').single()
       if (error) throw error
-      toast.success(at('Overtime logged — awaiting approval'))
+      // Short entries can be approved automatically (Settings → Approval rules) by a
+      // database trigger after the insert, so read the status back.
+      const { data: saved } = await supabase.from('overtime_entries').select('status').eq('id', created.id).maybeSingle()
+      toast.success(saved?.status === 'approved'
+        ? at('Overtime logged and approved automatically — it is under your auto-approve limit')
+        : at('Overtime logged — awaiting approval'))
       setForm({ employee_id: '', work_date: '', hours: '', reason: '' })
       load()
     } catch (e) { toast.error(e.message || 'Failed') } finally { setSaving(false) }

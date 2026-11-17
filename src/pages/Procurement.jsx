@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePermissions } from '../hooks/usePermissions'
 import { useTable } from '../hooks/useTable'
 import { useDepartments } from '../hooks/useDepartments'
+import { useApprovalRules } from '../components/ApprovalRules'
 import {
   ShoppingCart, Truck, FileClock, Wallet, Plus, X, Check, Send, ArrowRight, FileText, Clock, Receipt } from 'lucide-react'
 
@@ -49,6 +50,9 @@ function Requests({ suppliers }) {
   const [decide, setDecide] = useState(null)
   const [note, setNote] = useState('')
   const canApprove = ['owner', 'admin', 'manager', 'supervisor'].includes(role)
+  const { rules } = useApprovalRules()
+  // Own request while "Can't approve own" is on → no Review button (mirrors Approvals and the database guard).
+  const selfBlocked = (r) => (rules.purchase_request?.block_self ?? true) && !!r.created_by && r.created_by === user?.id
 
   const [form, setForm] = useState({
     title: '', department: '', approver_email: '', approver_name: '',
@@ -67,8 +71,17 @@ function Requests({ suppliers }) {
         request_no: `PR-${Date.now().toString().slice(-6)}`,
         requested_by: user?.email, status: 'pending',
       })
-      if (created?.id) await notify({ org_id: activeOrgId, event: 'request_submitted', request_id: created.id })
-      toast.success('Request submitted — approver notified')
+      // Small requests can be approved automatically (Settings → Approval rules) by a
+      // database trigger after the insert, so read the status back before telling the user.
+      const { data: saved } = created?.id
+        ? await supabase.from('purchase_requests').select('status').eq('id', created.id).maybeSingle()
+        : { data: null }
+      if (saved?.status === 'approved') {
+        toast.success(at('Request approved automatically — it is under your auto-approve limit'))
+      } else {
+        if (created?.id) await notify({ org_id: activeOrgId, event: 'request_submitted', request_id: created.id })
+        toast.success('Request submitted — approver notified')
+      }
       setDrawer(false)
       setForm({ title: '', department: '', approver_email: '', approver_name: '', supplier_id: '', priority: 'normal', est_total: '', needed_by: '', justification: '', cc_emails: '' })
     } catch (e) { toast.error(e.message) } finally { setSaving(false) }
@@ -143,9 +156,11 @@ function Requests({ suppliers }) {
                     <td className="td"><Badge tone={statusTone(r.status)}>{r.status}</Badge></td>
                     <td className="td text-right">
                       <div className="inline-flex gap-1">
-                        {canApprove && r.status === 'pending' && (
+                        {canApprove && r.status === 'pending' && (selfBlocked(r) ? (
+                          <span className="whitespace-nowrap rounded-md bg-white/[0.04] px-2 py-1 text-xs text-ice-faint" title={at('Your request — another approver must decide')}>{at('Your request')}</span>
+                        ) : (
                           <button onClick={() => { setDecide(r); setNote('') }} className="rounded-md bg-ok/10 px-2 py-1 text-xs text-ok hover:bg-ok/20">Review</button>
-                        )}
+                        ))}
                         {r.status === 'approved' && (
                           <button onClick={() => convert(r)} className="rounded-md bg-accent/15 px-2 py-1 text-xs text-accent hover:bg-accent/25">Convert to PO</button>
                         )}
