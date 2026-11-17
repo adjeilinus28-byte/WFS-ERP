@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, PieChart, Pie, Legend,
@@ -24,7 +25,7 @@ const genCase = () => 'IR-' + Math.random().toString(36).slice(2, 8).toUpperCase
 const genCode = () => Math.random().toString(36).slice(2, 8).toUpperCase()
 
 function notify(payload) {
-  fetch('/.netlify/functions/ir-notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {})
+  callFn('ir-notify', payload).catch(() => {})
 }
 
 // ── 1. Drop box (any worker) ─────────────────────────────────────────────────

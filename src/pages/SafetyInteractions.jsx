@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, X, Search, ShieldCheck, ClipboardCheck, Eye, Target, Camera, Check, AlertTriangle, TrendingUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -17,10 +18,7 @@ const FORM_META = {
 }
 
 function notify(org_id, interaction_id) {
-  fetch('/.netlify/functions/ccv-action-notify', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ org_id, interaction_id }),
-  }).catch(() => {})
+  callFn('ccv-action-notify', { org_id, interaction_id }).catch(() => {})
 }
 
 // ── KPI dashboard ────────────────────────────────────────────────────────────

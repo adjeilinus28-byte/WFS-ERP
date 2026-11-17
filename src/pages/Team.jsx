@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -55,12 +56,11 @@ export default function Team() {
       if (error) throw error
       const link = `${window.location.origin}/invite/${token}`
       setInviteLink(link)
-      // Fire the Brevo email (best-effort; link is shown regardless).
+      // Fire the Brevo email (best-effort; link is shown regardless). The
+      // function reads the recipient, role and link from the invitation itself.
       try {
-        await fetch('/.netlify/functions/send-invite', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: inviteEmail.trim(), link, org: activeOrg?.org_name, role: inviteRole }),
-        })
+        const res = await callFn('send-invite', { org_id: activeOrgId, token })
+        if (!res.ok) throw new Error('not sent')
         toast.success(at('Invitation sent'))
       } catch { toast.success(at('Invite link created — copy it below')) }
       setInviteEmail('')
@@ -153,12 +153,7 @@ export default function Team() {
   const resetPassword = async (uid, email) => {
     if (!window.confirm(`${at('Send a password reset to')} ${email}?`)) return
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/.netlify/functions/reset-member-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
-        body: JSON.stringify({ org_id: activeOrgId, target_user_id: uid, redirect_to: window.location.origin }),
-      })
+      const res = await callFn('reset-member-password', { org_id: activeOrgId, target_user_id: uid, redirect_to: window.location.origin })
       if (!res.ok) throw new Error(await res.text())
       const out = await res.json()
       if (out.emailed) toast.success(at('Reset email sent'))

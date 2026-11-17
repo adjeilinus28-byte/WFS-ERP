@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Users, Wallet, CheckCircle2, RefreshCw } from 'lucide-react'
@@ -532,10 +533,7 @@ export default function Payroll({ ccy }) {
     if (!window.confirm(`Generate & email ${label} to employees?`)) return
     setSending(true)
     try {
-      const res = await fetch('/.netlify/functions/payslip-send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: activeOrgId, ids: target.map((r) => r.id) }),
-      })
+      const res = await callFn('payslip-send', { org_id: activeOrgId, ids: target.map((r) => r.id) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Send failed')
       toast.success(`Sent ${data.sent}, skipped ${data.skipped} (no email)`)

@@ -1,6 +1,6 @@
 // Scheduled: reminds assignees of open CCV actions due within 3 days, and nudges
 // observers who are behind on their monthly safety KPIs. Cron in netlify.toml.
-const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
+const { admin, sendBrevo, shell, esc } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
@@ -16,7 +16,7 @@ exports.handler = async () => {
     for (const a of acts || []) {
       const overdue = a.action_due && a.action_due < new Date().toISOString().slice(0, 10)
       const body = `<p>Reminder: a CCV action assigned to you is <b>${overdue ? 'OVERDUE' : 'due soon'}</b>.</p>
-        <p><b>${a.ref_no || 'CCV'}</b> — ${a.action_description || ''}<br/>Due: ${a.action_due || 'ASAP'} · Location: ${a.location || '—'}</p>
+        <p><b>${esc(a.ref_no || 'CCV')}</b> — ${esc(a.action_description || '')}<br/>Due: ${esc(a.action_due || 'ASAP')} · Location: ${esc(a.location || '—')}</p>
         <p>Please close it out in the HSE module.</p>`
       const ok = await sendBrevo({ to: [a.assigned_to_email], subject: `[${org.name}] ${overdue ? 'OVERDUE' : 'Reminder'}: CCV action ${a.ref_no || ''}`, html: shell(org, org.accent_color, 'Safety Action Reminder', body) })
       if (ok) actionReminders++
@@ -39,7 +39,7 @@ exports.handler = async () => {
         }).filter(Boolean)
         if (behind.length) {
           const body = `<p>Month-end reminder: your safety interaction KPIs are below target.</p>
-            <p>${behind.join('<br/>')}</p><p>Please complete your outstanding CCVs / PTOs / Take 5s before month end.</p>`
+            <p>${behind.map(esc).join('<br/>')}</p><p>Please complete your outstanding CCVs / PTOs / Take 5s before month end.</p>`
           const ok = await sendBrevo({ to: [e.email], subject: `[${org.name}] Safety KPI reminder — ${behind.length} target(s) outstanding`, html: shell(org, org.accent_color, 'Safety KPI', body) })
           if (ok) kpiReminders++
         }

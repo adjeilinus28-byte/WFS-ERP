@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import Suppliers from './Suppliers'
 import ModuleScaffold from '../components/ModuleScaffold'
@@ -32,9 +33,7 @@ function Tabs({ tab, setTab }) {
 
 async function notify(payload) {
   try {
-    await fetch('/.netlify/functions/procurement-notify', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-    })
+    await callFn('procurement-notify', payload)
   } catch (_) {}
 }
 

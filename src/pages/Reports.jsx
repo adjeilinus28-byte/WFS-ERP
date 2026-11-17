@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
@@ -51,10 +52,7 @@ export default function Reports() {
   const generate = async () => {
     setBusy(true); setReport('')
     try {
-      const res = await fetch('/.netlify/functions/generate-report', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: activeOrgId }),
-      })
+      const res = await callFn('generate-report', { org_id: activeOrgId })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Generation failed')
       setReport(data.report || '')

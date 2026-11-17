@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
@@ -98,10 +99,7 @@ function MyOrders() {
         department: me.department, service_date: date, reason,
       }).select().single()
       if (error) throw error
-      fetch('/.netlify/functions/catering-callout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: activeOrgId, callout_id: data.id, event: 'requested' }),
-      }).catch(() => {})
+      callFn('catering-callout', { org_id: activeOrgId, callout_id: data.id, event: 'requested' }).catch(() => {})
       toast.success('Callout requested — your supervisor has been notified')
       load()
     } catch (e) { toast.error(e.message.includes('duplicate') ? 'A callout for this day already exists' : e.message) }
@@ -471,10 +469,7 @@ function CalloutApprovals() {
         status, decided_by: user?.email, decided_at: new Date().toISOString(),
       }).eq('id', r.id)
       if (error) throw error
-      fetch('/.netlify/functions/catering-callout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: activeOrgId, callout_id: r.id, event: 'decided' }),
-      }).catch(() => {})
+      callFn('catering-callout', { org_id: activeOrgId, callout_id: r.id, event: 'decided' }).catch(() => {})
       toast.success(status === 'approved' ? 'Callout approved — worker can order meals' : 'Callout declined')
       load()
     } catch (e) { toast.error(e.message) }

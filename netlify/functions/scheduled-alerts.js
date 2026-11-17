@@ -28,7 +28,7 @@ exports.handler = async () => {
     const alerts = []
     ;(inv || []).filter((r) => Number(r.qty_on_hand) <= Number(r.reorder_level))
       .forEach((r) => alerts.push(`Low stock: <b>${esc(r.name)}</b> (${esc(r.qty_on_hand)} ${esc(r.uom)})`))
-    ;(assets || []).forEach((a) => { const d = days(a.next_service_date); if (d != null && d <= 7) alerts.push(`Service ${d < 0 ? 'overdue' : `due in ${d}d`}: <b>${esc(a.name)}</b>`) })
+    ;(assets || []).forEach((a) => { const d = days(a.next_service_date); if (d != null && d <= 7) alerts.push(`Service ${d < 0 ? 'overdue' : `due in ${esc(d)}d`}: <b>${esc(a.name)}</b>`) })
     ;(wos || []).forEach((w) => { const d = days(w.due_date); if (d != null && d < 0 && !['done','cancelled'].includes(w.status)) alerts.push(`Overdue WO <b>${esc(w.wo_number)}</b>: ${esc(w.title)}`) })
     ;(docs || []).filter((x) => ['expired','critical','expiring'].includes(x.expiry_status))
       .forEach((x) => alerts.push(`Document <b>${esc(x.name)}</b> ${esc(x.expiry_status)}`))
@@ -36,13 +36,13 @@ exports.handler = async () => {
       .forEach((h) => alerts.push(`Open ${esc(h.severity)} HSE: <b>${esc(h.incident_no)}</b>`))
     ;(sups || []).filter((x) => (x.status || 'active') === 'active').forEach((x) => {
       const d = days(x.tax_clearance_expiry)
-      if (d != null && d <= 30 && (d < 0 || [30, 14, 7, 3, 1, 0].includes(d))) alerts.push(`Supplier tax clearance ${d < 0 ? 'expired' : `expires in ${d}d`}: <b>${esc(x.name)}</b>`)
+      if (d != null && d <= 30 && (d < 0 || [30, 14, 7, 3, 1, 0].includes(d))) alerts.push(`Supplier tax clearance ${d < 0 ? 'expired' : `expires in ${esc(d)}d`}: <b>${esc(x.name)}</b>`)
     })
 
     if (alerts.length === 0) continue
     const to = await recipientsFor(sb, oid)
     const html = shell(org, org.accent_color, 'Daily Operations Alert',
-      `<p>${alerts.length} item(s) need attention today:</p><ul>${alerts.map(li).join('')}</ul>`)
+      `<p>${esc(alerts.length)} item(s) need attention today:</p><ul>${alerts.map(li).join('')}</ul>`)
     const ok = await sendBrevo({ to, subject: `[${org.name}] ${alerts.length} operational alert(s)`, html })
     await sb.from('notification_log').insert({ org_id: oid, alert_type: 'daily_sweep', subject: `${alerts.length} alerts`, recipients: to, status: ok ? 'sent' : 'failed', detail: { count: alerts.length } })
     summary.push(`${org.name}: ${alerts.length}`)

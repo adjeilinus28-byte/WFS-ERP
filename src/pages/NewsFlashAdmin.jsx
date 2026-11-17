@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { CAT } from '../components/NewsFlash'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, StatCard } from '../components/ui'
@@ -49,10 +50,7 @@ export default function NewsFlashAdmin() {
       afterSave={(rec) => {
         // Fire the email once, only when a dispatch target is chosen and not already sent
         if (rec?.notify_target && !rec.emailed_at && rec.id) {
-          fetch('/.netlify/functions/news-notify', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ org_id: rec.org_id, news_id: rec.id }),
-          }).catch(() => {})
+          callFn('news-notify', { org_id: rec.org_id, news_id: rec.id }).catch(() => {})
         }
       }}
       kpis={(rows) => {

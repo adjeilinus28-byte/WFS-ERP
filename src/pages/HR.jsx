@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import ExportCsvButton from '../components/ExportCsvButton'
 import ModuleScaffold from '../components/ModuleScaffold'
@@ -36,10 +37,7 @@ function TabStrip({ tab, setTab }) {
 // ── Notify helper (Brevo via Netlify fn) ────────────────────────────────────
 async function notify(org_id, request_id, event) {
   try {
-    await fetch('/.netlify/functions/leave-notification', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ org_id, request_id, event }),
-    })
+    await callFn('leave-notification', { org_id, request_id, event })
   } catch (_) { /* non-blocking */ }
 }
 

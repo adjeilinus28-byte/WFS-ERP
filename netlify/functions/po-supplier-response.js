@@ -2,14 +2,14 @@
 // GET /po-supplier-response?po=UUID&token=XYZ&decision=accepted|declined
 // On accept: marks PO accepted + auto-creates a Bill (AP) in Accounts and
 // notifies the buyer. Token-gated (no auth session needed).
-const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
+const { admin, sendBrevo, shell, recipientsFor, esc } = require('./_lib')
 
-const page = (title, msg, color) => `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
+const page = (title, msg, color) => `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head>
 <body style="font-family:Arial,sans-serif;background:#080C16;color:#F1F5F9;display:grid;place-items:center;min-height:100vh;margin:0">
   <div style="max-width:420px;text-align:center;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px 28px;background:#0E1424">
     <div style="width:56px;height:56px;border-radius:14px;background:${color}22;display:grid;place-items:center;margin:0 auto 16px;font-size:28px">${title.includes('Accept') ? '✓' : title.includes('Declin') ? '✗' : 'ℹ'}</div>
-    <h1 style="font-size:20px;margin:0 0 8px">${title}</h1>
-    <p style="color:#94a3b8;font-size:14px;line-height:1.6">${msg}</p>
+    <h1 style="font-size:20px;margin:0 0 8px">${esc(title)}</h1>
+    <p style="color:#94a3b8;font-size:14px;line-height:1.6">${esc(msg)}</p>
     <p style="color:#64748B;font-size:11px;margin-top:24px">Powered by WorkFlow Solutions</p>
   </div>
 </body></html>`
@@ -36,7 +36,7 @@ exports.handler = async (event) => {
     await sb.from('purchase_orders').update(patch).eq('id', po)
 
     const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', order.org_id).single()
-    const { data: sup } = order.supplier_id ? await sb.from('suppliers').select('*').eq('id', order.supplier_id).single() : { data: null }
+    const { data: sup } = order.supplier_id ? await sb.from('suppliers').select('*').eq('id', order.supplier_id).eq('org_id', order.org_id).maybeSingle() : { data: null }
 
     if (decision === 'accepted') {
       // Auto-create a Bill (Accounts Payable) for follow-up, if none yet.
@@ -58,7 +58,7 @@ exports.handler = async (event) => {
       const to = await recipientsFor(sb, order.org_id, ['owner', 'admin', 'manager'])
       await sendBrevo({ to, subject: `[${org.name}] Supplier ACCEPTED PO ${order.po_number}`,
         html: shell(org, org.accent_color, 'Procurement',
-          `<p><b>${sup?.name || 'Supplier'}</b> accepted PO <b>${order.po_number}</b> (${order.currency} ${Number(order.total||0).toLocaleString()}).</p>
+          `<p><b>${esc(sup?.name || 'Supplier')}</b> accepted PO <b>${esc(order.po_number)}</b> (${esc(order.currency)} ${esc(Number(order.total||0).toLocaleString())}).</p>
            <p>A bill has been created in Accounts → Bills for follow-up.</p>`) })
       await sb.from('notification_log').insert({ org_id: order.org_id, alert_type: 'po_accepted', subject: `PO ${order.po_number} accepted`, status: 'sent' })
       return html('Order Accepted', `Thank you. Your acceptance of PO ${order.po_number} has been recorded and ${org.name} has been notified.`, '#16a34a')
@@ -66,7 +66,7 @@ exports.handler = async (event) => {
       const to = await recipientsFor(sb, order.org_id, ['owner', 'admin', 'manager'])
       await sendBrevo({ to, subject: `[${org.name}] Supplier DECLINED PO ${order.po_number}`,
         html: shell(org, org.accent_color, 'Procurement',
-          `<p><b>${sup?.name || 'Supplier'}</b> declined PO <b>${order.po_number}</b>. You may wish to revise the order or contact another supplier.</p>`) })
+          `<p><b>${esc(sup?.name || 'Supplier')}</b> declined PO <b>${esc(order.po_number)}</b>. You may wish to revise the order or contact another supplier.</p>`) })
       await sb.from('notification_log').insert({ org_id: order.org_id, alert_type: 'po_declined', subject: `PO ${order.po_number} declined`, status: 'sent' })
       return html('Order Declined', `Your response has been recorded and ${org.name} has been notified.`, '#dc2626')
     }

@@ -3,8 +3,9 @@
 //   event: request_submitted | request_approved | request_declined | po_to_supplier
 // Everything people type (titles, notes, names, line items) is HTML-escaped with
 // esc() before it goes into an email body, and records are only looked up inside
-// the workspace named in the call.
-const { admin, sendBrevo, shell, recipientsFor, esc } = require('./_lib')
+// the workspace named in the call. The caller must be signed in and a member of
+// that workspace.
+const { admin, sendBrevo, shell, recipientsFor, esc, requireMember } = require('./_lib')
 
 const crypto = require('crypto')
 
@@ -12,8 +13,10 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' }
   try {
     const { org_id, event: kind, request_id, po_id } = JSON.parse(event.body || '{}')
-    if (!org_id || !kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and event required' }) }
     const sb = admin()
+    const auth = await requireMember(event, org_id, { sb })
+    if (auth.error) return auth.error
+    if (!kind) return { statusCode: 400, body: JSON.stringify({ error: 'org_id and event required' }) }
     const { data: org } = await sb.from('organizations').select('id, name, logo_url, accent_color').eq('id', org_id).maybeSingle()
     if (!org) return { statusCode: 404, body: JSON.stringify({ error: 'organization not found' }) }
     const base = process.env.URL || process.env.DEPLOY_PRIME_URL || ''
@@ -54,7 +57,7 @@ exports.handler = async (event) => {
       let token = po.supplier_token
       if (!token) {
         token = crypto.randomBytes(24).toString('hex')
-        await sb.from('purchase_orders').update({ supplier_token: token, supplier_status: 'pending' }).eq('id', po.id)
+        await sb.from('purchase_orders').update({ supplier_token: token, supplier_status: 'pending' }).eq('id', po.id).eq('org_id', org_id)
       }
       const link = (decision) => `${base}/.netlify/functions/po-supplier-response?po=${encodeURIComponent(po.id)}&token=${token}&decision=${decision}`
       const { data: lines } = await sb.from('purchase_order_lines').select('*').eq('po_id', po.id)

@@ -1,6 +1,6 @@
 // Daily cron: (1) reminds attendees of sessions happening in ~2 days;
 // (2) flags certifications expiring within 30 days to the employee + HSE head.
-const { admin, sendBrevo, shell, recipientsFor } = require('./_lib')
+const { admin, sendBrevo, shell, recipientsFor, esc, safeColor, safeUrl } = require('./_lib')
 
 exports.handler = async () => {
   const sb = admin()
@@ -8,7 +8,7 @@ exports.handler = async () => {
   let reminders = 0, expiryAlerts = 0
 
   for (const org of orgs || []) {
-    const accent = org.accent_color || '#F59E0B'
+    const accent = safeColor(org.accent_color)
 
     // (1) Upcoming session reminders — sessions ~2 days out
     const d2 = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10)
@@ -24,7 +24,7 @@ exports.handler = async () => {
       if (!emails.length) continue
       const when = new Date(s.scheduled_at).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
       const body = `<p>Reminder: you have training scheduled in 2 days.</p>
-        <h3>${s.title}</h3><p><b>${when}</b>${s.venue ? ' · ' + s.venue : ''}${s.mode === 'online' && s.link_url ? ` · <a href="${s.link_url}">Online link</a>` : ''}</p>
+        <h3>${esc(s.title)}</h3><p><b>${esc(when)}</b>${s.venue ? ' · ' + esc(s.venue) : ''}${s.mode === 'online' && safeUrl(s.link_url) ? ` · <a href="${safeUrl(s.link_url)}">Online link</a>` : ''}</p>
         <p style="font-size:13px;color:#6b7280">Please make yourself available. Attendance will be recorded.</p>`
       const ok = await sendBrevo({ to: [emails[0]], cc: emails.slice(1), subject: `[${org.name}] Reminder: ${s.title} in 2 days`, html: shell(org, accent, 'Training Reminder', body) })
       if (ok) reminders++
@@ -38,8 +38,8 @@ exports.handler = async () => {
       .gte('expires_at', today).lte('expires_at', in30)
     if (expiring && expiring.length) {
       // Notify HSE head with the full list
-      const rows = expiring.map((e) => `<tr><td style="padding:3px 8px;border-bottom:1px solid #eee">${e.employee_name || '—'}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${e.department || '—'}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${e.expires_at}</td></tr>`).join('')
-      const body = `<p><b>${expiring.length}</b> certification(s) expire within 30 days and need renewal scheduling.</p>
+      const rows = expiring.map((e) => `<tr><td style="padding:3px 8px;border-bottom:1px solid #eee">${esc(e.employee_name || '—')}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${esc(e.department || '—')}</td><td style="padding:3px 8px;border-bottom:1px solid #eee">${esc(e.expires_at)}</td></tr>`).join('')
+      const body = `<p><b>${esc(expiring.length)}</b> certification(s) expire within 30 days and need renewal scheduling.</p>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px"><tr><td style="padding:3px 8px;font-weight:bold">Employee</td><td style="padding:3px 8px;font-weight:bold">Department</td><td style="padding:3px 8px;font-weight:bold">Expires</td></tr>${rows}</table>`
       const to = org.hse_head_email ? [org.hse_head_email] : await recipientsFor(sb, org.id, ['owner', 'admin', 'manager'])
       const ok = await sendBrevo({ to, subject: `[${org.name}] ${expiring.length} certification(s) expiring soon`, html: shell(org, accent, 'Certification Expiry', body) })
@@ -52,7 +52,7 @@ exports.handler = async () => {
           const emp = (emps || []).find((x) => x.id === e.employee_id)
           if (!emp?.email) continue
           await sendBrevo({ to: [emp.email], subject: `[${org.name}] Your certification expires ${e.expires_at}`,
-            html: shell(org, accent, 'Certification Expiry', `<p>Your certification is due to expire on <b>${e.expires_at}</b>. Please arrange renewal with your supervisor.</p>`) })
+            html: shell(org, accent, 'Certification Expiry', `<p>Your certification is due to expire on <b>${esc(e.expires_at)}</b>. Please arrange renewal with your supervisor.</p>`) })
         }
       }
     }

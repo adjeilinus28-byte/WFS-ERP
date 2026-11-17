@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useState } from 'react'
 import ModuleScaffold from '../components/ModuleScaffold'
 import { Badge, statusTone, StatCard, PageHeader, Field, Select, useToast } from '../components/ui'
@@ -221,10 +222,7 @@ export default function HSE() {
           searchKeys={['incident_no', 'incident_type', 'location', 'reported_by']}
           afterSave={(rec, isNew) => {
             if (isNew && rec?.id) {
-              fetch('/.netlify/functions/incident-notify', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ org_id: rec.org_id, incident_id: rec.id }),
-              }).catch(() => {})
+              callFn('incident-notify', { org_id: rec.org_id, incident_id: rec.id }).catch(() => {})
             }
           }}
           columns={[

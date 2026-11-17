@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useMemo, useState } from 'react'
 import ExportCsvButton from '../components/ExportCsvButton'
 import { Plus, X, Search, Filter, Send, Trash2, Pencil, FileText, Landmark, TrendingUp, Clock, Wallet, CheckCircle2, ExternalLink } from 'lucide-react'
@@ -62,10 +63,7 @@ export default function Invoices({ ccy }) {
     if (!window.confirm(`Email invoice ${inv.invoice_no} to ${inv.customer_email} for approval?`)) return
     setSending(true)
     try {
-      const res = await fetch('/.netlify/functions/invoice-send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ org_id: activeOrgId, invoice_id: inv.id }),
-      })
+      const res = await callFn('invoice-send', { org_id: activeOrgId, invoice_id: inv.id })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Send failed')
       toast.success('Invoice emailed to customer')

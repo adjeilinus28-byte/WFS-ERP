@@ -1,3 +1,4 @@
+import { callFn } from '../lib/fn'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, PieChart, Pie, Legend,
@@ -129,9 +130,7 @@ function Schedule() {
   const announce = async (s) => {
     if (!window.confirm(`Announce "${s.title}"? This emails assigned staff and posts a News Flash banner.`)) return
     try {
-      const res = await fetch('/.netlify/functions/training-notify', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: activeOrgId, session_id: s.id }),
-      })
+      const res = await callFn('training-notify', { org_id: activeOrgId, session_id: s.id })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Announce failed')
       toast.success(`Announced — ${data.emailed} emailed, banner posted`); refresh()
