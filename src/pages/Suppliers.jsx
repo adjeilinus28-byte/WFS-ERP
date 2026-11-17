@@ -60,7 +60,7 @@ export default function Suppliers() {
         { key: 'name', label: 'Supplier', render: (v, r) => <div><div className="font-medium text-ice">{v}</div>{r.tin && <div className="font-mono text-[11px] text-ice-faint">TIN {r.tin}</div>}</div> },
         { key: 'category', label: 'Category', render: (v) => v ? <Badge>{v}</Badge> : '—' },
         { key: 'contact_name', label: 'Contact', render: (v, r) => <div><div>{v || '—'}</div>{(r.phone || r.email) && <div className="text-[11px] text-ice-faint">{r.phone || r.email}</div>}</div> },
-        { key: 'tax_clearance_expiry', label: 'Tax clearance', render: (v) => { const c = clearanceState(v); return <Badge tone={c.tone}>{at(c.label)}</Badge> } },
+        { key: 'tax_clearance_expiry', label: 'Tax clearance', render: (v) => { const c = clearanceState(v); return <Badge tone={c.tone} plain>{at(c.label)}</Badge> } },
         { key: '_spend', label: `Spend ${year}`, render: (_, r) => <span className="font-mono">{money(spend.of(r), ccy)}</span> },
         { key: 'status', label: 'Status', render: (v) => <Badge tone={v === 'inactive' ? 'mute' : 'ok'}>{v || 'active'}</Badge> },
       ]}

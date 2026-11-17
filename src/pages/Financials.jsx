@@ -160,7 +160,8 @@ export default function Financials() {
       const { data: bills } = await supabase.from('bills').select('*').eq('org_id', activeOrgId).neq('status', 'draft')
       for (const b of bills || []) {
         const amt = Number(b.total || b.amount || 0); if (!amt) continue
-        await mk('bill', b.id, b.bill_date || b.created_at?.slice(0, 10), `Bill ${b.bill_no || ''}`, [
+        // bills store their date as issue_date (bill_date kept as a fallback)
+        await mk('bill', b.id, b.issue_date || b.bill_date || b.created_at?.slice(0, 10), `Bill ${b.bill_no || ''}`, [
           { account_id: ruleAcct('expense').id, debit: amt, credit: 0, description: 'Expense' },
           { account_id: ruleAcct('ap').id, debit: 0, credit: amt, description: 'Payable' },
         ])

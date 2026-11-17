@@ -23,9 +23,11 @@ const TONE = {
   accent: 'bg-accent-soft text-accent',
 }
 // Pill with a small status dot (coloured tones only).
-export function Badge({ tone = 'mute', children }) {
+// `plain` keeps the text as written (for sentences like "12 days left");
+// otherwise status words are capitalised.
+export function Badge({ tone = 'mute', plain = false, children }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${TONE[tone] || TONE.mute}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${plain ? '' : 'capitalize'} ${TONE[tone] || TONE.mute}`}>
       {tone !== 'mute' && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden="true" />}
       {children}
     </span>
